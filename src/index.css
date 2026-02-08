@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0d0b08;
+  --bg-secondary: #15110c;
+  --bg-tertiary: #1d1712;
+  --text-primary: #f0e7de;
+  --text-secondary: #c7b7a6;
+  --text-muted: #9a8675;
+  --border: #2a211a;
+  --shadow-soft: 0 14px 40px rgba(10, 7, 4, 0.35);
+  --grid-line: rgba(240, 231, 222, 0.04);
+  --grid-line-strong: rgba(240, 231, 222, 0.06);
+  --surface-glow: rgba(196, 122, 74, 0.12);
+  --button-bg: linear-gradient(180deg, rgba(228, 193, 154, 0.18) 0%, rgba(137, 88, 54, 0.28) 100%);
+  --button-bg-strong: linear-gradient(180deg, rgba(228, 193, 154, 0.35) 0%, rgba(137, 88, 54, 0.45) 100%);
+  --button-border: rgba(199, 122, 69, 0.55);
+  --focus-ring: rgba(199, 122, 69, 0.5);
+
+  --merkle: #c8824a;
+  --accumulator: #c8824a;
+  --polynomial: #c8824a;
+  --recursive: #c8824a;
+
+  --status-success-bg: rgba(34,197,94,0.15);
+  --status-success: #22c55e;
+  --status-error-bg: rgba(239,68,68,0.15);
+  --status-error: #ef4444;
+  --surface-element: #1f1a15;
+  --surface-element-border: #2a211a;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8f3ed;
+  --bg-secondary: #f3ece4;
+  --bg-tertiary: #ebe2d7;
+  --text-primary: #2c1d14;
+  --text-secondary: #6f4b32;
+  --text-muted: #9a7a63;
+  --border: #d7c7b9;
+  --shadow-soft: 0 12px 30px rgba(111, 75, 50, 0.15);
+  --grid-line: rgba(111, 75, 50, 0.07);
+  --grid-line-strong: rgba(111, 75, 50, 0.1);
+  --surface-glow: rgba(163, 91, 41, 0.12);
+  --button-bg: linear-gradient(180deg, rgba(255, 250, 245, 1) 0%, rgba(236, 220, 205, 1) 100%);
+  --button-bg-strong: linear-gradient(180deg, rgba(255, 246, 236, 1) 0%, rgba(224, 206, 189, 1) 100%);
+  --button-border: rgba(163, 91, 41, 0.45);
+  --focus-ring: rgba(163, 91, 41, 0.4);
+  --status-success-bg: rgba(34,197,94,0.12);
+  --status-success: #16a34a;
+  --status-error-bg: rgba(239,68,68,0.12);
+  --status-error: #dc2626;
+  --surface-element: #f3ece4;
+  --surface-element-border: #d7c7b9;
+
+  color-scheme: light;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-mono);
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(circle at 12% -10%, rgba(240, 231, 222, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 86% -20%, rgba(196, 122, 74, 0.08) 0%, transparent 45%),
+    linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-strong) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+#root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 45%),
+    radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.015) 0, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 3px);
+  opacity: 0.6;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.panel-surface {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 92%, transparent) 0%, var(--bg-tertiary) 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.panel-surface.overflow-y-auto {
+  border-radius: 0;
+}
+
+.panel-inset {
+  background: color-mix(in srgb, var(--bg-primary) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.control-section {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.control-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.control-section:last-child {
+  padding-bottom: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+button {
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
