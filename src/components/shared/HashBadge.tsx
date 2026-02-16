@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
 
 interface HashBadgeProps {
   hash: string;
@@ -13,7 +14,7 @@ export function HashBadge({ hash, truncate = 8, color = 'var(--text-muted)', cla
   const display = hash.length > truncate ? `${hash.slice(0, truncate / 2)}...${hash.slice(-truncate / 2)}` : hash;
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(hash);
+    copyToClipboard(hash);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }, [hash]);

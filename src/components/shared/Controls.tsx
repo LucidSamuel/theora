@@ -62,24 +62,36 @@ interface ToggleControlProps {
 export function ToggleControl({ label, checked, onChange, accentColor }: ToggleControlProps) {
   const active = accentColor || 'var(--merkle)';
   return (
-    <label className="flex items-center justify-between cursor-pointer py-1">
+    <div className="flex items-center justify-between py-1">
       <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </span>
-      <div
-        className="relative w-9 h-5 rounded-full transition-colors"
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        className="relative w-9 h-5 rounded-full transition-colors cursor-pointer"
         style={{
           backgroundColor: checked ? active : 'var(--border)',
-          boxShadow: checked ? `0 0 12px ${active}` : 'none',
+          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent)',
+          border: 'none',
+          padding: 0,
         }}
         onClick={() => onChange(!checked)}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            onChange(!checked);
+          }
+        }}
       >
         <div
           className="absolute top-0.5 w-4 h-4 rounded-full transition-transform bg-white"
           style={{ transform: checked ? 'translateX(18px)' : 'translateX(2px)' }}
         />
-      </div>
-    </label>
+      </button>
+    </div>
   );
 }
 
@@ -103,8 +115,7 @@ export function ButtonControl({ label, onClick, accentColor, disabled, variant =
         background: isPrimary ? 'var(--button-bg)' : 'transparent',
         color: isPrimary ? 'var(--text-primary)' : color,
         border: `1px solid ${isPrimary ? 'var(--button-border)' : color}`,
-        boxShadow: isPrimary ? '0 8px 18px rgba(10, 7, 4, 0.35)' : 'none',
-        textShadow: isPrimary ? '0 1px 0 rgba(0, 0, 0, 0.35)' : 'none',
+        boxShadow: isPrimary ? '0 6px 16px rgba(10, 8, 6, 0.18)' : 'none',
         opacity: disabled ? 0.4 : 1,
       }}
       onMouseEnter={(e) => {
@@ -118,12 +129,12 @@ export function ButtonControl({ label, onClick, accentColor, disabled, variant =
       onMouseDown={(e) => {
         if (!isPrimary || disabled) return;
         e.currentTarget.style.background = 'var(--button-bg-strong)';
-        e.currentTarget.style.boxShadow = '0 6px 14px rgba(10, 7, 4, 0.45)';
+        e.currentTarget.style.boxShadow = '0 4px 10px rgba(10, 8, 6, 0.22)';
       }}
       onMouseUp={(e) => {
         if (!isPrimary || disabled) return;
         e.currentTarget.style.background = 'var(--button-bg-strong)';
-        e.currentTarget.style.boxShadow = '0 8px 18px rgba(10, 7, 4, 0.35)';
+        e.currentTarget.style.boxShadow = '0 6px 16px rgba(10, 8, 6, 0.18)';
       }}
     >
       {label}
@@ -150,13 +161,14 @@ export function TextInput({ value, onChange, placeholder, accentColor, onSubmit 
         if (e.key === 'Enter') onSubmit?.();
       }}
       placeholder={placeholder}
+      aria-label={placeholder}
       className="w-full px-3 py-1.5 rounded text-xs outline-none transition-colors"
       style={{
-        backgroundColor: 'var(--bg-primary)',
+        backgroundColor: 'var(--bg-secondary)',
         color: 'var(--text-primary)',
         border: `1px solid var(--border)`,
         caretColor: color,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 10%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 8%, transparent)`,
       }}
     />
   );
@@ -182,11 +194,11 @@ export function SelectControl({ label, value, options, onChange, accentColor }: 
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-2 py-1.5 rounded text-xs outline-none cursor-pointer"
         style={{
-          backgroundColor: 'var(--bg-primary)',
+          backgroundColor: 'var(--bg-secondary)',
           color: 'var(--text-primary)',
           border: `1px solid var(--border)`,
           accentColor: color,
-          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 10%, transparent)`,
+          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 8%, transparent)`,
         }}
       >
         {options.map((o) => (

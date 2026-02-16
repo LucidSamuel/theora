@@ -23,6 +23,7 @@ import {
   simulateKzgVerify,
 } from './logic';
 import { renderPolynomial, canvasToMath } from './renderer';
+import { copyToClipboard } from '@/lib/clipboard';
 
 // Action types
 type PolynomialAction =
@@ -377,14 +378,14 @@ export function PolynomialDemo() {
   });
 
   const handleCopyShareUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
+    copyToClipboard(window.location.href);
   };
 
   const handleCopyHashUrl = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('p');
     url.hash = `polynomial|${encodeStatePlain(buildShareState())}`;
-    navigator.clipboard.writeText(url.toString());
+    copyToClipboard(url.toString());
   };
 
   const handleCopyEmbed = () => {
@@ -392,7 +393,7 @@ export function PolynomialDemo() {
     url.searchParams.set('embed', 'polynomial');
     url.searchParams.set('p', encodeState(buildShareState()));
     const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    navigator.clipboard.writeText(iframe);
+    copyToClipboard(iframe);
   };
 
   const handleExportPng = () => {
@@ -415,7 +416,7 @@ export function PolynomialDemo() {
       compareCoefficients: state.compareCoefficients,
       kzg: state.kzg,
     };
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    copyToClipboard(JSON.stringify(payload, null, 2));
   };
 
   // Initialize from URL state (hash-only preferred)

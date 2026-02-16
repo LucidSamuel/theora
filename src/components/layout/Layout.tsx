@@ -17,12 +17,15 @@ interface LayoutProps {
 
 export function Layout({ activeDemo, onSwitchDemo, theme, onToggleTheme, children }: LayoutProps) {
   const [infoOpen, setInfoOpen] = useState(true);
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const isEmbed = Boolean(getSearchParam('embed'));
 
   return (
     <InfoProvider>
       <div className="flex h-full w-full overflow-hidden">
-        {!isEmbed && <Sidebar activeDemo={activeDemo} onSwitch={onSwitchDemo} />}
+        {!isEmbed && (
+          <Sidebar activeDemo={activeDemo} onSwitch={onSwitchDemo} collapsed={navCollapsed} onToggleCollapse={() => setNavCollapsed((v) => !v)} />
+        )}
         <div className="flex-1 flex flex-col min-w-0 h-full">
           {!isEmbed && (
             <Header
@@ -31,6 +34,8 @@ export function Layout({ activeDemo, onSwitchDemo, theme, onToggleTheme, childre
               onToggleTheme={onToggleTheme}
               onToggleInfo={() => setInfoOpen((v) => !v)}
               infoOpen={infoOpen}
+              navCollapsed={navCollapsed}
+              onToggleNav={() => setNavCollapsed((v) => !v)}
               onSwitchDemo={onSwitchDemo}
             />
           )}

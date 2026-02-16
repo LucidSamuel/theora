@@ -8,17 +8,19 @@ interface HeaderProps {
   onToggleTheme: () => void;
   onToggleInfo: () => void;
   infoOpen: boolean;
+  navCollapsed: boolean;
+  onToggleNav: () => void;
   onSwitchDemo?: (id: DemoId) => void;
 }
 
-export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpen, onSwitchDemo }: HeaderProps) {
+export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
 
   return (
     <header
-      className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b backdrop-blur-md"
+      className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 border-b"
       style={{
-        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 86%, transparent)',
+        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 92%, transparent)',
         borderColor: 'var(--border)',
       }}
     >
@@ -52,6 +54,17 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleNav}
+          className="hidden md:inline-flex p-2 rounded-lg text-xs transition-colors"
+          style={{
+            backgroundColor: navCollapsed ? `color-mix(in srgb, ${demo.accent} 12%, transparent)` : "transparent",
+            color: navCollapsed ? demo.accent : "var(--text-muted)",
+          }}
+          aria-label="Toggle sidebar"
+        >
+          {navCollapsed ? "▶" : "◀"}
+        </button>
         <button
           onClick={onToggleInfo}
           className="p-2 rounded-lg text-xs transition-colors"

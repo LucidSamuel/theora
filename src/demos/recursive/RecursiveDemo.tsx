@@ -23,6 +23,7 @@ import {
   getConstantProofSize,
 } from './logic';
 import { renderProofTree, renderIvcChain } from './renderer';
+import { copyToClipboard } from '@/lib/clipboard';
 
 type Action =
   | { type: 'SET_MODE'; mode: RecursiveMode }
@@ -88,16 +89,27 @@ function recursiveReducer(state: RecursiveState, action: Action): RecursiveState
       const node = allNodes.get(nodeId);
       if (!node) return state;
 
-      // Set to verifying first
-      if (node.status === 'pending') {
-        node.status = 'verifying';
-      } else if (node.status === 'verifying') {
-        // Compute final status
-        node.status = verifyNode(node, allNodes);
+      // Clone the tree immutably, updating the target node's status
+      const cloneTree = (n: ProofNode, targetId: string, newStatus: ProofNode['status']): ProofNode => {
+        const cloned: ProofNode = {
+          ...n,
+          children: n.children.map(c => cloneTree(c, targetId, newStatus)),
+        };
+        if (cloned.id === targetId) {
+          cloned.status = newStatus;
+        }
+        return cloned;
+      };
 
+      if (node.status === 'pending') {
+        const newRoot = cloneTree(state.root, nodeId, 'verifying');
+        return { ...state, root: newRoot };
+      } else if (node.status === 'verifying') {
+        const finalStatus = verifyNode(node, allNodes);
+        const newRoot = cloneTree(state.root, nodeId, finalStatus);
         return {
           ...state,
-          root: { ...state.root },
+          root: newRoot,
           verification: {
             ...state.verification,
             currentIndex: currentIndex + 1,
@@ -105,7 +117,7 @@ function recursiveReducer(state: RecursiveState, action: Action): RecursiveState
         };
       }
 
-      return { ...state, root: { ...state.root } };
+      return state;
     }
 
     case 'SET_SPEED':
@@ -388,14 +400,14 @@ export function RecursiveDemo(): JSX.Element {
   });
 
   const handleCopyShareUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
+    copyToClipboard(window.location.href);
   };
 
   const handleCopyHashUrl = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('r');
     url.hash = `recursive|${encodeStatePlain(buildShareState())}`;
-    navigator.clipboard.writeText(url.toString());
+    copyToClipboard(url.toString());
   };
 
   const handleCopyEmbed = () => {
@@ -403,7 +415,7 @@ export function RecursiveDemo(): JSX.Element {
     url.searchParams.set('embed', 'recursive');
     url.searchParams.set('r', encodeState(buildShareState()));
     const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    navigator.clipboard.writeText(iframe);
+    copyToClipboard(iframe);
   };
 
   const handleExportPng = () => {
@@ -427,7 +439,7 @@ export function RecursiveDemo(): JSX.Element {
       showPasta: state.showPastaCurves,
       showProofSize: state.showProofSize,
     };
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    copyToClipboard(JSON.stringify(payload, null, 2));
   };
 
   useEffect(() => {
@@ -527,12 +539,12 @@ export function RecursiveDemo(): JSX.Element {
                 />
               </div>
               <SliderControl
-                label="Speed"
-                value={state.verification.speed}
+                label={`Speed (${state.verification.speed}ms)`}
+                value={1100 - state.verification.speed}
                 min={100}
                 max={1000}
                 step={100}
-                onChange={(value) => dispatch({ type: 'SET_SPEED', speed: value })}
+                onChange={(value) => dispatch({ type: 'SET_SPEED', speed: 1100 - value })}
               />
             </ControlGroup>
 

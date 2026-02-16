@@ -23,6 +23,7 @@ import {
   getProofPathNodes,
 } from './logic';
 import { renderMerkleTree } from './renderer';
+import { copyToClipboard } from '@/lib/clipboard';
 
 interface MerkleState {
   leaves: string[];
@@ -498,7 +499,7 @@ export function MerkleDemo() {
   const handleCopyProof = () => {
     if (!state.proof) return;
     const payload = JSON.stringify(state.proof, null, 2);
-    navigator.clipboard.writeText(payload);
+    copyToClipboard(payload);
   };
 
   const handleDownloadProof = () => {
@@ -522,14 +523,14 @@ export function MerkleDemo() {
   });
 
   const handleCopyShareUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
+    copyToClipboard(window.location.href);
   };
 
   const handleCopyHashUrl = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('m');
     url.hash = `merkle|${encodeStatePlain(buildShareState())}`;
-    navigator.clipboard.writeText(url.toString());
+    copyToClipboard(url.toString());
   };
 
   const handleCopyEmbed = () => {
@@ -537,7 +538,7 @@ export function MerkleDemo() {
     url.searchParams.set('embed', 'merkle');
     url.searchParams.set('m', encodeState(buildShareState()));
     const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    navigator.clipboard.writeText(iframe);
+    copyToClipboard(iframe);
   };
 
   const handleExportPng = () => {
@@ -560,7 +561,7 @@ export function MerkleDemo() {
       proof: state.proof,
       verified: state.proofVerified,
     };
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    copyToClipboard(JSON.stringify(payload, null, 2));
   };
 
   return (

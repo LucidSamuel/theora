@@ -141,7 +141,7 @@ export function renderProofTree(
 
     // Verification wave effect for verifying nodes
     if (node.status === 'verifying') {
-      const pulse = Math.sin(time * 0.005) * 0.5 + 0.5;
+      const pulse = Math.sin(time * 5) * 0.5 + 0.5;
       const ringRadius = 25 + pulse * 10;
 
       ctx.strokeStyle = hexToRgba(colors.verifying, 0.4 - pulse * 0.3);
@@ -235,7 +235,7 @@ export function renderIvcChain(
   theme: 'dark' | 'light'
 ): { hovered: { type: 'step'; id: string; label: string; curve: string } | null } {
   const colors = COLORS[theme];
-  const { time, width, height } = frame;
+  const { width, height } = frame;
 
   // Background gradient
   const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -299,11 +299,9 @@ export function renderIvcChain(
     let x = startX + index * (stepWidth + spacing);
     const y = startY - stepHeight / 2;
 
-    // Folding animation: compress folded steps
+    // Compress folded steps towards the accumulator
     if (step.folded) {
-      const foldProgress = Math.min(1, (time % 1000) / 1000);
-      const slideAmount = (stepWidth + spacing) * 0.7 * foldProgress;
-      x -= slideAmount * (index + 1);
+      x -= (stepWidth + spacing) * 0.7 * (index + 1);
     }
 
     // Step color

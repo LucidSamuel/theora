@@ -13,6 +13,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { createSpring2D, spring2DStep, spring2DSetTarget } from '@/lib/animation';
 import { isPrime } from '@/lib/math';
+import { copyToClipboard } from '@/lib/clipboard';
 import type { AccumulatorState, AccElement, HistoryEntry } from '@/types/accumulator';
 import { renderAccumulator } from './renderer';
 import {
@@ -42,8 +43,7 @@ type Action =
   | { type: 'SET_BATCH_MODE'; enabled: boolean }
   | { type: 'SET_BATCH_PRIMES'; primes: string }
   | { type: 'ADD_HISTORY'; entry: HistoryEntry }
-  | { type: 'CLEAR' }
-  | { type: 'UPDATE_SPRINGS'; centerX: number; centerY: number; delta: number };
+  | { type: 'CLEAR' };
 
 function reducer(state: AccumulatorState, action: Action): AccumulatorState {
   switch (action.type) {
@@ -308,31 +308,6 @@ function reducer(state: AccumulatorState, action: Action): AccumulatorState {
         batchPrimes: '',
       };
 
-    case 'UPDATE_SPRINGS': {
-      const { centerX, centerY, delta } = action;
-
-      return {
-        ...state,
-        elements: state.elements.map((element) => {
-          const angle = element.orbitAngle + performance.now() / 1000 * element.orbitSpeed;
-          const targetX = centerX + Math.cos(angle) * element.orbitRadius;
-          const targetY = centerY + Math.sin(angle) * element.orbitRadius;
-
-          let spring = spring2DSetTarget(element.spring, targetX, targetY);
-          spring = spring2DStep(spring, delta);
-
-          // Fade in opacity
-          const newOpacity = Math.min(1, element.opacity + delta * 1.5);
-
-          return {
-            ...element,
-            spring,
-            opacity: newOpacity,
-          };
-        }),
-      };
-    }
-
     default:
       return state;
   }
@@ -362,6 +337,7 @@ export function AccumulatorDemo() {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   const hoveredIndexRef = useRef<number | null>(null);
+  const springsRef = useRef<{ spring: ReturnType<typeof createSpring2D>; opacity: number }[]>([]);
 
   useEffect(() => {
     if (!errorMsg) return;
@@ -381,19 +357,35 @@ export function AccumulatorDemo() {
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
       const centerX = frame.width / 2;
       const centerY = frame.height / 2;
+      const springs = springsRef.current;
 
-      // Update spring positions
-      dispatch({
-        type: 'UPDATE_SPRINGS',
-        centerX,
-        centerY,
-        delta: frame.delta,
+      // Sync springs array length with elements
+      while (springs.length < state.elements.length) {
+        springs.push({
+          spring: createSpring2D(0, 0, { damping: 0.7, stiffness: 0.05 }),
+          opacity: 0,
+        });
+      }
+      springs.length = state.elements.length;
+
+      // Update springs directly in the ref (no dispatch) and build patched elements
+      const now = performance.now() / 1000;
+      const elementsWithSprings = state.elements.map((element, i) => {
+        const s = springs[i]!;
+        const angle = element.orbitAngle + now * element.orbitSpeed;
+        const targetX = centerX + Math.cos(angle) * element.orbitRadius;
+        const targetY = centerY + Math.sin(angle) * element.orbitRadius;
+
+        s.spring = spring2DStep(spring2DSetTarget(s.spring, targetX, targetY), frame.delta);
+        s.opacity = Math.min(1, s.opacity + frame.delta * 1.5);
+
+        return { ...element, spring: s.spring, opacity: s.opacity };
       });
 
       const { hoveredIndex } = renderAccumulator(
         ctx,
         frame,
-        state.elements,
+        elementsWithSprings,
         state.accValue,
         state.selectedIndex,
         state.witness,
@@ -408,7 +400,7 @@ export function AccumulatorDemo() {
         setHoverIndex(hoveredIndex);
       }
     },
-    [state.elements, state.accValue, state.selectedIndex, state.witness, interaction.mouseX, interaction.mouseY, theme]
+    [state.elements, state.accValue, state.selectedIndex, state.witness, state.nonMembership, interaction, theme]
   );
 
   const handleAddPrime = useCallback(() => {
@@ -586,14 +578,14 @@ export function AccumulatorDemo() {
   });
 
   const handleCopyShareUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
+    copyToClipboard(window.location.href);
   };
 
   const handleCopyHashUrl = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('a');
     url.hash = `accumulator|${encodeStatePlain(buildShareState())}`;
-    navigator.clipboard.writeText(url.toString());
+    copyToClipboard(url.toString());
   };
 
   const handleCopyEmbed = () => {
@@ -601,7 +593,7 @@ export function AccumulatorDemo() {
     url.searchParams.set('embed', 'accumulator');
     url.searchParams.set('a', encodeState(buildShareState()));
     const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    navigator.clipboard.writeText(iframe);
+    copyToClipboard(iframe);
   };
 
   const handleExportPng = () => {
@@ -637,7 +629,7 @@ export function AccumulatorDemo() {
           }
         : null,
     };
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    copyToClipboard(JSON.stringify(payload, null, 2));
   };
 
   return (
