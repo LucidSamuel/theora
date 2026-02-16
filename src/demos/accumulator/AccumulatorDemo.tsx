@@ -8,6 +8,8 @@ import {
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
+import { useCanvasCamera } from '@/hooks/useCanvasCamera';
+import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -352,6 +354,8 @@ export function AccumulatorDemo() {
   }, []);
 
   const interaction = useCanvasInteraction(handleCanvasClick);
+  const camera = useCanvasCamera();
+  const mergedHandlers = mergeCanvasHandlers(interaction, camera);
 
   const handleDraw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
@@ -382,6 +386,9 @@ export function AccumulatorDemo() {
         return { ...element, spring: s.spring, opacity: s.opacity };
       });
 
+      // Transform mouse coords from screen space to world space
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+
       const { hoveredIndex } = renderAccumulator(
         ctx,
         frame,
@@ -390,8 +397,8 @@ export function AccumulatorDemo() {
         state.selectedIndex,
         state.witness,
         state.nonMembership,
-        interaction.mouseX,
-        interaction.mouseY,
+        worldMouse.x,
+        worldMouse.y,
         theme
       );
 
@@ -486,11 +493,12 @@ export function AccumulatorDemo() {
     const payload = decodedHash ?? decoded;
     if (!payload) return;
     if (payload.elements && payload.elements.length > 0) {
-      payload.elements.forEach((prime) => {
-        if (typeof prime === 'number' && isPrime(prime)) {
-          dispatch({ type: 'ADD_ELEMENT', prime: BigInt(prime) });
-        }
-      });
+      const validPrimes = payload.elements
+        .filter((p): p is number => typeof p === 'number' && isPrime(p))
+        .map((p) => BigInt(p));
+      if (validPrimes.length > 0) {
+        dispatch({ type: 'BATCH_ADD', primes: validPrimes });
+      }
     }
     if (typeof payload.selectedIndex === 'number') {
       dispatch({ type: 'SELECT_ELEMENT', index: payload.selectedIndex });
@@ -826,8 +834,9 @@ export function AccumulatorDemo() {
       <div className="flex-1 relative">
         <AnimatedCanvas
           draw={handleDraw}
+          camera={camera}
           onCanvas={(c) => (canvasElRef.current = c)}
-          {...interaction.handlers}
+          {...mergedHandlers}
         />
       </div>
 

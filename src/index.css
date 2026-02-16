@@ -164,6 +164,19 @@ button:active {
   transform: translateY(1px);
 }
 
+.btn-primary:hover:not(:disabled) {
+  background: var(--button-bg-strong);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--button-bg-strong);
+  box-shadow: 0 4px 10px rgba(10, 8, 6, 0.22);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--button-bg);
+}
+
 /* Slider thumb (visible after appearance-none) */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;

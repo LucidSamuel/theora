@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useState, useRef, useEffect } from 'react';
 import type { PolynomialState, EvalPoint } from '@/types/polynomial';
-import { AnimatedCanvas } from '@/components/shared/AnimatedCanvas';
+import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import {
   ControlGroup,
   SliderControl,
@@ -10,6 +10,8 @@ import {
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
+import { useCanvasCamera } from '@/hooks/useCanvasCamera';
+import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -33,6 +35,7 @@ type PolynomialAction =
   | { type: 'ADD_LAGRANGE_POINT'; x: number; y: number }
   | { type: 'CLEAR_LAGRANGE' }
   | { type: 'ADD_EVAL_POINT'; point: EvalPoint }
+  | { type: 'CLEAR_EVAL_POINTS' }
   | { type: 'KZG_COMMIT'; commitment: string }
   | { type: 'KZG_CHALLENGE'; challengeZ: number }
   | { type: 'KZG_REVEAL'; revealedValue: number; quotientPoly: number[]; proofHash: string }
@@ -121,8 +124,11 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
     case 'ADD_EVAL_POINT':
       return {
         ...state,
-        evalPoints: [...state.evalPoints, action.point],
+        evalPoints: [...state.evalPoints, action.point].slice(-20),
       };
+
+    case 'CLEAR_EVAL_POINTS':
+      return { ...state, evalPoints: [] };
 
     case 'KZG_COMMIT':
       return {
@@ -251,14 +257,24 @@ export function PolynomialDemo() {
     [state.mode, state.viewRange]
   );
 
-  const interaction = useCanvasInteraction(handleCanvasClick);
+  const camera = useCanvasCamera();
+  const handleCanvasClickWorld = useCallback(
+    (x: number, y: number) => {
+      const world = camera.toWorld(x, y);
+      handleCanvasClick(world.x, world.y);
+    },
+    [handleCanvasClick]
+  );
+  const interaction = useCanvasInteraction(handleCanvasClickWorld);
+  const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [evalInput, setEvalInput] = useState('');
 
   // Draw function
   const draw = useCallback(
-    (ctx: CanvasRenderingContext2D, frame: { time: number; delta: number; frameCount: number; width: number; height: number }) => {
+    (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
       canvasSizeRef.current = { width: frame.width, height: frame.height };
-      const { hovered } = renderPolynomial(ctx, frame, state, interaction.mouseX, interaction.mouseY, theme);
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+      const { hovered } = renderPolynomial(ctx, frame, state, worldMouse.x, worldMouse.y, theme);
 
       let nextHover: { key: string; title: string; body: string } | null = null;
       if (hovered?.type === 'eval') {
@@ -286,7 +302,7 @@ export function PolynomialDemo() {
         setHoverInfo(nextHover);
       }
     },
-    [state, interaction.mouseX, interaction.mouseY, theme]
+    [state, interaction.mouseX, interaction.mouseY, camera, theme]
   );
 
   // Handlers
@@ -615,6 +631,13 @@ export function PolynomialDemo() {
               setEvalInput('');
             }}
           />
+          {state.evalPoints.length > 0 && (
+            <ButtonControl
+              label={`Clear Points (${state.evalPoints.length})`}
+              onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
+              variant="secondary"
+            />
+          )}
         </ControlGroup>
 
         <ControlGroup label="View">
@@ -697,7 +720,7 @@ export function PolynomialDemo() {
 
       {/* Canvas */}
       <div className="flex-1">
-        <AnimatedCanvas draw={draw} onCanvas={(c) => (canvasElRef.current = c)} {...interaction.handlers} />
+        <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
       </div>
     </div>
   );

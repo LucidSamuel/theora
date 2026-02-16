@@ -8,6 +8,8 @@ import {
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
+import { useCanvasCamera } from '@/hooks/useCanvasCamera';
+import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -214,6 +216,8 @@ export function MerkleDemo() {
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
   const interaction = useCanvasInteraction();
+  const camera = useCanvasCamera();
+  const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [positions, setPositions] = useState(new Map<string, { x: number; y: number }>());
   const [hoverInfo, setHoverInfo] = useState<MerkleHoverInfo | null>(null);
   const hoverKeyRef = useRef<string | null>(null);
@@ -465,6 +469,7 @@ export function MerkleDemo() {
       }
     }
 
+    const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
     const { hoveredNode } = renderMerkleTree(
       ctx,
       frame,
@@ -473,8 +478,8 @@ export function MerkleDemo() {
       proofPath,
       highlightedEdges,
       state.proofStep,
-      interaction.mouseX,
-      interaction.mouseY,
+      worldMouse.x,
+      worldMouse.y,
       theme
     );
 
@@ -746,7 +751,7 @@ export function MerkleDemo() {
       </div>
 
       <div className="flex-1 relative">
-        <AnimatedCanvas draw={handleDraw} onCanvas={(c) => (canvasElRef.current = c)} {...interaction.handlers} />
+        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
       </div>
     </div>
   );

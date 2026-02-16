@@ -8,6 +8,8 @@ import {
   TextInput,
 } from '@/components/shared/Controls';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
+import { useCanvasCamera } from '@/hooks/useCanvasCamera';
+import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -206,6 +208,8 @@ export function RecursiveDemo(): JSX.Element {
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
   const interaction = useCanvasInteraction();
+  const camera = useCanvasCamera();
+  const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [hoverInfo, setHoverInfo] = useState<{ key: string; title: string; body: string } | null>(null);
   const hoverKeyRef = useRef<string | null>(null);
   const [badProofInput, setBadProofInput] = useState('');
@@ -244,6 +248,8 @@ export function RecursiveDemo(): JSX.Element {
         setCanvasSize({ width: frame.width, height: frame.height });
       }
 
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+
       if (state.mode === 'tree') {
         const { hovered } = renderProofTree(
           ctx,
@@ -253,8 +259,8 @@ export function RecursiveDemo(): JSX.Element {
           state.verification,
           state.showPastaCurves,
           state.showProofSize,
-          interaction.mouseX,
-          interaction.mouseY,
+          worldMouse.x,
+          worldMouse.y,
           theme
         );
 
@@ -276,8 +282,8 @@ export function RecursiveDemo(): JSX.Element {
           frame,
           state.ivcChain,
           state.showPastaCurves,
-          interaction.mouseX,
-          interaction.mouseY,
+          worldMouse.x,
+          worldMouse.y,
           theme
         );
 
@@ -620,7 +626,7 @@ export function RecursiveDemo(): JSX.Element {
 
       {/* Canvas */}
       <div className="flex-1">
-        <AnimatedCanvas draw={handleDraw} onCanvas={(c) => (canvasElRef.current = c)} {...interaction.handlers} />
+        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
       </div>
 
       {/* Stats Panel */}

@@ -110,31 +110,12 @@ export function ButtonControl({ label, onClick, accentColor, disabled, variant =
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full px-3 py-2 rounded text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+      className={`w-full px-3 py-2 rounded text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${isPrimary ? 'btn-primary' : 'btn-secondary'}`}
       style={{
         background: isPrimary ? 'var(--button-bg)' : 'transparent',
         color: isPrimary ? 'var(--text-primary)' : color,
         border: `1px solid ${isPrimary ? 'var(--button-border)' : color}`,
         boxShadow: isPrimary ? '0 6px 16px rgba(10, 8, 6, 0.18)' : 'none',
-        opacity: disabled ? 0.4 : 1,
-      }}
-      onMouseEnter={(e) => {
-        if (!isPrimary || disabled) return;
-        e.currentTarget.style.background = 'var(--button-bg-strong)';
-      }}
-      onMouseLeave={(e) => {
-        if (!isPrimary || disabled) return;
-        e.currentTarget.style.background = 'var(--button-bg)';
-      }}
-      onMouseDown={(e) => {
-        if (!isPrimary || disabled) return;
-        e.currentTarget.style.background = 'var(--button-bg-strong)';
-        e.currentTarget.style.boxShadow = '0 4px 10px rgba(10, 8, 6, 0.22)';
-      }}
-      onMouseUp={(e) => {
-        if (!isPrimary || disabled) return;
-        e.currentTarget.style.background = 'var(--button-bg-strong)';
-        e.currentTarget.style.boxShadow = '0 6px 16px rgba(10, 8, 6, 0.18)';
       }}
     >
       {label}

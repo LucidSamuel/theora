@@ -1,9 +1,48 @@
+import { useState } from 'react';
 import { DEMOS, type DemoId } from '@/types';
 import { useInfoPanel } from './InfoContext';
 
 interface InfoPanelProps {
   activeDemo: DemoId;
   isOpen: boolean;
+}
+
+interface CollapsibleSectionProps {
+  title: string;
+  accent: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleSection({ title, accent, defaultOpen = false, children }: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mb-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full text-left cursor-pointer py-1"
+        style={{ background: 'none', border: 'none', padding: 0 }}
+      >
+        <h4
+          className="text-[10px] font-bold uppercase tracking-wider"
+          style={{ color: accent }}
+        >
+          {title}
+        </h4>
+        <span
+          className="text-[10px] transition-transform"
+          style={{
+            color: 'var(--text-muted)',
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+            display: 'inline-block',
+          }}
+        >
+          ▸
+        </span>
+      </button>
+      {open && <div className="mt-2">{children}</div>}
+    </div>
+  );
 }
 
 const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = {
@@ -49,8 +88,8 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
   ],
   polynomial: [
     { term: 'Commitment', definition: 'Binding handle to a polynomial.' },
-    { term: 'Challenge z', definition: 'Verifier’s random evaluation point.' },
-    { term: 'Quotient', definition: 'q(x) where p(x)=(x−z)q(x)+p(z).' },
+    { term: 'Challenge z', definition: 'Verifier\u2019s random evaluation point.' },
+    { term: 'Quotient', definition: 'q(x) where p(x)=(x\u2212z)q(x)+p(z).' },
   ],
   accumulator: [
     { term: 'Accumulator', definition: 'Compact value representing a set.' },
@@ -89,19 +128,16 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
         width: 300,
       }}
     >
-      <h3 className="text-xs font-bold uppercase tracking-wider mb-3 font-display" style={{ color: demo.accent }}>
+      <h3 className="text-xs font-bold uppercase tracking-wider mb-1 font-display" style={{ color: demo.accent }}>
         About {demo.title}
       </h3>
-      <p className="text-xs leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>
+      <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
         {demo.description}
       </p>
 
       {contextEntry && (
-        <>
-          <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-            Live Context
-          </h4>
-          <div className="mb-5 rounded border px-3 py-3 panel-inset" style={{ borderColor: 'var(--border)' }}>
+        <CollapsibleSection title="Live Context" accent="var(--text-muted)" defaultOpen>
+          <div className="rounded border px-3 py-3 panel-inset" style={{ borderColor: 'var(--border)' }}>
             <div className="text-[11px] font-semibold mb-1" style={{ color: demo.accent }}>
               {contextEntry.title}
             </div>
@@ -109,55 +145,51 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
               {contextEntry.body}
             </div>
           </div>
-        </>
+        </CollapsibleSection>
       )}
 
-      <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-        Suggested Next
-      </h4>
-      <ul className="space-y-3 mb-5">
-        {nextSteps.map((step, i) => (
-          <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
-            {step}
-          </li>
-        ))}
-      </ul>
+      <CollapsibleSection title="Suggested Next" accent="var(--text-muted)" defaultOpen>
+        <ul className="space-y-3">
+          {nextSteps.map((step, i) => (
+            <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
+              {step}
+            </li>
+          ))}
+        </ul>
+      </CollapsibleSection>
 
-      <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-        Key Concepts
-      </h4>
-      <ul className="space-y-3 mb-5">
-        {extra.concepts.map((c, i) => (
-          <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
-            {c}
-          </li>
-        ))}
-      </ul>
+      <CollapsibleSection title="Key Concepts" accent="var(--text-muted)">
+        <ul className="space-y-3">
+          {extra.concepts.map((c, i) => (
+            <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
+              {c}
+            </li>
+          ))}
+        </ul>
+      </CollapsibleSection>
 
-      <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-        Mini Glossary
-      </h4>
-      <ul className="space-y-3 mb-5">
-        {glossary.map((item, i) => (
-          <li key={i} className="text-[11px] leading-relaxed">
-            <span className="font-semibold" style={{ color: demo.accent }}>
-              {item.term}
-            </span>
-            <span style={{ color: 'var(--text-secondary)' }}> — {item.definition}</span>
-          </li>
-        ))}
-      </ul>
+      <CollapsibleSection title="Mini Glossary" accent="var(--text-muted)">
+        <ul className="space-y-3">
+          {glossary.map((item, i) => (
+            <li key={i} className="text-[11px] leading-relaxed">
+              <span className="font-semibold" style={{ color: demo.accent }}>
+                {item.term}
+              </span>
+              <span style={{ color: 'var(--text-secondary)' }}> — {item.definition}</span>
+            </li>
+          ))}
+        </ul>
+      </CollapsibleSection>
 
-      <h4 className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-        Further Reading
-      </h4>
-      <ul className="space-y-1">
-        {extra.resources.map((r, i) => (
-          <li key={i} className="text-[11px]" style={{ color: demo.accent }}>
-            {r}
-          </li>
-        ))}
-      </ul>
+      <CollapsibleSection title="Further Reading" accent="var(--text-muted)">
+        <ul className="space-y-1">
+          {extra.resources.map((r, i) => (
+            <li key={i} className="text-[11px]" style={{ color: demo.accent }}>
+              {r}
+            </li>
+          ))}
+        </ul>
+      </CollapsibleSection>
     </aside>
   );
 }
