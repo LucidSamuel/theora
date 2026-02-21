@@ -2,7 +2,7 @@ import { drawGrid, drawLine, drawGlowCircle, hexToRgba } from '@/lib/canvas';
 import type { AccElement, WitnessInfo } from '@/types/accumulator';
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 
-const AMBER_COLOR = '#c88f54';
+const AMBER_COLOR = '#a1a1aa';
 const ELEMENT_RADIUS = 25;
 
 export function renderAccumulator(
@@ -24,22 +24,22 @@ export function renderAccumulator(
   // 1. Draw subtle gradient + grid background
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   if (theme === 'dark') {
-    gradient.addColorStop(0, '#0f0b08');
-    gradient.addColorStop(1, '#17110c');
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(1, '#111111');
   } else {
-    gradient.addColorStop(0, '#fbf6ef');
-    gradient.addColorStop(1, '#f2e8dd');
+    gradient.addColorStop(0, '#fafafa');
+    gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const gridColor = theme === 'dark' ? 'rgba(240, 231, 222, 0.04)' : 'rgba(111, 75, 50, 0.08)';
+  const gridColor = theme === 'dark' ? 'rgba(228, 228, 231, 0.04)' : 'rgba(113, 113, 122, 0.08)';
   drawGrid(ctx, width, height, 40, gridColor);
 
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(111,75,50,0.08)');
+  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(113,113,122,0.08)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
@@ -172,7 +172,7 @@ export function renderAccumulator(
         witness.verified === null ? AMBER_COLOR : witness.verified ? '#10b981' : '#ef4444';
       const pulse = 0.3 + Math.sin(time * 6) * 0.2;
 
-      ctx.fillStyle = hexToRgba(theme === 'dark' ? '#1f2937' : '#f3f4f6', 0.95);
+      ctx.fillStyle = hexToRgba(theme === 'dark' ? '#18181b' : '#f4f4f5', 0.95);
       ctx.fillRect(x - 100, boxY, 200, 50);
 
       ctx.strokeStyle = hexToRgba(statusColor, witness.verified === null ? pulse : 0.6);
@@ -199,20 +199,20 @@ export function renderAccumulator(
         cursorX += ctx.measureText(text).width;
       };
 
-      const witnessColor = '#f59e0b';
-      const elementColor = '#a855f7';
+      const witnessColor = '#d4d4d8';
+      const elementColor = '#71717a';
       const accColor = '#22c55e';
 
       drawPart('w', witnessColor);
-      drawPart('^', theme === 'dark' ? '#e5e7eb' : '#1f2937');
+      drawPart('^', theme === 'dark' ? '#e4e4e7' : '#18181b');
       ctx.font = supFont;
       ctx.fillStyle = elementColor;
       ctx.fillText(witness.element.toString(), cursorX, baseY - 4);
       cursorX += ctx.measureText(witness.element.toString()).width;
       ctx.font = baseFont;
-      drawPart(' ≡ ', theme === 'dark' ? '#e5e7eb' : '#1f2937');
+      drawPart(' ≡ ', theme === 'dark' ? '#e4e4e7' : '#18181b');
       drawPart('acc', accColor);
-      drawPart(' (mod n)', theme === 'dark' ? '#9ca3af' : '#6b7280');
+      drawPart(' (mod n)', theme === 'dark' ? '#a1a1aa' : '#71717a');
 
       if (witness.verified !== null) {
         ctx.strokeStyle = hexToRgba(statusColor, 0.5);
@@ -233,7 +233,7 @@ export function renderAccumulator(
     const statusColor =
       nonMembership.verified === null ? AMBER_COLOR : nonMembership.verified ? '#10b981' : '#ef4444';
 
-    ctx.fillStyle = hexToRgba(theme === 'dark' ? '#1f2937' : '#f3f4f6', 0.95);
+    ctx.fillStyle = hexToRgba(theme === 'dark' ? '#18181b' : '#f4f4f5', 0.95);
     ctx.fillRect(boxX, boxY, boxW, boxH);
     ctx.strokeStyle = hexToRgba(statusColor, 0.6);
     ctx.lineWidth = 1.5;

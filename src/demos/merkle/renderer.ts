@@ -3,7 +3,7 @@ import type { MerkleTree, MerkleNode } from '@/types/merkle';
 import { drawGrid, drawLine, drawGlowCircle, hexToRgba } from '@/lib/canvas';
 import { spring2DStep, spring2DSetTarget, lerp } from '@/lib/animation';
 
-const MERKLE_PURPLE = '#c77a45';
+const MERKLE_PURPLE = '#d4d4d8';
 
 export function renderMerkleTree(
   ctx: CanvasRenderingContext2D,
@@ -22,23 +22,23 @@ export function renderMerkleTree(
   // Background
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   if (theme === 'dark') {
-    gradient.addColorStop(0, '#0f0c09');
-    gradient.addColorStop(1, '#17120d');
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(1, '#111111');
   } else {
-    gradient.addColorStop(0, '#fbf6ef');
-    gradient.addColorStop(1, '#f2e8dd');
+    gradient.addColorStop(0, '#fafafa');
+    gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   // Subtle grid
-  const gridColor = theme === 'dark' ? 'rgba(240, 231, 222, 0.04)' : 'rgba(111, 75, 50, 0.06)';
+  const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.06)';
   drawGrid(ctx, width, height, 40, gridColor);
 
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(111,75,50,0.08)');
+  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 

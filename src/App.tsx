@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
 import { Layout } from '@/components/layout/Layout';
@@ -18,6 +19,11 @@ const DEMO_NAMES = {
 export default function App() {
   const { theme, toggle } = useTheme();
   const { activeDemo, switchDemo } = useActiveDemo();
+
+  useEffect(() => {
+    document.body.classList.add('app-shell');
+    return () => document.body.classList.remove('app-shell');
+  }, []);
 
   const renderDemo = () => {
     switch (activeDemo) {

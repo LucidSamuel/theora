@@ -12,8 +12,8 @@ export function applyTheme(theme: Theme): void {
 }
 
 export const DEMO_COLORS = {
-  merkle: '#b8733a',
-  accumulator: '#c8824a',
-  polynomial: '#5f7ea0',
-  recursive: '#8a6b5b',
+  merkle: '#fafafa',
+  accumulator: '#a1a1aa',
+  polynomial: '#d4d4d8',
+  recursive: '#71717a',
 } as const;

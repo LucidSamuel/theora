@@ -18,71 +18,63 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
 
   return (
     <header
-      className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 border-b"
+      className="flex items-center justify-between px-5 h-11 border-b"
       style={{
-        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 92%, transparent)',
+        backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
       }}
     >
       <div className="flex items-center gap-3">
         {/* Mobile demo selector */}
-        <div className="flex md:hidden gap-1">
+        <div className="flex md:hidden gap-0.5">
           {DEMOS.map((d) => (
             <button
               key={d.id}
               onClick={() => onSwitchDemo?.(d.id)}
-              className="p-1.5 rounded-md text-sm"
+              className="w-7 h-7 flex items-center justify-center rounded-md"
               style={{
-                backgroundColor: activeDemo === d.id ? `color-mix(in srgb, ${d.accent} 20%, transparent)` : 'transparent',
+                backgroundColor: activeDemo === d.id ? 'var(--button-bg-strong)' : 'transparent',
               }}
               aria-label={d.title}
             >
-              <DemoIcon id={d.id} size={16} color={activeDemo === d.id ? d.accent : 'var(--text-muted)'} />
+              <DemoIcon id={d.id} size={14} color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'} />
             </button>
           ))}
         </div>
-        <div>
-          <h2 className="text-sm font-semibold flex items-center gap-2 font-display">
-            <span className="hidden md:inline">
-              <DemoIcon id={demo.id} size={16} color={demo.accent} />
-            </span>
-            <span style={{ color: demo.accent }}>{demo.title}</span>
-          </h2>
-          <p className="text-[10px] hidden sm:block" style={{ color: 'var(--text-muted)' }}>
-            {demo.subtitle}
-          </p>
-        </div>
+        <span className="text-[13px] font-medium font-display" style={{ color: 'var(--text-primary)' }}>
+          {demo.title}
+        </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <button
           onClick={onToggleNav}
-          className="hidden md:inline-flex p-2 rounded-lg text-xs transition-colors"
+          className="hidden md:flex w-7 h-7 items-center justify-center rounded-md text-[10px]"
           style={{
-            backgroundColor: navCollapsed ? `color-mix(in srgb, ${demo.accent} 12%, transparent)` : "transparent",
-            color: navCollapsed ? demo.accent : "var(--text-muted)",
+            color: 'var(--text-muted)',
+            backgroundColor: navCollapsed ? 'var(--button-bg)' : 'transparent',
           }}
           aria-label="Toggle sidebar"
         >
-          {navCollapsed ? "▶" : "◀"}
+          {navCollapsed ? '\u203A' : '\u2039'}
         </button>
         <button
           onClick={onToggleInfo}
-          className="p-2 rounded-lg text-xs transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-md text-[10px]"
           style={{
-            backgroundColor: infoOpen ? `color-mix(in srgb, ${demo.accent} 15%, transparent)` : 'transparent',
-            color: infoOpen ? demo.accent : 'var(--text-muted)',
+            color: infoOpen ? 'var(--text-primary)' : 'var(--text-muted)',
+            backgroundColor: infoOpen ? 'var(--button-bg)' : 'transparent',
           }}
           aria-label="Toggle info panel"
         >
-          {infoOpen ? '✕' : 'ℹ'}
+          {infoOpen ? '\u2715' : '\u2139'}
         </button>
         <button
           onClick={onToggleTheme}
-          className="p-2 rounded-lg text-xs transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-md text-[10px]"
           style={{ color: 'var(--text-muted)' }}
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {theme === 'dark' ? '☀' : '☾'}
+          {theme === 'dark' ? '\u2600' : '\u263E'}
         </button>
       </div>
     </header>
