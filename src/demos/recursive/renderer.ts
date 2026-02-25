@@ -13,8 +13,8 @@ const COLORS = {
     verifying: '#eab308',
     verified: '#22c55e',
     failed: '#ef4444',
-    pallas: '#c77a45',
-    vesta: '#8b5a3c',
+    pallas: '#d4d4d8',
+    vesta: '#71717a',
   },
   light: {
     background: '#ffffff',
@@ -25,8 +25,8 @@ const COLORS = {
     verifying: '#eab308',
     verified: '#22c55e',
     failed: '#ef4444',
-    pallas: '#c77a45',
-    vesta: '#8b5a3c',
+    pallas: '#3f3f46',
+    vesta: '#71717a',
   },
 };
 
@@ -51,22 +51,22 @@ export function renderProofTree(
   // Background gradient
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   if (theme === 'dark') {
-    gradient.addColorStop(0, '#0f0b08');
-    gradient.addColorStop(1, '#17110c');
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(1, '#111111');
   } else {
-    gradient.addColorStop(0, '#fbf6ef');
-    gradient.addColorStop(1, '#f2e8dd');
+    gradient.addColorStop(0, '#fafafa');
+    gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   // Grid
-  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(111, 75, 50, 0.08)');
+  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(63, 63, 70, 0.08)');
 
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(111,75,50,0.08)');
+  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(63,63,70,0.08)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
@@ -240,22 +240,22 @@ export function renderIvcChain(
   // Background gradient
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   if (theme === 'dark') {
-    gradient.addColorStop(0, '#0f0b08');
-    gradient.addColorStop(1, '#17110c');
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(1, '#111111');
   } else {
-    gradient.addColorStop(0, '#fbf6ef');
-    gradient.addColorStop(1, '#f2e8dd');
+    gradient.addColorStop(0, '#fafafa');
+    gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   // Grid
-  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(111, 75, 50, 0.08)');
+  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(63, 63, 70, 0.08)');
 
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(111,75,50,0.08)');
+  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(63,63,70,0.08)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 

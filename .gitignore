@@ -4,4 +4,31 @@ dist
 *.local
 *.tsbuildinfo
 .DS_Store
+
+# Claude Code working files
 claude.md
+CLAUDE.md
+.claude/
+
+# Workflow orchestration task tracking
+tasks/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+
+# Editor & IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+Desktop.ini

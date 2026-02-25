@@ -80,15 +80,15 @@ export function renderPolynomial(
   const isDark = theme === 'dark';
   const bgGradient = ctx.createLinearGradient(0, 0, width, height);
   if (isDark) {
-    bgGradient.addColorStop(0, '#100c09');
-    bgGradient.addColorStop(1, '#19120c');
+    bgGradient.addColorStop(0, '#0a0a0a');
+    bgGradient.addColorStop(1, '#111111');
   } else {
-    bgGradient.addColorStop(0, '#fbf6ef');
-    bgGradient.addColorStop(1, '#f2e8dd');
+    bgGradient.addColorStop(0, '#fafafa');
+    bgGradient.addColorStop(1, '#f4f4f5');
   }
   const textColor = isDark ? '#e2e8f0' : '#1e293b';
-  const gridColor = isDark ? 'rgba(240, 231, 222, 0.06)' : 'rgba(111, 75, 50, 0.1)';
-  const axisColor = isDark ? '#6d5b4b' : '#8d6a51';
+  const gridColor = isDark ? 'rgba(240, 231, 222, 0.06)' : 'rgba(161, 161, 170, 0.1)';
+  const axisColor = isDark ? '#52525b' : '#a1a1aa';
 
   // Background
   ctx.fillStyle = bgGradient;
@@ -97,7 +97,7 @@ export function renderPolynomial(
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, isDark ? 'rgba(0,0,0,0.35)' : 'rgba(111,75,50,0.08)');
+  vignette.addColorStop(1, isDark ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
@@ -171,12 +171,12 @@ export function renderPolynomial(
         }
       }
 
-      ctx.strokeStyle = isDark ? '#475569' : '#94a3b8';
+      ctx.strokeStyle = isDark ? '#52525b' : '#a1a1aa';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       // Label
-      drawText(ctx, 'q(x) - quotient polynomial', width - padding - 10, padding + 50, { color: isDark ? '#64748b' : '#94a3b8', size: 14, align: 'right' });
+      drawText(ctx, 'q(x) - quotient polynomial', width - padding - 10, padding + 50, { color: isDark ? '#71717a' : '#a1a1aa', size: 14, align: 'right' });
     }
   }
 
@@ -205,7 +205,7 @@ export function renderPolynomial(
         }
       }
 
-      ctx.strokeStyle = '#d49a45';
+      ctx.strokeStyle = '#d4d4d8';
       ctx.lineWidth = 3;
       ctx.stroke();
     }
@@ -237,7 +237,7 @@ export function renderPolynomial(
         }
       }
 
-      ctx.strokeStyle = '#8b5a3c';
+      ctx.strokeStyle = '#a1a1aa';
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 6]);
       ctx.stroke();
@@ -271,7 +271,7 @@ export function renderPolynomial(
 
     intersectionPoints.forEach((p) => {
       const pos = mathToCanvas(p.x, p.y, viewRange, width, height);
-      drawGlowCircle(ctx, pos.cx, pos.cy, 5, '#f0d2a6', 0.4);
+      drawGlowCircle(ctx, pos.cx, pos.cy, 5, '#d4d4d8', 0.4);
     });
 
     if (intersectionPoints.length > 0) {
@@ -280,7 +280,7 @@ export function renderPolynomial(
         `Intersections: ${intersectionPoints.length}`,
         width - padding - 12,
         padding + 24,
-        { color: '#d8a46a', size: 12, align: 'right' }
+        { color: '#d4d4d8', size: 12, align: 'right' }
       );
     }
   }
@@ -290,7 +290,7 @@ export function renderPolynomial(
     const challengePos = mathToCanvas(kzg.challengeZ, 0, viewRange, width, height);
 
     ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = '#c88f54';
+    ctx.strokeStyle = '#a1a1aa';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(challengePos.cx, padding);
@@ -299,7 +299,7 @@ export function renderPolynomial(
     ctx.setLineDash([]);
 
     // Label
-    drawText(ctx, `z = ${kzg.challengeZ.toFixed(2)}`, challengePos.cx, padding + 20, { color: '#c88f54', size: 14 });
+    drawText(ctx, `z = ${kzg.challengeZ.toFixed(2)}`, challengePos.cx, padding + 20, { color: '#a1a1aa', size: 14 });
   }
 
   // Draw revealed point (highlighted)
@@ -312,21 +312,21 @@ export function renderPolynomial(
       height
     );
 
-    drawGlowCircle(ctx, revealedPos.cx, revealedPos.cy, 8, '#d8a46a', 0.5);
+    drawGlowCircle(ctx, revealedPos.cx, revealedPos.cy, 8, '#d4d4d8', 0.5);
 
     // Label
-    drawText(ctx, `p(z) = ${kzg.revealedValue.toFixed(2)}`, revealedPos.cx + 15, revealedPos.cy - 15, { color: '#d8a46a', size: 14 });
+    drawText(ctx, `p(z) = ${kzg.revealedValue.toFixed(2)}`, revealedPos.cx + 15, revealedPos.cy - 15, { color: '#d4d4d8', size: 14 });
   }
 
   // Draw evaluation points
   for (const evalPoint of evalPoints) {
     const pos = mathToCanvas(evalPoint.x, evalPoint.y, viewRange, width, height);
 
-    drawGlowCircle(ctx, pos.cx, pos.cy, 6, '#b98348', 0.4);
+    drawGlowCircle(ctx, pos.cx, pos.cy, 6, '#a1a1aa', 0.4);
 
     // Label
     const label = evalPoint.label ?? `(${evalPoint.x.toFixed(1)}, ${evalPoint.y.toFixed(1)})`;
-    drawText(ctx, label, pos.cx + 12, pos.cy - 12, { color: '#b98348', size: 12 });
+    drawText(ctx, label, pos.cx + 12, pos.cy - 12, { color: '#a1a1aa', size: 12 });
   }
 
   // Draw Lagrange points as diamonds
@@ -337,7 +337,7 @@ export function renderPolynomial(
     ctx.translate(pos.cx, pos.cy);
     ctx.rotate(Math.PI / 4);
 
-    ctx.fillStyle = '#c77a45';
+    ctx.fillStyle = '#71717a';
     ctx.fillRect(-6, -6, 12, 12);
 
     ctx.strokeStyle = '#fff';
@@ -347,7 +347,7 @@ export function renderPolynomial(
     ctx.restore();
 
     // Label
-    drawText(ctx, `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`, pos.cx + 12, pos.cy - 12, { color: '#c77a45', size: 12 });
+    drawText(ctx, `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`, pos.cx + 12, pos.cy - 12, { color: '#71717a', size: 12 });
   }
 
   // Draw commitment badge at top
@@ -356,13 +356,13 @@ export function renderPolynomial(
     const badgeY = padding + 30;
 
     drawRoundedRect(ctx, badgeX - 150, badgeY - 20, 300, 40, 8);
-    ctx.fillStyle = hexToRgba('#c77a45', 0.2);
+    ctx.fillStyle = hexToRgba('#71717a', 0.2);
     ctx.fill();
-    ctx.strokeStyle = '#c77a45';
+    ctx.strokeStyle = '#71717a';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    drawText(ctx, `Commitment: ${kzg.commitment.slice(0, 16)}...`, badgeX, badgeY, { color: '#c77a45', size: 14 });
+    drawText(ctx, `Commitment: ${kzg.commitment.slice(0, 16)}...`, badgeX, badgeY, { color: '#71717a', size: 14 });
   }
 
   // Draw verification status

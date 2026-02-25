@@ -113,10 +113,11 @@ export function generateProof(tree: MerkleTree, leafIndex: number, _mode: HashFu
     }
   }
 
+  // Reverse: collected top-to-bottom, but verification walks bottom-to-top
   return {
     leafIndex,
     leafHash: leaf.hash,
-    siblings,
+    siblings: siblings.reverse(),
     root: tree.root.hash,
   };
 }

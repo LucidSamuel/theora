@@ -169,10 +169,19 @@ export function HeroAnimation() {
       };
     };
 
-    // Get CSS variable color
-    const getColor = (varName: string): string => {
-      return getComputedStyle(canvas).getPropertyValue(varName).trim() || '#888';
+    // Cache CSS variable colors — refresh on theme change, not every frame
+    const colorsRef = { textMuted: '', textPrimary: '', border: '', accent: '' };
+    const refreshColors = () => {
+      const s = getComputedStyle(canvas);
+      colorsRef.textMuted = s.getPropertyValue('--text-muted').trim() || '#888';
+      colorsRef.textPrimary = s.getPropertyValue('--text-primary').trim() || '#fafafa';
+      colorsRef.border = s.getPropertyValue('--border').trim() || 'rgba(255,255,255,0.06)';
+      colorsRef.accent = s.getPropertyValue('--accent').trim() || '#fafafa';
     };
+    refreshColors();
+
+    const themeObserver = new MutationObserver(refreshColors);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // Animation loop
     const animate = (timestamp: number) => {
@@ -214,11 +223,7 @@ export function HeroAnimation() {
         node.y = node.baseY;
       });
 
-      // Get theme colors
-      const textMuted = getColor('--text-muted');
-      const textPrimary = getColor('--text-primary');
-      const border = getColor('--border');
-      const accent = getColor('--accent');
+      const { textMuted, textPrimary, border, accent } = colorsRef;
 
       // Draw connections
       ctx.globalAlpha = 0.6;
@@ -331,6 +336,7 @@ export function HeroAnimation() {
         cancelAnimationFrame(animationFrameRef.current);
       }
       resizeObserver.disconnect();
+      themeObserver.disconnect();
     };
   }, []);
 

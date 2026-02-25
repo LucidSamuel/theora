@@ -2,7 +2,7 @@
 
 Interactive cryptographic primitive visualizer. Merkle trees, polynomial commitments, RSA accumulators, and recursive proof composition — animated, shareable, and embeddable.
 
----
+\---
 
 ## Why This Exists
 
