@@ -166,7 +166,7 @@ export function Landing() {
               <p className="lp-hero-sub">
                 A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, and recursive proof composition. Interactive canvas, step-through verification, zero setup.
               </p>
-              <div className="flex flex-wrap gap-3 mt-7">
+              <div className="flex flex-wrap gap-3 mt-12">
                 <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
                   Explore Demos →
                 </button>
