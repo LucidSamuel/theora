@@ -576,17 +576,19 @@ export function MerkleDemo() {
         style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}
       >
         <ControlGroup label="Merkle Tree">
-          <TextInput
-            value={state.newLeafInput}
-            onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
-            onSubmit={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
-            placeholder="Enter data..."
-          />
-          <ButtonControl
-            label="Add"
-            onClick={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
-            disabled={!state.newLeafInput.trim()}
-          />
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={state.newLeafInput}
+              onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
+              onSubmit={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
+              placeholder="Enter data..."
+            />
+            <ButtonControl
+              label="Add"
+              onClick={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
+              disabled={!state.newLeafInput.trim()}
+            />
+          </div>
 
           <SelectControl
               label="Hash Function"

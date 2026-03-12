@@ -528,7 +528,7 @@ export function RecursiveDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Verification">
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <ButtonControl
                   label={state.verification.isRunning ? '⏸ Pause' : '▶ Auto'}
                   onClick={() =>
@@ -542,6 +542,7 @@ export function RecursiveDemo(): JSX.Element {
                   label="Step"
                   onClick={() => dispatch({ type: 'STEP_VERIFY' })}
                   disabled={state.verification.isRunning}
+                  variant="secondary"
                 />
               </div>
               <SliderControl
@@ -555,19 +556,21 @@ export function RecursiveDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Bad Proof Injection">
-              <TextInput
-                value={badProofInput}
-                onChange={setBadProofInput}
-                placeholder="e.g. node_2_1"
-              />
-              <ButtonControl
-                label="Inject"
-                onClick={() => {
-                  dispatch({ type: 'INJECT_BAD_PROOF', nodeId: badProofInput });
-                  dispatch({ type: 'BUILD_TREE' });
-                  setBadProofInput('');
-                }}
-              />
+              <div className="flex flex-col gap-3">
+                <TextInput
+                  value={badProofInput}
+                  onChange={setBadProofInput}
+                  placeholder="e.g. node_2_1"
+                />
+                <ButtonControl
+                  label="Inject"
+                  onClick={() => {
+                    dispatch({ type: 'INJECT_BAD_PROOF', nodeId: badProofInput });
+                    dispatch({ type: 'BUILD_TREE' });
+                    setBadProofInput('');
+                  }}
+                />
+              </div>
             </ControlGroup>
           </>
         )}

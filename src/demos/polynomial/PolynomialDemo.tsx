@@ -621,22 +621,24 @@ export function PolynomialDemo() {
         )}
 
         <ControlGroup label="Evaluate">
-          <TextInput
-            value={evalInput}
-            onChange={setEvalInput}
-            placeholder="Enter x value"
-            onSubmit={() => {
-              handleEvaluate(evalInput);
-              setEvalInput('');
-            }}
-          />
-          {state.evalPoints.length > 0 && (
-            <ButtonControl
-              label={`Clear Points (${state.evalPoints.length})`}
-              onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
-              variant="secondary"
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={evalInput}
+              onChange={setEvalInput}
+              placeholder="Enter x value"
+              onSubmit={() => {
+                handleEvaluate(evalInput);
+                setEvalInput('');
+              }}
             />
-          )}
+            {state.evalPoints.length > 0 && (
+              <ButtonControl
+                label={`Clear Points (${state.evalPoints.length})`}
+                onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
+                variant="secondary"
+              />
+            )}
+          </div>
         </ControlGroup>
 
         <ControlGroup label="View">
