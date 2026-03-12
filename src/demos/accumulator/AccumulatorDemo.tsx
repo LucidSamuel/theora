@@ -717,13 +717,14 @@ export function AccumulatorDemo() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => dispatch({ type: 'SELECT_ELEMENT', index })}
-                      className="px-2 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600"
+                      className="app-leaf-prove"
                     >
                       Select
                     </button>
                     <button
                       onClick={() => dispatch({ type: 'REMOVE_ELEMENT', index })}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                      className="app-leaf-remove"
+                      aria-label="Remove element"
                     >
                       ×
                     </button>
