@@ -27,9 +27,8 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
         paddingRight: 16,
       }}
     >
-      {/* Left — logo + separator + demo title */}
+      {/* Left — mobile demo tabs + title */}
       <div className="flex items-center gap-3">
-        {/* Mobile demo icon tabs */}
         <div className="flex md:hidden gap-0.5">
           {DEMOS.map((d) => (
             <button
@@ -49,27 +48,6 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
             </button>
           ))}
         </div>
-
-        {/* Logo — desktop only */}
-        <a href="/" className="no-underline hidden md:block">
-          <span
-            className="text-[13px] font-semibold font-display"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            <span style={{ opacity: 0.35 }}>∴</span> theora
-          </span>
-        </a>
-
-        {/* Divider */}
-        <span
-          className="hidden md:block text-[13px] select-none"
-          style={{ color: 'var(--border)', userSelect: 'none' }}
-          aria-hidden
-        >
-          /
-        </span>
-
-        {/* Active demo title */}
         <span
           className="text-[13px] font-semibold font-display"
           style={{ color: 'var(--text-primary)' }}

@@ -16,9 +16,33 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
         borderColor: 'var(--border)',
         width: collapsed ? 56 : 224,
         backgroundColor: 'var(--bg-primary)',
-        padding: collapsed ? '24px 8px' : '24px 16px',
+        padding: collapsed ? '0 8px 24px' : '0 16px 24px',
       }}
     >
+      {/* Logo row — exactly 48px tall, matching the header height */}
+      <div
+        className="flex items-center shrink-0"
+        style={{
+          height: 48,
+          borderBottom: '1px solid var(--border)',
+          marginBottom: 16,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+        }}
+      >
+        <a href="/" className="no-underline block">
+          <span
+            className="text-[13px] font-semibold font-display"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {collapsed ? (
+              <span style={{ opacity: 0.4 }}>∴</span>
+            ) : (
+              <><span style={{ opacity: 0.4 }}>∴</span> theora</>
+            )}
+          </span>
+        </a>
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-0.5" role="navigation" aria-label="Demo navigation">
         {DEMOS.map((demo) => {
