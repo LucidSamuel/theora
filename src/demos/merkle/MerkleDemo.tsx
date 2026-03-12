@@ -576,22 +576,19 @@ export function MerkleDemo() {
         style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}
       >
         <ControlGroup label="Merkle Tree">
-          <div className="space-y-2">
-            <TextInput
-              value={state.newLeafInput}
-              onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
-              onSubmit={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
-              placeholder="Enter data..."
-            />
-            <ButtonControl
-              label="Add"
-              onClick={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
-              disabled={!state.newLeafInput.trim()}
-            />
-          </div>
+          <TextInput
+            value={state.newLeafInput}
+            onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
+            onSubmit={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
+            placeholder="Enter data..."
+          />
+          <ButtonControl
+            label="Add"
+            onClick={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
+            disabled={!state.newLeafInput.trim()}
+          />
 
-          <div className="mt-4">
-            <SelectControl
+          <SelectControl
               label="Hash Function"
               value={state.hashMode}
               options={[
@@ -600,7 +597,6 @@ export function MerkleDemo() {
               ]}
               onChange={(value) => dispatch({ type: 'SET_HASH_MODE', mode: value as HashFunction })}
             />
-          </div>
 
           {state.leaves.length > 64 && (
             <div className="mt-2 text-xs" style={{ color: '#f59e0b' }}>

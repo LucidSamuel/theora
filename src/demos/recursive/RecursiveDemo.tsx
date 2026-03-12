@@ -489,7 +489,7 @@ export function RecursiveDemo(): JSX.Element {
       <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
 
         <ControlGroup label="Mode">
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={() => dispatch({ type: 'SET_MODE', mode: 'tree' })}
               className="flex-1 rounded px-3 py-2 text-sm font-medium"
@@ -528,7 +528,7 @@ export function RecursiveDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Verification">
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <ButtonControl
                   label={state.verification.isRunning ? '⏸ Pause' : '▶ Auto'}
                   onClick={() =>
@@ -610,12 +610,12 @@ export function RecursiveDemo(): JSX.Element {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 

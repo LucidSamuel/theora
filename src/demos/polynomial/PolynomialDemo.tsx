@@ -570,7 +570,7 @@ export function PolynomialDemo() {
                 <ButtonControl label="Resample Compare" onClick={handleResampleCompare} variant="secondary" />
               )}
               {state.compareEnabled && state.compareCoefficients && state.compareCoefficients.length > 0 && (
-                <div className="space-y-2">
+                <>
                   {state.compareCoefficients.map((coeff, index) => (
                     <SliderControl
                       key={`compare-${index}`}
@@ -587,7 +587,7 @@ export function PolynomialDemo() {
                       accentColor="#8b5a3c"
                     />
                   ))}
-                </div>
+                </>
               )}
               {state.compareEnabled && (
                 <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
@@ -645,17 +645,16 @@ export function PolynomialDemo() {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
           <ControlGroup label="KZG Commitment">
-            <div className="space-y-3">
             <ButtonControl
               label="1. Commit"
               onClick={handleKzgCommit}
@@ -714,7 +713,6 @@ export function PolynomialDemo() {
             <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
               Schwartz-Zippel intuition: two distinct degree‑d polynomials can agree on at most d points.
             </div>
-          </div>
         </ControlGroup>
       </div>
 

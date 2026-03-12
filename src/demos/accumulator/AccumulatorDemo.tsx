@@ -661,7 +661,7 @@ export function AccumulatorDemo() {
             placeholder="Enter prime"
             onSubmit={handleAddPrime}
           />
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-3">
             <ButtonControl onClick={handleAddPrime} label="Add" />
             <ButtonControl onClick={handleRandomPrime} label="Random" />
           </div>
@@ -693,7 +693,7 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Elements">
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2.5 max-h-48 overflow-y-auto">
             {state.elements.length === 0 && (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No elements yet</p>
             )}
@@ -737,7 +737,6 @@ export function AccumulatorDemo() {
 
         {state.selectedIndex !== null && (
           <ControlGroup label="Witness">
-            <div className="space-y-2">
               <ButtonControl
                 onClick={() => dispatch({ type: 'COMPUTE_WITNESS' })}
                 label="Compute Witness"
@@ -765,7 +764,6 @@ export function AccumulatorDemo() {
                   )}
                 </>
               )}
-            </div>
           </ControlGroup>
         )}
 
@@ -776,7 +774,7 @@ export function AccumulatorDemo() {
             placeholder="Prime not in set"
             onSubmit={handleNonMemberSet}
           />
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
             <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
           </div>
@@ -801,15 +799,13 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Parameters">
-          <div className="space-y-2">
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Modulus (n):</p>
-              <HashBadge hash={state.n.toString()} truncate={10} color="blue" />
-            </div>
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Generator (g):</p>
-              <HashBadge hash={state.g.toString()} truncate={10} color="purple" />
-            </div>
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Modulus (n):</p>
+            <HashBadge hash={state.n.toString()} truncate={10} color="blue" />
+          </div>
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Generator (g):</p>
+            <HashBadge hash={state.g.toString()} truncate={10} color="purple" />
           </div>
         </ControlGroup>
 
@@ -821,12 +817,12 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
       </div>
