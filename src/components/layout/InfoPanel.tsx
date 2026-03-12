@@ -78,6 +78,38 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
     ],
     resources: ['Nova: Recursive SNARKs without SNARKs', 'Halo: Recursive Proof Composition'],
   },
+  elliptic: {
+    concepts: [
+      'Elliptic curve groups define addition geometrically, then reinterpret it over finite fields for cryptography.',
+      'Scalar multiplication repeats addition with double-and-add, which is the workhorse behind commitments and signatures.',
+      'Pairing-friendly and cycle-friendly curves matter because recursive proof systems need fields and curves to line up cleanly.',
+    ],
+    resources: ['Guide to Elliptic Curve Cryptography', 'Electric Coin Co. - The Pasta Curves'],
+  },
+  'fiat-shamir': {
+    concepts: [
+      'The transform hashes the full public transcript to derive the verifier challenge.',
+      'If a message is omitted from the transcript, the prover may be able to bias or predict the challenge.',
+      'This is a transcript-binding problem, not just a hash-function problem.',
+    ],
+    resources: ['Fiat-Shamir heuristic overview', 'zkSecurity - Frozen Heart style transcript bugs'],
+  },
+  circuit: {
+    concepts: [
+      'R1CS constraints take the form (A·w) * (B·w) = (C·w).',
+      'A witness can satisfy some gates while still violating the full circuit if one relation is omitted.',
+      'Underconstrained signals often come from assignments that never appear in a constraint.',
+    ],
+    resources: ['R1CS explained', 'Underconstrained circuit research and audit reports'],
+  },
+  lookup: {
+    concepts: [
+      'Lookup arguments prove that witness values belong to a fixed table of allowed values.',
+      'Modern constructions reduce the problem to comparing multisets after sorting or permutation-style compression.',
+      'This saves many bespoke constraints for range checks, byte decompositions, and table-heavy gadgets.',
+    ],
+    resources: ['Plookup paper', 'LogUp and modern lookup summaries'],
+  },
 };
 
 const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
@@ -101,6 +133,26 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
     { term: 'IVC', definition: 'Incremental verifiable computation chain.' },
     { term: 'Pasta cycle', definition: 'Pallas/Vesta curve alternation.' },
   ],
+  elliptic: [
+    { term: 'Point addition', definition: 'Group law combining two points into a third.' },
+    { term: 'Scalar multiplication', definition: 'Repeated doubling and addition of one point.' },
+    { term: 'Generator', definition: 'Base point used to span a subgroup.' },
+  ],
+  'fiat-shamir': [
+    { term: 'Transcript', definition: 'Ordered list of messages seen so far.' },
+    { term: 'Challenge', definition: 'Verifier randomness or its hashed replacement.' },
+    { term: 'Forgery', definition: 'A proof assembled after exploiting a predictable challenge.' },
+  ],
+  circuit: [
+    { term: 'Witness', definition: 'Concrete assignment to all circuit wires.' },
+    { term: 'Constraint', definition: 'Equation that the witness must satisfy.' },
+    { term: 'Underconstrained', definition: 'A signal can vary without violating the circuit.' },
+  ],
+  lookup: [
+    { term: 'Table', definition: 'Allowed values committed by the circuit designer.' },
+    { term: 'Wire value', definition: 'Witness entry that must match the table.' },
+    { term: 'Multiset check', definition: 'Comparison proving both collections match with multiplicity.' },
+  ],
 };
 
 const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
@@ -108,6 +160,10 @@ const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   polynomial: ['Adjust coefficients', 'Commit to the polynomial', 'Challenge and verify'],
   accumulator: ['Add primes', 'Select an element', 'Compute a witness'],
   recursive: ['Build a tree', 'Run auto-verify', 'Try IVC mode'],
+  elliptic: ['Pick two points', 'Inspect the line and reflected sum', 'Step through scalar multiplication'],
+  'fiat-shamir': ['Compare interactive mode', 'Switch to a broken transcript', 'Attempt the forged proof'],
+  circuit: ['Adjust witness values', 'Toggle the broken circuit', 'Inspect which constraints fail'],
+  lookup: ['Edit the lookup table', 'Add wire values', 'Check the multiset permutation result'],
 };
 
 export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {

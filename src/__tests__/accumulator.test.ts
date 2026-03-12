@@ -6,6 +6,7 @@ import {
   removeElement,
   batchAdd,
   computeWitness,
+  computeWitnessCascade,
   verifyWitness,
   computeNonMembershipWitness,
   verifyNonMembershipWitness,
@@ -124,5 +125,23 @@ describe('getOrbitalParams', () => {
     const p1 = getOrbitalParams(1, 6);
     const angleDiff = Math.abs(p1.angle - p0.angle);
     expect(angleDiff).toBeCloseTo(Math.PI / 3, 3);
+  });
+});
+
+describe('computeWitnessCascade', () => {
+  it('marks surviving witnesses as changed after an addition', () => {
+    const before = [
+      { label: 'e0', prime: 3n },
+      { label: 'e1', prime: 5n },
+    ];
+    const after = [
+      ...before,
+      { label: 'e2', prime: 7n },
+    ];
+    const cascade = computeWitnessCascade(before, after, ACC_G, ACC_N);
+    expect(cascade).toHaveLength(3);
+    expect(cascade[0]!.changed).toBe(true);
+    expect(cascade[1]!.changed).toBe(true);
+    expect(cascade[2]!.witnessBefore).toBeNull();
   });
 });

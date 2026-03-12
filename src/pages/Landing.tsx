@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
-import { DEMOS } from '@/types';
 import { HeroAnimation } from '@/components/landing/HeroAnimation';
 
 const DEMO_DATA = [
@@ -57,10 +56,63 @@ const DEMO_DATA = [
       'Constant-size proofs (~288 bytes regardless of depth)',
     ],
   },
+  {
+    id: 'elliptic',
+    num: '05',
+    title: 'Elliptic Curves',
+    tag: 'POINT ADDITION · DOUBLE-AND-ADD · PASTA CYCLE',
+    body: 'Plot discrete curve points over a finite field, pick two points to add, and step through scalar multiplication. The side panel bridges from toy arithmetic to the Pallas/Vesta cycle used in modern proof systems.',
+    features: [
+      'Finite-field point enumeration',
+      'Point addition and point doubling',
+      'Double-and-add scalar trace',
+      'Pasta cycle summary for recursion intuition',
+    ],
+  },
+  {
+    id: 'fiat-shamir',
+    num: '06',
+    title: 'Fiat-Shamir',
+    tag: 'TRANSCRIPTS · CHALLENGES · FORGERIES',
+    body: 'Compare a live interactive proof against correct and broken Fiat-Shamir transcript hashing. Watch challenge derivation change, then see a forged proof succeed only when the commitment is omitted from the hash.',
+    features: [
+      'Interactive vs hashed challenges',
+      'Correct vs broken transcript mode',
+      'Predictable-challenge forgery demo',
+      'Stepwise transcript visualization',
+    ],
+  },
+  {
+    id: 'circuit',
+    num: '07',
+    title: 'R1CS Circuits',
+    tag: 'ARITHMETIC GATES · WITNESSES · UNDERCONSTRAINTS',
+    body: 'Inspect a small arithmetic circuit for x² + y = z, compare the witness against the active constraints, and toggle a broken version where the output relation silently disappears.',
+    features: [
+      'Witness sliders for x, y, z',
+      'Constraint satisfaction panel',
+      'Exploit witness in broken mode',
+      'R1CS row preview for each relation',
+    ],
+  },
+  {
+    id: 'lookup',
+    num: '08',
+    title: 'Lookup Arguments',
+    tag: 'TABLES · MULTISETS · PERMUTATION CHECKS',
+    body: 'Edit a lookup table and queried wire values, then compare the sorted multisets to see when a lookup passes, when values are missing, and when multiplicities overflow the table.',
+    features: [
+      'Editable table and wire lists',
+      'Sorted multiset comparison',
+      'Missing-value detection',
+      'Multiplicity clash detection',
+    ],
+  },
 ];
 
 const TICKER_ITEMS = [
   'MERKLE TREES', 'KZG COMMITMENTS', 'RSA ACCUMULATORS', 'RECURSIVE PROOFS',
+  'ELLIPTIC CURVES', 'FIAT-SHAMIR', 'R1CS', 'LOOKUP ARGUMENTS',
   'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
   'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
 ];
@@ -174,7 +226,7 @@ export function Landing() {
           {/* Description + buttons row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-16">
             <p className="lp-hero-sub sm:max-w-[480px]">
-              A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, and recursive proof composition. Interactive canvas, step-through verification, zero setup.
+              A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, recursive proofs, elliptic curves, transcript hashing, circuit constraints, and lookup arguments.
             </p>
             <div className="flex flex-wrap gap-3 flex-shrink-0">
               <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
@@ -190,7 +242,7 @@ export function Landing() {
           {/* Stats row */}
           <div className="lp-stats-row mt-8">
             {[
-              ['04', 'Interactive Demos'],
+              ['08', 'Interactive Demos'],
               ['∞', 'Shareable States'],
               ['0', 'Dependencies'],
               ['60', 'FPS Canvas'],
@@ -241,7 +293,7 @@ export function Landing() {
       >
         <div className="lp-container">
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
-            <p className="lp-section-num">§ 01 – 04 · DEMO SUITE</p>
+            <p className="lp-section-num">§ 01 – 08 · DEMO SUITE</p>
           </div>
 
           {DEMO_DATA.map((demo, i) => (

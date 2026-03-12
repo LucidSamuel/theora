@@ -2,14 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import type { DemoId } from '@/types';
 import { getSearchParam, getHashState } from '@/lib/urlState';
 
+const VALID_DEMOS: DemoId[] = ['merkle', 'polynomial', 'accumulator', 'recursive', 'elliptic', 'fiat-shamir', 'circuit', 'lookup'];
+
 function getDemoFromHash(): DemoId {
   const hashState = getHashState();
-  if (hashState && ['merkle', 'polynomial', 'accumulator', 'recursive'].includes(hashState.demo)) {
+  if (hashState && VALID_DEMOS.includes(hashState.demo as DemoId)) {
     return hashState.demo as DemoId;
   }
   const hash = window.location.hash.replace('#', '');
   const base = hash.split('|')[0] ?? '';
-  if (['merkle', 'polynomial', 'accumulator', 'recursive'].includes(base)) {
+  if (VALID_DEMOS.includes(base as DemoId)) {
     return base as DemoId;
   }
   return 'merkle';
@@ -18,7 +20,7 @@ function getDemoFromHash(): DemoId {
 export function useActiveDemo() {
   const [activeDemo, setActiveDemo] = useState<DemoId>(() => {
     const embed = getSearchParam('embed') ?? '';
-    if (['merkle', 'polynomial', 'accumulator', 'recursive'].includes(embed)) {
+    if (VALID_DEMOS.includes(embed as DemoId)) {
       return embed as DemoId;
     }
     return getDemoFromHash();

@@ -8,14 +8,18 @@ export interface CanvasCamera {
   toWorld: (screenX: number, screenY: number) => { x: number; y: number };
   /** Reset camera to default */
   reset: () => void;
+  panBy: (dx: number, dy: number) => void;
+  zoomBy: (factor: number) => void;
   handlers: {
     onWheel: (e: ReactWheelEvent<HTMLCanvasElement>) => void;
     onMouseDown: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
     onMouseMove: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
     onMouseUp: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
+    onMouseLeave: () => void;
     onTouchStart: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
     onTouchMove: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
     onTouchEnd: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLCanvasElement>) => void;
   };
 }
 
@@ -44,6 +48,15 @@ export function useCanvasCamera(): CanvasCamera {
     panXRef.current = 0;
     panYRef.current = 0;
     zoomRef.current = 1;
+  }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    panXRef.current += dx;
+    panYRef.current += dy;
+  }, []);
+
+  const zoomBy = useCallback((factor: number) => {
+    zoomRef.current = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomRef.current * factor));
   }, []);
 
   // Zoom centered on cursor
@@ -87,6 +100,10 @@ export function useCanvasCamera(): CanvasCamera {
     isPanningRef.current = false;
   }, []);
 
+  const handleMouseLeave = useCallback(() => {
+    isPanningRef.current = false;
+  }, []);
+
   // Two-finger pinch zoom for touch
   const handleTouchStart = useCallback((e: ReactTouchEvent<HTMLCanvasElement>) => {
     if (e.touches.length === 2) {
@@ -124,6 +141,43 @@ export function useCanvasCamera(): CanvasCamera {
     lastPinchDistRef.current = 0;
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLCanvasElement>) => {
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      zoomBy(1.1);
+      return;
+    }
+    if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      zoomBy(0.9);
+      return;
+    }
+    if (e.key === '0') {
+      e.preventDefault();
+      reset();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      panBy(0, 24);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      panBy(0, -24);
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      panBy(24, 0);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      panBy(-24, 0);
+    }
+  }, [panBy, reset, zoomBy]);
+
   const cameraRef = useRef<CanvasCamera | null>(null);
   if (!cameraRef.current) {
     cameraRef.current = {
@@ -132,14 +186,18 @@ export function useCanvasCamera(): CanvasCamera {
       get zoom() { return zoomRef.current; },
       toWorld,
       reset,
+      panBy,
+      zoomBy,
       handlers: {
         onWheel: handleWheel,
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
         onMouseUp: handleMouseUp,
+        onMouseLeave: handleMouseLeave,
         onTouchStart: handleTouchStart,
         onTouchMove: handleTouchMove,
         onTouchEnd: handleTouchEnd,
+        onKeyDown: handleKeyDown,
       },
     };
   }
@@ -150,9 +208,11 @@ export function useCanvasCamera(): CanvasCamera {
     onMouseDown: handleMouseDown,
     onMouseMove: handleMouseMove,
     onMouseUp: handleMouseUp,
+    onMouseLeave: handleMouseLeave,
     onTouchStart: handleTouchStart,
     onTouchMove: handleTouchMove,
     onTouchEnd: handleTouchEnd,
+    onKeyDown: handleKeyDown,
   };
 
   return cameraRef.current;

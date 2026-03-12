@@ -8,12 +8,20 @@ import { MerkleDemo } from '@/demos/merkle/MerkleDemo';
 import { PolynomialDemo } from '@/demos/polynomial/PolynomialDemo';
 import { AccumulatorDemo } from '@/demos/accumulator/AccumulatorDemo';
 import { RecursiveDemo } from '@/demos/recursive/RecursiveDemo';
+import { EllipticDemo } from '@/demos/elliptic/EllipticDemo';
+import { FiatShamirDemo } from '@/demos/fiat-shamir/FiatShamirDemo';
+import { CircuitDemo } from '@/demos/circuit/CircuitDemo';
+import { LookupDemo } from '@/demos/lookup/LookupDemo';
 
 const DEMO_NAMES = {
   merkle: 'Merkle Tree',
   polynomial: 'Polynomial Commitments',
   accumulator: 'RSA Accumulator',
   recursive: 'Recursive Proofs',
+  elliptic: 'Elliptic Curves',
+  'fiat-shamir': 'Fiat-Shamir',
+  circuit: 'R1CS Circuits',
+  lookup: 'Lookup Arguments',
 } as const;
 
 export default function App() {
@@ -35,6 +43,14 @@ export default function App() {
         return <AccumulatorDemo />;
       case 'recursive':
         return <RecursiveDemo />;
+      case 'elliptic':
+        return <EllipticDemo />;
+      case 'fiat-shamir':
+        return <FiatShamirDemo />;
+      case 'circuit':
+        return <CircuitDemo />;
+      case 'lookup':
+        return <LookupDemo />;
     }
   };
 

@@ -1,6 +1,6 @@
 # Theora
 
-Interactive cryptographic primitive visualizer. Merkle trees, polynomial commitments, RSA accumulators, and recursive proof composition — animated, shareable, and embeddable.
+Interactive cryptographic visualizer. Merkle trees, polynomial commitments, RSA accumulators, recursive proofs, elliptic curves, Fiat-Shamir transcripts, R1CS circuits, and lookup arguments — animated, shareable, and embeddable.
 
 \---
 
@@ -71,6 +71,31 @@ Visualize proof composition trees and incremental verifiable computation (IVC) c
 - **Statistics panel**: Total nodes, verified/failed counts, current step, accumulator hash, and constant proof size (~288 bytes regardless of depth)
 - **Display toggles**: Show/hide Pasta curve labels and proof size annotations
 
+### Elliptic Curves
+
+- **Finite-field point arithmetic**: Enumerate curve points over a small prime field and verify addition stays on-curve
+- **Point addition / doubling**: Pick two points and inspect their sum
+- **Scalar multiplication**: Step through double-and-add
+- **Pasta cycle bridge**: Quick summary of how Pallas and Vesta line up for recursion
+
+### Fiat-Shamir
+
+- **Interactive vs non-interactive**: Compare verifier randomness against transcript hashing
+- **Broken transcript mode**: Omit the commitment from the hash and watch the challenge become predictable
+- **Forgery demo**: Construct a proof that only verifies in the broken mode
+
+### R1CS Circuits
+
+- **Witness controls**: Adjust `x`, `y`, and `z` for a small arithmetic circuit
+- **Constraint inspection**: See which equations pass or fail
+- **Underconstrained example**: Toggle a broken circuit where the output relation is missing
+
+### Lookup Arguments
+
+- **Editable tables and wires**: Enter comma-separated values
+- **Multiset comparison**: Sort and compare table rows against queried wires
+- **Failure cases**: Detect missing values and multiplicity mismatches
+
 ---
 
 ## Features
@@ -98,7 +123,7 @@ Add an interactive diagram to any page:
 </iframe>
 ```
 
-Embed mode hides the sidebar and header, showing only the canvas and controls. Works for all four demos (`merkle`, `polynomial`, `accumulator`, `recursive`).
+Embed mode hides the sidebar and header, showing only the canvas and controls. Works for every demo, including `elliptic`, `fiat-shamir`, `circuit`, and `lookup`.
 
 ### Dark/Light Theme
 

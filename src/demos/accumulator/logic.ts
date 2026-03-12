@@ -169,3 +169,36 @@ export function getOrbitalParams(
 
   return { radius, speed, angle };
 }
+
+export function computeWitnessCascade(
+  beforeElements: { label: string; prime: bigint }[],
+  afterElements: { label: string; prime: bigint }[],
+  g: bigint,
+  n: bigint
+): Array<{
+  label: string;
+  prime: bigint;
+  witnessBefore: bigint | null;
+  witnessAfter: bigint;
+  changed: boolean;
+}> {
+  const beforePrimes = beforeElements.map((element) => element.prime);
+  const afterPrimes = afterElements.map((element) => element.prime);
+  const beforeMap = new Map<string, bigint>();
+
+  beforeElements.forEach((element, index) => {
+    beforeMap.set(element.label, computeWitness(beforePrimes, index, g, n));
+  });
+
+  return afterElements.map((element, index) => {
+    const witnessBefore = beforeMap.get(element.label) ?? null;
+    const witnessAfter = computeWitness(afterPrimes, index, g, n);
+    return {
+      label: element.label,
+      prime: element.prime,
+      witnessBefore,
+      witnessAfter,
+      changed: witnessBefore === null || witnessBefore !== witnessAfter,
+    };
+  });
+}

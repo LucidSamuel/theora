@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
+import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import {
   ControlGroup,
   ButtonControl,
@@ -290,7 +291,8 @@ export function MerkleDemo() {
     if (!payload) return;
 
     if (payload.leaves && payload.leaves.length > 0) {
-      dispatch({ type: 'SET_LEAVES', leaves: payload.leaves });
+      const leaves = payload.leaves.filter((l): l is string => typeof l === 'string').slice(0, 128);
+      if (leaves.length > 0) dispatch({ type: 'SET_LEAVES', leaves });
     }
     if (payload.hashMode) {
       dispatch({ type: 'SET_HASH_MODE', mode: payload.hashMode });
@@ -752,6 +754,7 @@ export function MerkleDemo() {
 
       <div className="flex-1 relative">
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
+        <CanvasToolbar camera={camera} />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { AnimatedCanvas } from '@/components/shared/AnimatedCanvas';
+import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import {
   ControlGroup,
   SliderControl,
@@ -371,7 +372,7 @@ export function RecursiveDemo(): JSX.Element {
     const payload = decodedHash ?? decoded;
     if (!payload) return;
     if (payload.mode) dispatch({ type: 'SET_MODE', mode: payload.mode });
-    if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: payload.depth });
+    if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: Math.max(2, Math.min(5, payload.depth)) });
     if (typeof payload.ivcLength === 'number') dispatch({ type: 'SET_IVC_LENGTH', length: payload.ivcLength });
     if (typeof payload.showPasta === 'boolean' && payload.showPasta !== initialState.showPastaCurves) {
       dispatch({ type: 'TOGGLE_PASTA' });
@@ -625,8 +626,9 @@ export function RecursiveDemo(): JSX.Element {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
+        <CanvasToolbar camera={camera} />
       </div>
 
       {/* Stats Panel */}

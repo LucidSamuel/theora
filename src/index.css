@@ -31,6 +31,7 @@
   --status-error: #ef4444;
   --surface-element: rgba(12, 12, 14, 0.9);
   --surface-element-border: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.06);
 
   --font-display: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -68,6 +69,7 @@
   --status-error: #dc2626;
   --surface-element: rgba(255, 255, 255, 0.9);
   --surface-element-border: rgba(0, 0, 0, 0.08);
+  --bg-hover: rgba(0, 0, 0, 0.04);
 
   color-scheme: light;
 }
@@ -845,4 +847,9 @@ input[type="range"]::-moz-range-thumb {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }

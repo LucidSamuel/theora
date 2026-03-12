@@ -29,6 +29,11 @@ tasks/
 *.swo
 *~
 
+# Replit
+.replit
+replit.md
+attached_assets/
+
 # OS files
 Thumbs.db
 Desktop.ini

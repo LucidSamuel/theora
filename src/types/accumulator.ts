@@ -33,6 +33,14 @@ export interface HistoryEntry {
   timestamp: number;
 }
 
+export interface WitnessCascadeEntry {
+  label: string;
+  prime: bigint;
+  witnessBefore: bigint | null;
+  witnessAfter: bigint;
+  changed: boolean;
+}
+
 export interface AccumulatorState {
   elements: AccElement[];
   accValue: bigint;
@@ -41,6 +49,7 @@ export interface AccumulatorState {
   selectedIndex: number | null;
   witness: WitnessInfo | null;
   nonMembership: NonMembershipInfo | null;
+  witnessCascade: WitnessCascadeEntry[];
   history: HistoryEntry[];
   batchMode: boolean;
   batchPrimes: string;

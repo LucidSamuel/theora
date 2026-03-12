@@ -1,5 +1,6 @@
 import { useReducer, useCallback, useRef, useEffect, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
+import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import {
   ControlGroup,
   ToggleControl,
@@ -30,6 +31,7 @@ import {
   verifyNonMembershipWitness,
   randomPrime,
   getOrbitalParams,
+  computeWitnessCascade,
 } from './logic';
 
 type Action =
@@ -65,14 +67,21 @@ function reducer(state: AccumulatorState, action: Action): AccumulatorState {
         spring: createSpring2D(0, 0, { damping: 0.7, stiffness: 0.05 }),
         opacity: 0,
       };
+      const nextElements = [...state.elements, newElement];
 
       return {
         ...state,
-        elements: [...state.elements, newElement],
+        elements: nextElements,
         accValue: accAfter,
         witness: null,
         nonMembership: null,
         selectedIndex: null,
+        witnessCascade: computeWitnessCascade(
+          state.elements.map((element) => ({ label: element.label, prime: element.prime })),
+          nextElements.map((element) => ({ label: element.label, prime: element.prime })),
+          ACC_G,
+          ACC_N
+        ),
         history: [
           {
             operation: 'add' as const,
@@ -94,14 +103,21 @@ function reducer(state: AccumulatorState, action: Action): AccumulatorState {
       const removedPrime = state.elements[index]?.prime;
       const elementPrimes = state.elements.map(el => el.prime);
       const accAfter = removeElement(elementPrimes, index, ACC_G, ACC_N);
+      const nextElements = state.elements.filter((_, i) => i !== index);
 
       return {
         ...state,
-        elements: state.elements.filter((_, i) => i !== index),
+        elements: nextElements,
         accValue: accAfter,
         witness: null,
         nonMembership: null,
         selectedIndex: null,
+        witnessCascade: computeWitnessCascade(
+          state.elements.map((element) => ({ label: element.label, prime: element.prime })),
+          nextElements.map((element) => ({ label: element.label, prime: element.prime })),
+          ACC_G,
+          ACC_N
+        ),
         history: [
           {
             operation: 'remove' as const,
@@ -136,14 +152,21 @@ function reducer(state: AccumulatorState, action: Action): AccumulatorState {
           opacity: 0,
         };
       });
+      const nextElements = [...state.elements, ...newElements];
 
       return {
         ...state,
-        elements: [...state.elements, ...newElements],
+        elements: nextElements,
         accValue: accAfter,
         witness: null,
         nonMembership: null,
         selectedIndex: null,
+        witnessCascade: computeWitnessCascade(
+          state.elements.map((element) => ({ label: element.label, prime: element.prime })),
+          nextElements.map((element) => ({ label: element.label, prime: element.prime })),
+          ACC_G,
+          ACC_N
+        ),
         batchPrimes: '',
         history: [
           {
@@ -296,6 +319,7 @@ function reducer(state: AccumulatorState, action: Action): AccumulatorState {
         selectedIndex: null,
         witness: null,
         nonMembership: null,
+        witnessCascade: [],
         history: [
           {
             operation: 'add' as const,
@@ -323,6 +347,7 @@ const initialState: AccumulatorState = {
   selectedIndex: null,
   witness: null,
   nonMembership: null,
+  witnessCascade: [],
   history: [],
   batchMode: false,
   batchPrimes: '',
@@ -493,7 +518,7 @@ export function AccumulatorDemo() {
     const payload = decodedHash ?? decoded;
     if (!payload) return;
     if (payload.elements && payload.elements.length > 0) {
-      const validPrimes = payload.elements
+      const validPrimes = payload.elements.slice(0, 64)
         .filter((p): p is number => typeof p === 'number' && isPrime(p))
         .map((p) => BigInt(p));
       if (validPrimes.length > 0) {
@@ -542,6 +567,16 @@ export function AccumulatorDemo() {
       return;
     }
 
+    if (state.witnessCascade.length > 0) {
+      const changedCount = state.witnessCascade.filter((entry) => entry.changed).length;
+      setEntry('accumulator', {
+        title: 'Witness cascade',
+        body: `${changedCount} witnesses changed after the latest accumulator mutation. Every surviving member generally needs a fresh witness.`,
+        nextSteps: ['Inspect the cascade list', 'Select an element', 'Verify one updated witness'],
+      });
+      return;
+    }
+
     if (state.nonMembership) {
       const status =
         state.nonMembership.verified === null
@@ -577,7 +612,7 @@ export function AccumulatorDemo() {
       body: `Current set size: ${state.elements.length}. Each prime exponentiates the accumulator.`,
       nextSteps: ['Add a prime', 'Select an element to compute a witness'],
     });
-  }, [hoverIndex, state.batchMode, state.witness, state.nonMembership, state.elements.length, state.elements, setEntry]);
+  }, [hoverIndex, state.batchMode, state.witnessCascade, state.witness, state.nonMembership, state.elements.length, state.elements, setEntry]);
 
   const buildShareState = () => ({
     elements: state.elements.map((el: AccElement) => Number(el.prime)),
@@ -768,6 +803,37 @@ export function AccumulatorDemo() {
           </ControlGroup>
         )}
 
+        <ControlGroup label="Witness Cascade">
+          {state.witnessCascade.length === 0 ? (
+            <div className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              Add or remove an element to watch how the surviving witnesses all update.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {state.witnessCascade.filter((entry) => entry.changed).length} / {state.witnessCascade.length} witnesses updated
+              </div>
+              {state.witnessCascade.slice(0, 8).map((entry) => (
+                <div
+                  key={entry.label}
+                  className="rounded-lg border p-3 text-xs"
+                  style={{ borderColor: 'var(--border)', background: 'var(--surface-element)' }}
+                >
+                  <div style={{ color: 'var(--text-primary)' }}>
+                    {entry.label} = {entry.prime.toString()}
+                  </div>
+                  <div style={{ color: 'var(--text-muted)' }}>
+                    before: {entry.witnessBefore ? `...${entry.witnessBefore.toString().slice(-8)}` : 'new member'}
+                  </div>
+                  <div style={{ color: entry.changed ? 'var(--status-success)' : 'var(--text-muted)' }}>
+                    after: ...{entry.witnessAfter.toString().slice(-8)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ControlGroup>
+
         <ControlGroup label="Non-Membership">
           <TextInput
             value={nonMemberInput}
@@ -838,6 +904,7 @@ export function AccumulatorDemo() {
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
         />
+        <CanvasToolbar camera={camera} />
       </div>
 
       {/* Right History Panel */}

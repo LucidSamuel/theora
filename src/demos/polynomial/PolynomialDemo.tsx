@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useState, useRef, useEffect } from 'react';
 import type { PolynomialState, EvalPoint } from '@/types/polynomial';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
+import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import {
   ControlGroup,
   SliderControl,
@@ -460,7 +461,7 @@ export function PolynomialDemo() {
       dispatch({ type: 'SET_MODE', mode: payload.mode });
     }
     if (payload.coefficients && payload.coefficients.length > 0) {
-      dispatch({ type: 'SET_COEFFICIENTS', coefficients: payload.coefficients });
+      dispatch({ type: 'SET_COEFFICIENTS', coefficients: payload.coefficients.slice(0, 20) });
     }
     if (payload.compareEnabled) {
       dispatch({ type: 'TOGGLE_COMPARE' });
@@ -719,8 +720,9 @@ export function PolynomialDemo() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
+        <CanvasToolbar camera={camera} />
       </div>
     </div>
   );

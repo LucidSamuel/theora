@@ -1,11 +1,15 @@
 import type { DemoId } from '@/types';
-import { TreePine, Orbit, Sigma, Repeat } from 'lucide-react';
+import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties } from 'lucide-react';
 
 const ICONS = {
   merkle: TreePine,
   polynomial: Sigma,
   accumulator: Orbit,
   recursive: Repeat,
+  elliptic: Hexagon,
+  'fiat-shamir': ShieldCheck,
+  circuit: CircuitBoard,
+  lookup: TableProperties,
 } as const;
 
 interface DemoIconProps {
