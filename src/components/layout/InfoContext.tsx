@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
 import type { DemoId } from '@/types';
 
 export interface InfoContextEntry {
@@ -19,24 +19,31 @@ const InfoContext = createContext<InfoContextValue | null>(null);
 export function InfoProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<Partial<Record<DemoId, InfoContextEntry>>>({});
 
+  const setEntry = useCallback((demoId: DemoId, entry: Omit<InfoContextEntry, 'updatedAt'> | null) => {
+    setEntries((prev) => {
+      if (!entry) {
+        const next = { ...prev };
+        delete next[demoId];
+        return next;
+      }
+      const existing = prev[demoId];
+      if (
+        existing &&
+        existing.title === entry.title &&
+        existing.body === entry.body
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [demoId]: { ...entry, updatedAt: Date.now() },
+      };
+    });
+  }, []);
+
   const value = useMemo<InfoContextValue>(
-    () => ({
-      entries,
-      setEntry: (demoId, entry) => {
-        setEntries((prev) => {
-          if (!entry) {
-            const next = { ...prev };
-            delete next[demoId];
-            return next;
-          }
-          return {
-            ...prev,
-            [demoId]: { ...entry, updatedAt: Date.now() },
-          };
-        });
-      },
-    }),
-    [entries]
+    () => ({ entries, setEntry }),
+    [entries, setEntry]
   );
 
   return <InfoContext.Provider value={value}>{children}</InfoContext.Provider>;

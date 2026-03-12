@@ -744,8 +744,8 @@ body::before {
 /* ─── App control sections ─── */
 
 .control-section {
-  padding-top: 14px;
-  padding-bottom: 14px;
+  padding-top: 18px;
+  padding-bottom: 18px;
   border-top: 1px solid var(--border);
 }
 
@@ -766,23 +766,104 @@ body::before {
   border: none;
   cursor: pointer;
   transition: opacity 150ms ease;
+  font-weight: 500;
 }
 
 .app-btn-primary:hover:not(:disabled) {
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .app-btn-secondary {
-  background: transparent;
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  font-weight: 450;
 }
 
 .app-btn-secondary:hover:not(:disabled) {
   border-color: var(--text-muted);
   color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ─── App leaf row ─── */
+
+.app-leaf-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: border-color 100ms ease, background-color 100ms ease;
+}
+
+.app-leaf-row:hover {
+  border-color: var(--text-muted);
+}
+
+.app-leaf-row.is-selected {
+  border-color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.app-leaf-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.app-leaf-remove {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: color 100ms ease, background-color 100ms ease;
+}
+
+.app-leaf-remove:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.app-leaf-prove {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  background: var(--button-bg-strong);
+  color: var(--text-primary);
+  border: none;
+  transition: opacity 100ms ease;
+}
+
+.app-leaf-prove:hover:not(:disabled) {
+  opacity: 0.7;
+}
+
+.app-leaf-prove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 button {
