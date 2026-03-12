@@ -2,98 +2,117 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import { DEMOS } from '@/types';
-import { DemoIcon } from '@/components/shared/DemoIcon';
 import { HeroAnimation } from '@/components/landing/HeroAnimation';
 
 const PRIMITIVES = ['Merkle Trees', 'Polynomial Commitments', 'RSA Accumulators', 'Recursive Proofs'];
 
-const DEMO_HIGHLIGHTS: Record<string, string[]> = {
-  merkle: ['Generate inclusion proofs', 'Step through verification', 'Copy/download proof JSON'],
-  polynomial: ['Reshape curves in real time', 'Run the 4-step KZG flow', 'Compare polynomials and intersections'],
-  accumulator: ['Membership + non-membership proofs', 'Batch add primes', 'Witness verification workflow'],
-  recursive: ['Proof trees and IVC chains', 'Inject bad proofs and trace failures', 'Pasta cycle visualization'],
-};
+const DEMO_DATA = [
+  {
+    id: 'merkle',
+    num: '01',
+    title: 'Merkle Tree',
+    tag: 'HASH TREES · MEMBERSHIP PROOFS',
+    body: 'Build a binary hash tree from arbitrary data. Generate inclusion proofs, step through verification one hash at a time, and watch the exact path of changed hashes cascade to the root.',
+    features: [
+      'SHA-256 and FNV-1a hash functions',
+      'Step-through proof verification',
+      'Spring-physics canvas animation',
+      'Proof export as JSON or audit summary',
+    ],
+  },
+  {
+    id: 'polynomial',
+    num: '02',
+    title: 'KZG Commitments',
+    tag: 'POLYNOMIAL EVALUATION · ELLIPTIC CURVES',
+    body: 'Commit to a polynomial, pick a challenge point, reveal a value, and verify — the full 4-step KZG flow animated. Drag coefficients to reshape the curve in real time.',
+    features: [
+      'Lagrange interpolation by clicking the canvas',
+      'Polynomial comparison via Schwartz-Zippel',
+      'KZG commit → challenge → prove → verify',
+      'Synthetic division for quotient polynomial',
+    ],
+  },
+  {
+    id: 'accumulator',
+    num: '03',
+    title: 'RSA Accumulator',
+    tag: 'SET MEMBERSHIP · MODULAR EXPONENTIATION',
+    body: 'Add prime numbers to a cryptographic accumulator and prove membership or non-membership without revealing the entire set. Witness computation via extended GCD.',
+    features: [
+      'Membership and non-membership proofs',
+      'Batch add with comma-separated primes',
+      'Orbital visualization with spring physics',
+      'Full operation history with before/after',
+    ],
+  },
+  {
+    id: 'recursive',
+    num: '04',
+    title: 'Recursive Proofs',
+    tag: 'IVC · PASTA CURVES · PROOF COMPOSITION',
+    body: 'Proof trees where each node verifies its children, built on Pallas/Vesta curve cycling. Inject a bad proof at any node and watch soundness failures propagate upward.',
+    features: [
+      'Binary proof tree (depth 2–5)',
+      'IVC chain with fold-by-fold stepping',
+      'Pasta curve cycle at each depth',
+      'Constant-size proofs (~288 bytes regardless of depth)',
+    ],
+  },
+];
 
-const DEMO_ACCENTS: Record<string, string> = {
-  merkle: '#b8733a',
-  polynomial: '#5f7ea0',
-  accumulator: '#c8824a',
-  recursive: '#8a6b5b',
-};
+const TICKER_ITEMS = [
+  'MERKLE TREES', 'KZG COMMITMENTS', 'RSA ACCUMULATORS', 'RECURSIVE PROOFS',
+  'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
+  'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
+];
 
-function CyclingText() {
+function CyclingPrimitive() {
   const [index, setIndex] = useState(0);
-  const [state, setState] = useState<'visible' | 'exit' | 'enter'>('visible');
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setState('exit');
+    const t = setInterval(() => {
+      setVisible(false);
       setTimeout(() => {
-        setIndex((i) => (i + 1) % PRIMITIVES.length);
-        setState('enter');
-        setTimeout(() => setState('visible'), 350);
-      }, 300);
-    }, 3000);
-    return () => clearInterval(interval);
+        setIndex(i => (i + 1) % PRIMITIVES.length);
+        setVisible(true);
+      }, 320);
+    }, 2800);
+    return () => clearInterval(t);
   }, []);
 
-  const transforms: Record<string, string> = {
-    visible: 'translateY(0) skewY(0deg)',
-    exit: 'translateY(-28px) skewY(-2deg)',
-    enter: 'translateY(28px) skewY(2deg)',
-  };
-
-  const opacities: Record<string, number> = {
-    visible: 1,
-    exit: 0,
-    enter: 0,
-  };
-
   return (
-    <span className="relative block overflow-hidden" style={{ height: '1.15em' }}>
-      <span className="invisible block" aria-hidden="true">Polynomial Commitments</span>
-      <span
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          opacity: opacities[state],
-          transform: transforms[state],
-          transition: state === 'visible'
-            ? 'opacity 350ms cubic-bezier(0.16, 1, 0.3, 1), transform 350ms cubic-bezier(0.16, 1, 0.3, 1)'
-            : 'opacity 280ms ease, transform 280ms ease',
-          background: 'linear-gradient(135deg, var(--text-primary) 0%, color-mix(in srgb, var(--text-primary) 75%, transparent) 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}
-      >
-        {PRIMITIVES[index]}
-      </span>
+    <span
+      className="landing-cycling"
+      style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(12px)' }}
+    >
+      {PRIMITIVES[index]}
     </span>
   );
 }
 
-function useScrolled(threshold = 20) {
-  const [scrolled, setScrolled] = useState(false);
+function useScrollY() {
+  const [y, setY] = useState(0);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [threshold]);
-  return scrolled;
+    const fn = () => setY(window.scrollY);
+    window.addEventListener('scroll', fn, { passive: true });
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+  return y;
 }
 
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLElement>(null);
+function useInView(threshold = 0.1) {
+  const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry?.isIntersecting) { setInView(true); observer.disconnect(); } },
-      { threshold }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    const obs = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting) { setInView(true); obs.disconnect(); }
+    }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
   }, [threshold]);
   return { ref, inView };
 }
@@ -101,388 +120,285 @@ function useInView(threshold = 0.15) {
 export function Landing() {
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
-  const scrolled = useScrolled();
-  const demoSectionRef = useInView(0.08);
-  const featureSectionRef = useInView(0.08);
+  const scrollY = useScrollY();
+  const navScrolled = scrollY > 40;
+  const aboutRef = useInView(0.05);
+  const demosRef = useInView(0.02);
+  const featuresRef = useInView(0.05);
 
   return (
-    <div
-      className="landing-page min-h-screen w-full overflow-x-hidden"
-      style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-    >
-      {/* ── Nav ── */}
+    <div className="lp min-h-screen w-full overflow-x-hidden" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+
+      {/* ── NAV ── */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-50"
         style={{
-          backgroundColor: scrolled
-            ? 'color-mix(in srgb, var(--bg-primary) 88%, transparent)'
-            : 'color-mix(in srgb, var(--bg-primary) 40%, transparent)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
+          borderBottom: navScrolled ? '1px solid var(--border)' : '1px solid transparent',
+          background: navScrolled ? 'color-mix(in srgb, var(--bg-primary) 90%, transparent)' : 'transparent',
+          backdropFilter: navScrolled ? 'blur(20px)' : 'none',
+          transition: 'border-color 300ms, background 300ms, backdrop-filter 300ms',
         }}
       >
-        <div className="landing-container h-16 flex items-center justify-between">
-          <span className="text-base font-display font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            <span style={{ opacity: 0.35 }}>∴</span> theora
+        <div className="lp-container h-16 flex items-center justify-between">
+          <span className="lp-wordmark">
+            <span className="lp-wordmark-sym">∴</span> theora
           </span>
           <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/LucidSamuel/theora"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline text-[13px] no-underline landing-link px-3 py-1.5 rounded-lg"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              GitHub
+            <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
+              className="lp-nav-link hidden sm:flex">
+              GitHub ↗
             </a>
-            <button
-              onClick={toggle}
-              className="landing-icon-btn"
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
+            <button onClick={toggle} className="lp-icon-btn" aria-label="Toggle theme">
               {theme === 'dark' ? '☀' : '☾'}
             </button>
-            <button onClick={() => navigate('/app')} className="landing-btn-primary">
+            <button onClick={() => navigate('/app')} className="lp-btn-primary">
               Launch App
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section
-        className="relative overflow-hidden"
-        style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', paddingTop: '80px' }}
-      >
+      {/* ── HERO ── */}
+      <section className="lp-hero relative overflow-hidden">
         <HeroAnimation />
 
-        {/* Radial glow at top */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--text-primary) 12%, transparent) 0%, transparent 70%)',
-            zIndex: 1,
-          }}
-          aria-hidden="true"
-        />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 lp-grid-bg pointer-events-none" style={{ zIndex: 1 }} />
 
-        {/* Bottom fade */}
-        <div
-          className="absolute bottom-0 left-0 right-0 pointer-events-none"
-          style={{
-            height: '200px',
-            background: 'linear-gradient(to top, var(--bg-primary), transparent)',
-            zIndex: 1,
-          }}
-          aria-hidden="true"
-        />
+        {/* Vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          zIndex: 2,
+          background: 'radial-gradient(ellipse 90% 60% at 50% 100%, var(--bg-primary) 0%, transparent 60%)',
+        }} />
 
-        <div className="landing-container relative w-full" style={{ zIndex: 10 }}>
-          <div className="max-w-[920px] mx-auto text-center flex flex-col items-center py-20 lg:py-28">
+        <div className="lp-container relative flex flex-col justify-end h-full pb-14 sm:pb-18" style={{ zIndex: 10 }}>
 
-            {/* Pill badge */}
-            <div className="landing-fade-up" style={{ animationDelay: '0ms' }}>
-              <span className="landing-pill">
-                <span style={{ opacity: 0.5, marginRight: '6px' }}>✦</span>
-                Built for developers, researchers, and educators
-              </span>
-            </div>
+          {/* Top label row */}
+          <div className="flex items-center justify-between mb-10 sm:mb-14">
+            <span className="lp-mono-label">∴ cryptographic primitive visualizer</span>
+            <span className="lp-mono-label hidden sm:block">EST. 2025 · MIT LICENSE</span>
+          </div>
 
-            {/* Main heading */}
-            <div className="landing-fade-up mt-9" style={{ animationDelay: '80ms' }}>
-              <h1
-                style={{
-                  fontSize: 'clamp(2.6rem, 7vw, 5.6rem)',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  letterSpacing: '-0.04em',
-                  lineHeight: 1.0,
-                  color: 'var(--text-primary)',
-                }}
-              >
-                Cryptography,
-                <br />
-                <span style={{ color: 'var(--text-secondary)' }}>made explorable</span>
-                <br />
-                <span style={{ display: 'block', marginTop: '0.05em' }}>
-                  through <CyclingText />
-                </span>
+          {/* Main headline */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8">
+            <div className="flex-1">
+              <h1 className="lp-hero-title">
+                Cryptography,<br />
+                made<br />
+                <CyclingPrimitive />
               </h1>
             </div>
 
-            {/* Subheading */}
-            <div className="landing-fade-up mt-9" style={{ animationDelay: '160ms' }}>
-              <p
-                style={{
-                  fontSize: 'clamp(15px, 1.6vw, 18px)',
-                  lineHeight: 1.75,
-                  maxWidth: '640px',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                A unified visual lab for Merkle trees, polynomial commitments, RSA accumulators,
-                and recursive proof composition. Interactive canvas demos, step-through verification,
-                and shareable state links.
+            <div className="sm:text-right sm:max-w-[320px] lg:max-w-[380px] flex-shrink-0">
+              <p className="lp-hero-sub">
+                A unified visual lab for ZK primitives. Interactive canvas, step-through verification, and shareable state links — no setup required.
               </p>
-            </div>
-
-            {/* CTA buttons */}
-            <div className="landing-fade-up flex flex-wrap justify-center gap-3 mt-11" style={{ animationDelay: '240ms' }}>
-              <button onClick={() => navigate('/app')} className="landing-btn-primary landing-btn-lg">
-                Explore Demos
-              </button>
-              <a
-                href="https://github.com/LucidSamuel/theora"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="landing-btn-secondary landing-btn-lg no-underline"
-              >
-                View Source ↗
-              </a>
-            </div>
-
-            {/* Stat cards */}
-            <div className="landing-fade-up w-full mt-20 lg:mt-24" style={{ animationDelay: '340ms' }}>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {[
-                  { label: 'Core primitives', value: '4 interactive demos', icon: '◈' },
-                  { label: 'Rendering model', value: 'Hand-drawn canvas', icon: '◇' },
-                  { label: 'Sharing', value: 'URL-serialized state', icon: '⊕' },
-                  { label: 'Use case', value: 'Teaching & research', icon: '∴' },
-                ].map((stat) => (
-                  <div key={stat.label} className="landing-stat-card">
-                    <span className="landing-stat-icon">{stat.icon}</span>
-                    <p className="mt-3 text-[11px] uppercase tracking-[0.1em]" style={{ color: 'var(--text-muted)' }}>
-                      {stat.label}
-                    </p>
-                    <p className="mt-1.5 text-[14px] font-semibold font-display" style={{ color: 'var(--text-primary)' }}>
-                      {stat.value}
-                    </p>
-                  </div>
-                ))}
+              <div className="flex sm:justify-end gap-3 mt-6">
+                <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
+                  Explore Demos
+                </button>
+                <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
+                  className="lp-btn-ghost lp-btn-lg no-underline">
+                  Source ↗
+                </a>
               </div>
             </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="landing-container">
-        <div className="landing-divider" />
-      </div>
-
-      {/* ── Demo cards section ── */}
-      <section
-        ref={demoSectionRef.ref as React.RefObject<HTMLElement>}
-        className={`pt-24 sm:pt-32 pb-24 sm:pb-32 section-reveal ${demoSectionRef.inView ? 'in-view' : ''}`}
-      >
-        <div className="landing-container">
-          <div className="mb-16 sm:mb-20">
-            <p className="landing-kicker">Demo suite</p>
-            <h2 className="landing-section-title mt-5 max-w-[600px]">
-              Four primitives, one consistent interaction model
-            </h2>
-            <p className="mt-5 max-w-[560px]" style={{ fontSize: '15px', lineHeight: 1.75, color: 'var(--text-secondary)' }}>
-              Each module combines intuitive controls, animated state transitions, and concrete
-              verification steps so you can move from theory to intuition quickly.
-            </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
-            {DEMOS.map((demo, i) => {
-              const accent = DEMO_ACCENTS[demo.id] ?? '#888';
-              return (
-                <button
-                  key={demo.id}
-                  onClick={() => navigate(`/app#${demo.id}`)}
-                  className="landing-card text-left"
-                  style={{ animationDelay: demoSectionRef.inView ? `${i * 60}ms` : '0ms' }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-5">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                      style={{
-                        backgroundColor: `${accent}15`,
-                        border: `1px solid ${accent}28`,
-                        boxShadow: `0 0 16px ${accent}12`,
-                      }}
-                    >
-                      <DemoIcon id={demo.id} size={19} color={accent} />
-                    </div>
-                    <span className="landing-card-arrow">↗</span>
-                  </div>
-
-                  <h3 className="text-[18px] font-semibold font-display mb-3" style={{ color: 'var(--text-primary)' }}>
-                    {demo.title}
-                  </h3>
-
-                  <p className="text-[14px] leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-                    {demo.subtitle}
-                  </p>
-
-                  <div className="space-y-2">
-                    {(DEMO_HIGHLIGHTS[demo.id] ?? []).map((item) => (
-                      <div key={item} className="flex items-center gap-2.5">
-                        <span
-                          className="w-1 h-1 rounded-full shrink-0"
-                          style={{ backgroundColor: accent, opacity: 0.65 }}
-                        />
-                        <p className="text-[12px]" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                          {item}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div
-                    className="mt-6 h-px"
-                    style={{ background: `linear-gradient(to right, ${accent}30, transparent)` }}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="landing-container">
-        <div className="landing-divider" />
-      </div>
-
-      {/* ── Features section ── */}
-      <section
-        ref={featureSectionRef.ref as React.RefObject<HTMLElement>}
-        className={`pt-24 sm:pt-32 pb-24 sm:pb-32 section-reveal ${featureSectionRef.inView ? 'in-view' : ''}`}
-      >
-        <div className="landing-container">
-          <div className="mb-16 sm:mb-20">
-            <p className="landing-kicker">Platform capabilities</p>
-            <h2 className="landing-section-title mt-5 max-w-[560px]">
-              Built as tooling, not just a static showcase
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {/* Stats row */}
+          <div className="lp-stats-row mt-10">
             {[
-              {
-                title: 'State sharing & embedding',
-                desc: 'Every demo serializes into the URL. Each primitive can be embedded in docs, blogs, and workshop material.',
-                icon: '⊕',
-              },
-              {
-                title: 'Step-through verification',
-                desc: 'Walk proof logic incrementally to see exactly how values evolve across each verification stage.',
-                icon: '▶',
-              },
-              {
-                title: 'High-fidelity canvas rendering',
-                desc: 'All diagrams are rendered on HTML5 canvas with spring-driven motion and HiDPI scaling.',
-                icon: '◇',
-              },
-              {
-                title: 'Research-ready presentation',
-                desc: 'Useful for conference demos, onboarding sessions, security reviews, and explanatory screenshots.',
-                icon: '∴',
-              },
-              {
-                title: 'Dark and light themes',
-                desc: 'System-aware theming with persistent user preference and coherent contrast across all controls.',
-                icon: '◑',
-              },
-              {
-                title: 'Composable architecture',
-                desc: 'A clean logic + renderer + React pattern across demos makes it easy to add new primitives.',
-                icon: '⬡',
-              },
-            ].map((item, i) => (
-              <div
-                key={item.title}
-                className="landing-feature-card"
-                style={{ animationDelay: featureSectionRef.inView ? `${i * 55}ms` : '0ms' }}
-              >
-                <span className="landing-feature-icon">{item.icon}</span>
-                <h3 className="mt-4 text-[16px] font-semibold font-display mb-2.5" style={{ color: 'var(--text-primary)' }}>
-                  {item.title}
-                </h3>
-                <p className="text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {item.desc}
-                </p>
+              ['04', 'Interactive Demos'],
+              ['∞', 'Shareable States'],
+              ['0', 'Dependencies'],
+              ['60', 'FPS Canvas'],
+            ].map(([v, l]) => (
+              <div key={l} className="lp-stat">
+                <span className="lp-stat-val">{v}</span>
+                <span className="lp-stat-label">{l}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="pb-28 sm:pb-36">
-        <div className="landing-container">
-          <div className="landing-cta-panel text-center">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-7"
-              style={{
-                background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)',
-                border: '1px solid var(--border)',
-                fontSize: '22px',
-              }}
-            >
-              ∴
+      {/* ── TICKER ── */}
+      <div className="lp-ticker">
+        <div className="lp-ticker-track">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span key={i} className="lp-ticker-item">
+              {item}
+              <span className="lp-ticker-dot">·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── ABOUT STRIP ── */}
+      <div
+        ref={aboutRef.ref}
+        className={`lp-section-reveal ${aboutRef.inView ? 'is-visible' : ''}`}
+      >
+        <div className="lp-container py-20 sm:py-28">
+          <div className="lp-about-grid">
+            <div>
+              <p className="lp-section-num">§ 00</p>
+              <h2 className="lp-section-heading mt-4">
+                The ZK visualization<br />
+                <span className="lp-dim">landscape is thin.</span>
+              </h2>
             </div>
-            <p className="landing-kicker">Start exploring</p>
-            <h2 className="landing-section-title mt-5 max-w-[540px] mx-auto">
-              Open the visual lab and test cryptographic intuition
-            </h2>
-            <p
-              className="mt-6 max-w-[500px] mx-auto"
-              style={{ fontSize: '15px', lineHeight: 1.75, color: 'var(--text-secondary)' }}
+            <div className="lp-about-body">
+              <p>zkREPL is a code playground, not a visualizer. Merkle tree demos are static and single-purpose. Conference talks rely on terminal output. Blog posts use static diagrams.</p>
+              <p className="mt-4">Theora is the missing piece — a unified, interactive, animated tool that lets you poke at the actual cryptographic primitives and build intuition before you write a line of Circom.</p>
+              <div className="lp-audience-grid mt-8">
+                {['Engineers building ZK systems', 'Cryptographers & researchers', 'Security auditors', 'Educators & DevRel'].map((a) => (
+                  <div key={a} className="lp-audience-item">
+                    <span className="lp-audience-dot" />
+                    {a}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DEMOS ── */}
+      <div
+        ref={demosRef.ref}
+        className={`lp-section-reveal ${demosRef.inView ? 'is-visible' : ''}`}
+      >
+        <div className="lp-container">
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+            <p className="lp-section-num">§ 01 – 04 · DEMO SUITE</p>
+          </div>
+
+          {DEMO_DATA.map((demo, i) => (
+            <button
+              key={demo.id}
+              onClick={() => navigate(`/app#${demo.id}`)}
+              className="lp-demo-row"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
-              No installation, no account, no setup. Launch the app, manipulate real inputs,
-              and share the exact state with your team.
+              <div className="lp-demo-left">
+                <span className="lp-demo-num">{demo.num}</span>
+                <h3 className="lp-demo-title">{demo.title}</h3>
+                <span className="lp-demo-tag">{demo.tag}</span>
+              </div>
+
+              <div className="lp-demo-right">
+                <p className="lp-demo-body">{demo.body}</p>
+                <ul className="lp-demo-features">
+                  {demo.features.map((f, j) => (
+                    <li key={j} className="lp-demo-feature-item">
+                      <span className="lp-demo-feature-num">{String(j + 1).padStart(2, '0')}</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="lp-demo-cta">
+                <span className="lp-demo-arrow">→</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FEATURES ── */}
+      <div
+        ref={featuresRef.ref}
+        className={`lp-section-reveal ${featuresRef.inView ? 'is-visible' : ''}`}
+      >
+        <div className="lp-container py-20 sm:py-28">
+          <div style={{ borderTop: '1px solid var(--border)', paddingBottom: '3rem', paddingTop: '2rem' }}>
+            <p className="lp-section-num">§ 05 · PLATFORM</p>
+            <h2 className="lp-section-heading mt-4">
+              Tooling, not a showcase.
+            </h2>
+          </div>
+
+          <div className="lp-features-grid">
+            {[
+              {
+                num: '01',
+                title: 'State sharing & embedding',
+                body: 'Every demo serializes into the URL. Share a link, embed an iframe in docs or Notion — the recipient sees exactly what you see.',
+              },
+              {
+                num: '02',
+                title: 'Step-through verification',
+                body: 'Walk proof logic incrementally. Watch hashes, witnesses, and evaluations evolve at each verification stage.',
+              },
+              {
+                num: '03',
+                title: 'High-fidelity canvas rendering',
+                body: 'All diagrams on HTML5 canvas. Spring-physics node positioning, 60fps animation, HiDPI scaling, zero SVG or charting libraries.',
+              },
+              {
+                num: '04',
+                title: 'Dark & light themes',
+                body: 'System-aware with localStorage persistence. Every element responds via CSS custom properties — no dark: class overrides.',
+              },
+              {
+                num: '05',
+                title: 'Fault injection',
+                body: 'Inject bad proofs, wrong witnesses, and invalid inputs — watch verification fail in real time and trace the exact failure path.',
+              },
+              {
+                num: '06',
+                title: 'Composable architecture',
+                body: 'Clean logic + renderer + React pattern across all demos. Adding a new primitive is a matter of implementing one interface.',
+              },
+            ].map((f) => (
+              <div key={f.num} className="lp-feature-item">
+                <span className="lp-feature-num">{f.num}</span>
+                <h4 className="lp-feature-title">{f.title}</h4>
+                <p className="lp-feature-body">{f.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── CTA ── */}
+      <div className="lp-container pb-28 sm:pb-36">
+        <div className="lp-cta-block">
+          <div className="lp-cta-inner">
+            <p className="lp-mono-label mb-5">§ 06 · START</p>
+            <h2 className="lp-cta-title">
+              Open the lab.<br />
+              Test your intuition.
+            </h2>
+            <p className="lp-cta-sub">
+              No installation. No account. No ceremony.<br />
+              Manipulate real cryptographic primitives in your browser.
             </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <button onClick={() => navigate('/app')} className="landing-btn-primary landing-btn-lg">
-                Launch Theora
+            <div className="flex flex-wrap gap-3 mt-10">
+              <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
+                Launch Theora →
               </button>
-              <a
-                href="https://github.com/LucidSamuel/theora"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="landing-btn-secondary landing-btn-lg no-underline"
-              >
+              <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
+                className="lp-btn-ghost lp-btn-lg no-underline">
                 View Source ↗
               </a>
             </div>
           </div>
+          <div className="lp-cta-mark" aria-hidden="true">∴</div>
         </div>
-      </section>
+      </div>
 
-      {/* ── Footer ── */}
+      {/* ── FOOTER ── */}
       <footer style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="landing-container py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            <span style={{ opacity: 0.35 }}>∴</span> theora — open source cryptography visual tooling
-          </span>
-          <div className="flex items-center gap-5">
-            <a
-              href="https://github.com/LucidSamuel/theora"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-underline landing-link"
-              style={{ fontSize: '12px', color: 'var(--text-muted)' }}
-            >
-              GitHub
-            </a>
-            <a
-              href="https://x.com/lucidzk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-underline landing-link"
-              style={{ fontSize: '12px', color: 'var(--text-muted)' }}
-            >
-              @lucidzk
-            </a>
+        <div className="lp-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="lp-mono-label">∴ theora — open source cryptography visual tooling · MIT</span>
+          <div className="flex gap-6">
+            <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
+              className="lp-footer-link no-underline">GitHub</a>
+            <a href="https://x.com/lucidzk" target="_blank" rel="noopener noreferrer"
+              className="lp-footer-link no-underline">@lucidzk</a>
           </div>
         </div>
       </footer>
