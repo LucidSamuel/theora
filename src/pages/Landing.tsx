@@ -144,7 +144,19 @@ export function Landing() {
           background: 'radial-gradient(ellipse 90% 60% at 50% 100%, var(--bg-primary) 0%, transparent 60%)',
         }} />
 
-        <div className="lp-container relative flex flex-col justify-center h-full py-16 sm:py-20" style={{ zIndex: 10 }}>
+        {/* Ticker pinned to bottom of hero */}
+        <div className="absolute bottom-0 left-0 right-0 lp-ticker" style={{ zIndex: 10 }}>
+          <div className="lp-ticker-track">
+            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+              <span key={i} className="lp-ticker-item">
+                {item}
+                <span className="lp-ticker-dot">·</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="lp-container relative flex flex-col justify-center h-full py-16 sm:py-20 pb-24 sm:pb-28" style={{ zIndex: 10 }}>
 
           {/* Top label row */}
           <div className="flex items-center justify-between mb-8 sm:mb-10">
@@ -191,18 +203,6 @@ export function Landing() {
           </div>
         </div>
       </section>
-
-      {/* ── TICKER ── */}
-      <div className="lp-ticker">
-        <div className="lp-ticker-track">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} className="lp-ticker-item">
-              {item}
-              <span className="lp-ticker-dot">·</span>
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* ── ABOUT STRIP ── */}
       <div
