@@ -4,8 +4,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { DEMOS } from '@/types';
 import { HeroAnimation } from '@/components/landing/HeroAnimation';
 
-const PRIMITIVES = ['Merkle Trees', 'Polynomial Commitments', 'RSA Accumulators', 'Recursive Proofs'];
-
 const DEMO_DATA = [
   {
     id: 'merkle',
@@ -66,31 +64,6 @@ const TICKER_ITEMS = [
   'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
   'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
 ];
-
-function CyclingPrimitive() {
-  const [index, setIndex] = useState(0);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setIndex(i => (i + 1) % PRIMITIVES.length);
-        setVisible(true);
-      }, 320);
-    }, 2800);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <span
-      className="landing-cycling"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(12px)' }}
-    >
-      {PRIMITIVES[index]}
-    </span>
-  );
-}
 
 function useScrollY() {
   const [y, setY] = useState(0);
@@ -180,22 +153,22 @@ export function Landing() {
           </div>
 
           {/* Main headline */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8 sm:gap-12">
+            <div className="flex-1 min-w-0">
               <h1 className="lp-hero-title">
-                Cryptography,<br />
-                made<br />
-                <CyclingPrimitive />
+                Crypto&shy;graphy,<br />
+                <span className="lp-hero-title-dim">made</span>{' '}
+                <span className="lp-hero-title-accent">visible.</span>
               </h1>
             </div>
 
-            <div className="sm:text-right sm:max-w-[320px] lg:max-w-[380px] flex-shrink-0">
+            <div className="sm:max-w-[340px] lg:max-w-[400px] flex-shrink-0">
               <p className="lp-hero-sub">
-                A unified visual lab for ZK primitives. Interactive canvas, step-through verification, and shareable state links — no setup required.
+                A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, and recursive proof composition. Interactive canvas, step-through verification, zero setup.
               </p>
-              <div className="flex sm:justify-end gap-3 mt-6">
+              <div className="flex flex-wrap gap-3 mt-7">
                 <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
-                  Explore Demos
+                  Explore Demos →
                 </button>
                 <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
                   className="lp-btn-ghost lp-btn-lg no-underline">
