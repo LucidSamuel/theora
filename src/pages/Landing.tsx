@@ -152,29 +152,26 @@ export function Landing() {
             <span className="lp-mono-label hidden sm:block">EST. 2025 · MIT LICENSE</span>
           </div>
 
-          {/* Main headline */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8 sm:gap-12">
-            <div className="flex-1 min-w-0">
-              <h1 className="lp-hero-title">
-                Cryptography,<br />
-                <span className="lp-hero-title-dim">made</span>{' '}
-                <span className="lp-hero-title-accent">visible.</span>
-              </h1>
-            </div>
+          {/* Full-width heading */}
+          <h1 className="lp-hero-title mb-8 sm:mb-10">
+            Cryptography,<br />
+            <span className="lp-hero-title-dim">made</span>{' '}
+            <span className="lp-hero-title-accent">visible.</span>
+          </h1>
 
-            <div className="sm:max-w-[340px] lg:max-w-[400px] flex-shrink-0">
-              <p className="lp-hero-sub">
-                A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, and recursive proof composition. Interactive canvas, step-through verification, zero setup.
-              </p>
-              <div className="flex flex-wrap gap-3 mt-12">
-                <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
-                  Explore Demos →
-                </button>
-                <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
-                  className="lp-btn-ghost lp-btn-lg no-underline">
-                  Source ↗
-                </a>
-              </div>
+          {/* Description + buttons row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-16">
+            <p className="lp-hero-sub sm:max-w-[480px]">
+              A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, and recursive proof composition. Interactive canvas, step-through verification, zero setup.
+            </p>
+            <div className="flex flex-wrap gap-3 flex-shrink-0">
+              <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
+                Explore Demos →
+              </button>
+              <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
+                className="lp-btn-ghost lp-btn-lg no-underline">
+                Source ↗
+              </a>
             </div>
           </div>
 
