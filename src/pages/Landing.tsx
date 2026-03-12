@@ -334,7 +334,7 @@ export function Landing() {
       </div>
 
       {/* ── CTA ── */}
-      <div className="lp-container pb-28 sm:pb-36">
+      <div className="lp-container pb-40 sm:pb-56">
         <div className="lp-cta-block">
           <div className="lp-cta-inner">
             <p className="lp-mono-label mb-5">§ 06 · START</p>
