@@ -128,7 +128,13 @@ export function AnimatedCanvas({
       role="img"
       tabIndex={0}
       aria-label="Interactive cryptographic visualization"
-      style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        touchAction: 'none',
+        cursor: camera && 'cursor' in camera ? String(camera.cursor) : 'default',
+      }}
       onWheel={onWheel}
       onMouseMove={onMouseMove}
       onMouseDown={onMouseDown}

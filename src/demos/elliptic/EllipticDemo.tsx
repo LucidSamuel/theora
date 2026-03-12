@@ -100,7 +100,7 @@ export function EllipticDemo(): JSX.Element {
 
       <div className="flex-1 relative min-w-0 overflow-hidden demo-canvas-area">
         <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:elliptic" />
       </div>
     </div>
   );

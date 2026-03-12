@@ -628,7 +628,7 @@ export function RecursiveDemo(): JSX.Element {
       {/* Canvas */}
       <div className="flex-1 relative">
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:recursive" />
       </div>
 
       {/* Stats Panel */}

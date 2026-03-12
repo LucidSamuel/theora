@@ -1,11 +1,58 @@
+import { useEffect, useRef, useState } from 'react';
 import type { CanvasCamera } from '@/hooks/useCanvasCamera';
 
 interface CanvasToolbarProps {
   camera: CanvasCamera;
   className?: string;
+  storageKey?: string;
 }
 
-export function CanvasToolbar({ camera, className }: CanvasToolbarProps) {
+export function CanvasToolbar({ camera, className, storageKey }: CanvasToolbarProps) {
+  const [offset, setOffset] = useState(() => {
+    if (!storageKey || typeof window === 'undefined') {
+      return { x: 0, y: 0 };
+    }
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return { x: 0, y: 0 };
+      const parsed = JSON.parse(raw) as { x?: number; y?: number };
+      return {
+        x: typeof parsed.x === 'number' ? parsed.x : 0,
+        y: typeof parsed.y === 'number' ? parsed.y : 0,
+      };
+    } catch {
+      return { x: 0, y: 0 };
+    }
+  });
+  const dragStateRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+
+  useEffect(() => {
+    if (!storageKey || typeof window === 'undefined') return;
+    window.localStorage.setItem(storageKey, JSON.stringify(offset));
+  }, [offset, storageKey]);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const drag = dragStateRef.current;
+      if (!drag) return;
+      setOffset({
+        x: drag.baseX + (event.clientX - drag.startX),
+        y: drag.baseY + (event.clientY - drag.startY),
+      });
+    };
+
+    const handlePointerUp = () => {
+      dragStateRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, []);
+
   return (
     <div
       className={className}
@@ -13,6 +60,7 @@ export function CanvasToolbar({ camera, className }: CanvasToolbarProps) {
         position: 'absolute',
         top: 12,
         right: 12,
+        transform: `translate(${offset.x}px, ${offset.y}px)`,
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
@@ -29,7 +77,43 @@ export function CanvasToolbar({ camera, className }: CanvasToolbarProps) {
         }}
       >
         <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-          View Tools
+          <div
+            onPointerDown={(event) => {
+              dragStateRef.current = {
+                startX: event.clientX,
+                startY: event.clientY,
+                baseX: offset.x,
+                baseY: offset.y,
+              };
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              cursor: 'grab',
+              userSelect: 'none',
+              touchAction: 'none',
+            }}
+            aria-label="Drag view tools"
+          >
+            <span>View Tools</span>
+            <span style={{ fontSize: 11, opacity: 0.65 }}>::</span>
+          </div>
+        </div>
+        <div className="mb-2 flex gap-1.5">
+          <ToolbarButton
+            label="↖"
+            onClick={() => camera.setMode('inspect')}
+            title="Inspect mode"
+            active={camera.mode === 'inspect'}
+          />
+          <ToolbarButton
+            label="✋"
+            onClick={() => camera.setMode('pan')}
+            title="Hand pan mode"
+            active={camera.mode === 'pan'}
+          />
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           <ToolbarButton label="+" onClick={() => camera.zoomBy(1.15)} title="Zoom in" />
@@ -45,7 +129,7 @@ export function CanvasToolbar({ camera, className }: CanvasToolbarProps) {
           </div>
         </div>
         <div className="mt-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Wheel or pinch to zoom. Arrow keys pan. <span className="font-mono">0</span> resets.
+          Drag the header to move this panel. Hand mode uses left-drag with a grab cursor. Wheel or pinch zooms. <span className="font-mono">0</span> resets.
         </div>
       </div>
     </div>
@@ -56,9 +140,10 @@ interface ToolbarButtonProps {
   label: string;
   onClick: () => void;
   title: string;
+  active?: boolean;
 }
 
-function ToolbarButton({ label, onClick, title }: ToolbarButtonProps) {
+function ToolbarButton({ label, onClick, title, active = false }: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -66,6 +151,8 @@ function ToolbarButton({ label, onClick, title }: ToolbarButtonProps) {
       onClick={onClick}
       title={title}
       aria-label={title}
+      aria-pressed={active}
+      style={active ? { background: 'var(--button-bg-strong)', color: 'var(--text-primary)' } : undefined}
     >
       {label}
     </button>

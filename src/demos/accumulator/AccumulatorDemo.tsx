@@ -904,7 +904,7 @@ export function AccumulatorDemo() {
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
         />
-        <CanvasToolbar camera={camera} />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:accumulator" />
       </div>
 
       {/* Right History Panel */}

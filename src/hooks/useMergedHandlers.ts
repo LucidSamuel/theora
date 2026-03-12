@@ -25,7 +25,11 @@ export function mergeCanvasHandlers(
     onMouseDown: merge(camera.handlers.onMouseDown, interaction.handlers.onMouseDown),
     onMouseUp: merge(camera.handlers.onMouseUp, interaction.handlers.onMouseUp),
     onMouseLeave: merge(camera.handlers.onMouseLeave, interaction.handlers.onMouseLeave),
-    onClick: interaction.handlers.onClick,
+    onClick: (...args: Parameters<NonNullable<typeof interaction.handlers.onClick>>) => {
+      if (camera.shouldHandleClick()) {
+        interaction.handlers.onClick(...args);
+      }
+    },
     onTouchStart: merge(camera.handlers.onTouchStart, interaction.handlers.onTouchStart),
     onTouchMove: merge(camera.handlers.onTouchMove, interaction.handlers.onTouchMove),
     onTouchEnd: merge(camera.handlers.onTouchEnd, interaction.handlers.onTouchEnd),

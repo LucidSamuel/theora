@@ -722,7 +722,7 @@ export function PolynomialDemo() {
       {/* Canvas */}
       <div className="flex-1 relative">
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:polynomial" />
       </div>
     </div>
   );
