@@ -144,10 +144,10 @@ export function Landing() {
           background: 'radial-gradient(ellipse 90% 60% at 50% 100%, var(--bg-primary) 0%, transparent 60%)',
         }} />
 
-        <div className="lp-container relative flex flex-col justify-end h-full pb-14 sm:pb-18" style={{ zIndex: 10 }}>
+        <div className="lp-container relative flex flex-col justify-center h-full py-16 sm:py-20" style={{ zIndex: 10 }}>
 
           {/* Top label row */}
-          <div className="flex items-center justify-between mb-10 sm:mb-14">
+          <div className="flex items-center justify-between mb-8 sm:mb-10">
             <span className="lp-mono-label">∴ cryptographic primitive visualizer</span>
             <span className="lp-mono-label hidden sm:block">EST. 2025 · MIT LICENSE</span>
           </div>
@@ -179,7 +179,7 @@ export function Landing() {
           </div>
 
           {/* Stats row */}
-          <div className="lp-stats-row mt-10">
+          <div className="lp-stats-row mt-8">
             {[
               ['04', 'Interactive Demos'],
               ['∞', 'Shareable States'],
