@@ -1,0 +1,87 @@
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+
+const originalWindow = (globalThis as { window?: unknown }).window;
+
+beforeEach(() => {
+  const mockLocation = {
+    search: '',
+    hash: '',
+    pathname: '/',
+  };
+  const mockHistory = {
+    replaceState: (_state: unknown, _title: string, url: string) => {
+      const parsed = new URL(url, 'https://theora.test');
+      mockLocation.pathname = parsed.pathname;
+      mockLocation.search = parsed.search;
+      mockLocation.hash = parsed.hash;
+    },
+  };
+
+  Object.defineProperty(globalThis, 'window', {
+    value: {
+      location: mockLocation,
+      history: mockHistory,
+    },
+    configurable: true,
+  });
+});
+
+afterEach(() => {
+  if (originalWindow === undefined) {
+    delete (globalThis as { window?: unknown }).window;
+  } else {
+    Object.defineProperty(globalThis, 'window', { value: originalWindow, configurable: true });
+  }
+});
+
+describe('resolveGitHubImportSource', () => {
+  it('converts github blob URLs to raw URLs', () => {
+    const resolved = resolveGitHubImportSource('https://github.com/foo/bar/blob/main/examples/theora.json');
+    expect(resolved).toEqual({
+      kind: 'direct',
+      url: 'https://raw.githubusercontent.com/foo/bar/main/examples/theora.json',
+    });
+  });
+
+  it('converts gist page URLs to the gist api', () => {
+    const resolved = resolveGitHubImportSource('https://gist.github.com/user/abcdef123456');
+    expect(resolved).toEqual({
+      kind: 'gist-api',
+      url: 'https://api.github.com/gists/abcdef123456',
+    });
+  });
+});
+
+describe('parseTheoraImport', () => {
+  it('accepts a supported import envelope', () => {
+    const parsed = parseTheoraImport('{"demo":"merkle","state":{"leaves":["a","b"]}}');
+    expect(parsed.demo).toBe('merkle');
+  });
+
+  it('rejects unsupported demo ids', () => {
+    expect(() => parseTheoraImport('{"demo":"lookup","state":{}}')).toThrow();
+  });
+});
+
+describe('export envelope helpers', () => {
+  it('extracts the current supported demo state from the hash', () => {
+    window.history.replaceState(null, '', '/app#merkle|%7B%22leaves%22%3A%5B%22a%22%2C%22b%22%5D%7D');
+    const payload = getCurrentExportEnvelope('merkle');
+    expect(payload).toEqual({
+      version: 1,
+      demo: 'merkle',
+      state: { leaves: ['a', 'b'] },
+    });
+  });
+
+  it('returns null for unsupported demos', () => {
+    expect(getCurrentExportEnvelope('lookup')).toBeNull();
+  });
+
+  it('serializes export envelopes as pretty json', () => {
+    const json = serializeTheoraImport({ version: 1, demo: 'recursive', state: { depth: 3 } });
+    expect(json).toContain('"demo": "recursive"');
+    expect(json).toContain('"depth": 3');
+  });
+});

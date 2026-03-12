@@ -125,6 +125,42 @@ Add an interactive diagram to any page:
 
 Embed mode hides the sidebar and header, showing only the canvas and controls. Works for every demo, including `elliptic`, `fiat-shamir`, `circuit`, and `lookup`.
 
+### GitHub Import
+
+Theora now supports structured import from public GitHub and Gist sources.
+
+Available in v1:
+
+- **Import from public raw GitHub URLs**
+- **Import from GitHub blob URLs** (`github.com/.../blob/...`) via automatic raw URL conversion
+- **Import from public Gists** by reading `theora.json` or the first JSON file
+- **Export current supported demos** as `theora.json`
+- **Copy JSON + open Gist** helper workflow for manual public gist creation
+- **Strict schema**: `{"demo":"...","state":{...}}`
+- **Supported demos**: `merkle`, `polynomial`, `accumulator`, `recursive`
+
+Still intentionally out of scope:
+
+- Full repo ingestion
+- Private repo auth
+- Arbitrary codebase parsing
+- "Connect GitHub and auto-detect everything"
+- Direct authenticated Gist creation via API (next logical step, not in this first slice)
+
+Example import payload:
+
+```json
+{
+  "demo": "merkle",
+  "state": {
+    "leaves": ["alpha", "beta", "gamma", "delta"],
+    "selectedLeafIndex": 2
+  }
+}
+```
+
+The goal is reproducibility, collaboration, and easy sharing of canonical examples for teaching, audits, and research.
+
 ### Dark/Light Theme
 
 - Toggle between dark and light mode from the header

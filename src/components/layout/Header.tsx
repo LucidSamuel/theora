@@ -7,13 +7,14 @@ interface HeaderProps {
   theme: Theme;
   onToggleTheme: () => void;
   onToggleInfo: () => void;
+  onOpenImport: () => void;
   infoOpen: boolean;
   navCollapsed: boolean;
   onToggleNav: () => void;
   onSwitchDemo?: (id: DemoId) => void;
 }
 
-export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
+export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenImport, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
 
   return (
@@ -46,6 +47,22 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
         </span>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={onOpenImport}
+          className="h-7 px-2 hidden sm:flex items-center justify-center rounded-md text-[10px]"
+          style={{ color: 'var(--text-muted)', backgroundColor: 'var(--button-bg)' }}
+          aria-label="Import from GitHub"
+        >
+          Import
+        </button>
+        <button
+          onClick={onOpenImport}
+          className="w-7 h-7 flex sm:hidden items-center justify-center rounded-md text-[10px]"
+          style={{ color: 'var(--text-muted)' }}
+          aria-label="Import from GitHub"
+        >
+          ↓
+        </button>
         <button
           onClick={onToggleNav}
           className="hidden md:flex w-7 h-7 items-center justify-center rounded-md text-[10px]"
