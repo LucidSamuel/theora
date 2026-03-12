@@ -692,11 +692,12 @@ export function MerkleDemo() {
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <ButtonControl
                   label="← Back"
                   onClick={() => dispatch({ type: 'STEP_BACK' })}
                   disabled={state.proofStep === 0}
+                  variant="secondary"
                 />
                 <ButtonControl
                   label="Next →"
@@ -714,7 +715,7 @@ export function MerkleDemo() {
                 )}
               </div>
 
-              <div className="mt-2 flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <ButtonControl label="Copy JSON" onClick={handleCopyProof} />
                 <ButtonControl label="Download" onClick={handleDownloadProof} variant="secondary" />
               </div>

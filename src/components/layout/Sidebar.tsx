@@ -11,36 +11,58 @@ interface SidebarProps {
 export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: SidebarProps) {
   return (
     <aside
-      className="hidden md:flex flex-col h-full border-r transition-all"
+      className="hidden md:flex flex-col h-full border-r"
       style={{
         borderColor: 'var(--border)',
         width: collapsed ? 56 : 224,
         backgroundColor: 'var(--bg-primary)',
         padding: collapsed ? '0 8px 24px' : '0 16px 24px',
+        transition: 'width 200ms ease, padding 200ms ease',
       }}
     >
-      {/* Logo row — exactly 48px tall, matching the header height */}
+      {/* Logo row — matches header height */}
       <div
-        className="flex items-center shrink-0"
+        className="flex items-center justify-between shrink-0"
         style={{
           height: 48,
           borderBottom: '1px solid var(--border)',
           marginBottom: 16,
-          justifyContent: collapsed ? 'center' : 'flex-start',
         }}
       >
-        <a href="/" className="no-underline block">
-          <span
-            className="text-[13px] font-semibold font-display"
-            style={{ color: 'var(--text-primary)' }}
+        {collapsed ? (
+          <button
+            onClick={onToggleCollapse}
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            aria-label="Expand sidebar"
           >
-            {collapsed ? (
-              <span style={{ opacity: 0.4 }}>∴</span>
-            ) : (
-              <><span style={{ opacity: 0.4 }}>∴</span> theora</>
-            )}
-          </span>
-        </a>
+            <span
+              className="text-[13px] font-semibold font-display"
+              style={{ color: 'var(--text-primary)', opacity: 0.35 }}
+            >
+              ∴
+            </span>
+          </button>
+        ) : (
+          <>
+            <a href="/" className="no-underline block">
+              <span
+                className="text-[13px] font-semibold font-display"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <span style={{ opacity: 0.35 }}>∴</span> theora
+              </span>
+            </a>
+            <button
+              onClick={onToggleCollapse}
+              className="w-7 h-7 flex items-center justify-center rounded-md text-[13px]"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', flexShrink: 0 }}
+              aria-label="Collapse sidebar"
+            >
+              ‹
+            </button>
+          </>
+        )}
       </div>
 
       {/* Nav */}
@@ -61,6 +83,7 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
               }}
               aria-current={isActive ? 'page' : undefined}
+              title={collapsed ? demo.title : undefined}
             >
               {isActive && (
                 <span

@@ -61,19 +61,24 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
       <div className="flex items-center gap-0.5">
         <button
           onClick={onOpenImport}
-          className="h-7 px-2 hidden sm:flex items-center justify-center rounded-md text-[10px]"
-          style={{ color: 'var(--text-muted)', backgroundColor: 'var(--button-bg)' }}
-          aria-label="Import from GitHub"
+          className="h-7 px-3 hidden sm:flex items-center gap-1.5 rounded-md text-[11px] font-medium border"
+          style={{
+            color: 'var(--text-secondary)',
+            backgroundColor: 'var(--button-bg)',
+            borderColor: 'var(--border)',
+          }}
+          aria-label="Import / Export"
         >
+          <span style={{ fontSize: 12, lineHeight: 1 }}>⇅</span>
           Import
         </button>
         <button
           onClick={onOpenImport}
-          className="w-7 h-7 flex sm:hidden items-center justify-center rounded-md text-[10px]"
+          className="w-7 h-7 flex sm:hidden items-center justify-center rounded-md text-[12px]"
           style={{ color: 'var(--text-muted)' }}
-          aria-label="Import from GitHub"
+          aria-label="Import / Export"
         >
-          ↓
+          ⇅
         </button>
         <button
           onClick={onToggleNav}

@@ -959,12 +959,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .github-import-modal {
-  width: min(560px, 100%);
+  width: min(520px, 100%);
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
-  box-shadow: 0 24px 64px rgba(10, 8, 6, 0.32);
-  padding: 20px;
+  background: var(--bg-primary);
+  box-shadow: 0 24px 64px rgba(10, 8, 6, 0.28);
+  padding: 24px;
 }
 
 .github-import-modal__header {

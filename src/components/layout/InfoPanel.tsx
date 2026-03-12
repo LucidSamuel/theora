@@ -48,11 +48,19 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
         </span>
       </button>
 
-      {open && (
-        <div style={{ marginTop: 14 }}>
-          {children}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          transition: 'grid-template-rows 200ms ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ marginTop: 14 }}>
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

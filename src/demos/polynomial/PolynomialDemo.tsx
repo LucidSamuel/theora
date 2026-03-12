@@ -550,14 +550,13 @@ export function PolynomialDemo() {
                   onChange={(value) => handleCoeffChange(index, value)}
                 />
               ))}
-              <div className="flex gap-2">
-                <ButtonControl label="Add Term" onClick={() => dispatch({ type: 'ADD_TERM' })} />
-                <ButtonControl
-                  label="Remove Term"
-                  onClick={() => dispatch({ type: 'REMOVE_TERM' })}
-                  disabled={state.coefficients.length <= 1}
-                />
-              </div>
+              <ButtonControl label="+ Add Term" onClick={() => dispatch({ type: 'ADD_TERM' })} variant="secondary" />
+              <ButtonControl
+                label="− Remove Term"
+                onClick={() => dispatch({ type: 'REMOVE_TERM' })}
+                disabled={state.coefficients.length <= 1}
+                variant="secondary"
+              />
             </ControlGroup>
 
             <ControlGroup label="Compare Polynomials">
