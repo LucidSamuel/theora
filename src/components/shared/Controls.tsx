@@ -13,7 +13,7 @@ export function ControlGroup({ label, children }: ControlGroupProps) {
       >
         {label}
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="flex flex-col gap-4">{children}</div>
     </div>
   );
 }

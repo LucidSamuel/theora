@@ -682,7 +682,7 @@ export function AccumulatorDemo() {
                 value={state.batchPrimes}
                 onChange={(e) => dispatch({ type: 'SET_BATCH_PRIMES', primes: e.target.value })}
                 placeholder="Enter primes separated by commas (e.g., 3,5,7,11)"
-                className="w-full h-20 px-3 py-2 text-xs rounded resize-none mt-2"
+                className="w-full h-20 px-3 py-2 text-xs rounded resize-none"
                 style={{
                   backgroundColor: 'var(--bg-primary)',
                   color: 'var(--text-primary)',

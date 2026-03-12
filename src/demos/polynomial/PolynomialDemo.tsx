@@ -606,7 +606,7 @@ export function PolynomialDemo() {
               onClick={() => dispatch({ type: 'CLEAR_LAGRANGE' })}
             />
             {state.coefficients.length > 0 && (
-              <div className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 <p>Computed coefficients:</p>
                 <ul className="mt-1 list-inside list-disc">
                   {state.coefficients.map((c, i) => (

@@ -601,13 +601,13 @@ export function MerkleDemo() {
             />
 
           {state.leaves.length > 64 && (
-            <div className="mt-2 text-xs" style={{ color: '#f59e0b' }}>
+            <div className="text-xs" style={{ color: '#f59e0b' }}>
               Large tree detected. Using FNV-1a for performance.
             </div>
           )}
 
           {state.isBuilding && (
-            <div className="mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>Building…</div>
+            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Building…</div>
           )}
         </ControlGroup>
 
@@ -708,7 +708,7 @@ export function MerkleDemo() {
                 />
               </div>
 
-              <div className="mt-2 rounded p-2 text-xs panel-inset">
+              <div className="rounded p-2 text-xs panel-inset">
                 <div className="font-semibold mb-1">Current Hash</div>
                 {state.proofProgressHash ? (
                   <HashBadge hash={state.proofProgressHash} />
@@ -724,7 +724,7 @@ export function MerkleDemo() {
 
               {state.proofVerified !== null && (
                 <div
-                  className="mt-2 rounded p-2 text-xs"
+                  className="rounded p-2 text-xs"
                   style={{
                     backgroundColor: state.proofVerified ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                     color: state.proofVerified ? '#22c55e' : '#ef4444',
