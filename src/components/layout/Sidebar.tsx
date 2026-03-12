@@ -19,30 +19,6 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
         padding: collapsed ? '24px 8px' : '24px 16px',
       }}
     >
-      {/* Logo row */}
-      <div className="flex items-center justify-between mb-8">
-        <a href="/" className="no-underline block">
-          <span
-            className="text-[13px] font-semibold font-display"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {collapsed ? (
-              <span style={{ opacity: 0.4 }}>∴</span>
-            ) : (
-              <><span style={{ opacity: 0.4 }}>∴</span> theora</>
-            )}
-          </span>
-        </a>
-        <button
-          onClick={onToggleCollapse}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-[11px]"
-          style={{ color: 'var(--text-muted)' }}
-          aria-label="Collapse sidebar"
-        >
-          {collapsed ? '›' : '‹'}
-        </button>
-      </div>
-
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-0.5" role="navigation" aria-label="Demo navigation">
         {DEMOS.map((demo) => {
