@@ -655,15 +655,17 @@ export function AccumulatorDemo() {
         )}
 
         <ControlGroup label="Add Element">
-          <TextInput
-            value={primeInput}
-            onChange={setPrimeInput}
-            placeholder="Enter prime"
-            onSubmit={handleAddPrime}
-          />
-          <div className="flex gap-3">
-            <ButtonControl onClick={handleAddPrime} label="Add" />
-            <ButtonControl onClick={handleRandomPrime} label="Random" />
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={primeInput}
+              onChange={setPrimeInput}
+              placeholder="Enter prime"
+              onSubmit={handleAddPrime}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonControl onClick={handleAddPrime} label="Add" />
+              <ButtonControl onClick={handleRandomPrime} label="Random" />
+            </div>
           </div>
         </ControlGroup>
 
@@ -768,15 +770,17 @@ export function AccumulatorDemo() {
         )}
 
         <ControlGroup label="Non-Membership">
-          <TextInput
-            value={nonMemberInput}
-            onChange={setNonMemberInput}
-            placeholder="Prime not in set"
-            onSubmit={handleNonMemberSet}
-          />
-          <div className="flex gap-3">
-            <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
-            <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={nonMemberInput}
+              onChange={setNonMemberInput}
+              placeholder="Prime not in set"
+              onSubmit={handleNonMemberSet}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
+              <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
+            </div>
           </div>
           {state.nonMembership && (
             <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
