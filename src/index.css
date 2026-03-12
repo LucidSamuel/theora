@@ -295,13 +295,13 @@ body::before {
 
 .lp-hero-title {
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 8.5vw, 8.5rem);
+  font-size: clamp(2.8rem, 5.2vw, 5.2rem);
   font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.055em;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
   color: var(--text-primary);
-  hyphens: auto;
-  overflow-wrap: break-word;
+  hyphens: none;
+  white-space: nowrap;
 }
 
 .lp-hero-title-dim {

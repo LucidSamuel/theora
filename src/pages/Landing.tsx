@@ -156,7 +156,7 @@ export function Landing() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8 sm:gap-12">
             <div className="flex-1 min-w-0">
               <h1 className="lp-hero-title">
-                Crypto&shy;graphy,<br />
+                Cryptography,<br />
                 <span className="lp-hero-title-dim">made</span>{' '}
                 <span className="lp-hero-title-accent">visible.</span>
               </h1>
