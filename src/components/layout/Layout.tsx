@@ -12,10 +12,11 @@ interface LayoutProps {
   onSwitchDemo: (id: DemoId) => void;
   theme: Theme;
   onToggleTheme: () => void;
+  onOpenImport: () => void;
   children: ReactNode;
 }
 
-export function Layout({ activeDemo, onSwitchDemo, theme, onToggleTheme, children }: LayoutProps) {
+export function Layout({ activeDemo, onSwitchDemo, theme, onToggleTheme, onOpenImport, children }: LayoutProps) {
   const [infoOpen, setInfoOpen] = useState(true);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const isEmbed = Boolean(getSearchParam('embed'));
@@ -33,6 +34,7 @@ export function Layout({ activeDemo, onSwitchDemo, theme, onToggleTheme, childre
               theme={theme}
               onToggleTheme={onToggleTheme}
               onToggleInfo={() => setInfoOpen((v) => !v)}
+              onOpenImport={onOpenImport}
               infoOpen={infoOpen}
               navCollapsed={navCollapsed}
               onToggleNav={() => setNavCollapsed((v) => !v)}

@@ -29,6 +29,7 @@ interface AnimatedCanvasProps {
   onTouchStart?: (e: React.TouchEvent<HTMLCanvasElement>) => void;
   onTouchMove?: (e: React.TouchEvent<HTMLCanvasElement>) => void;
   onTouchEnd?: (e: React.TouchEvent<HTMLCanvasElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLCanvasElement>) => void;
 }
 
 const DEFAULT_CAMERA: CameraState = { panX: 0, panY: 0, zoom: 1 };
@@ -36,7 +37,7 @@ const DEFAULT_CAMERA: CameraState = { panX: 0, panY: 0, zoom: 1 };
 export function AnimatedCanvas({
   draw, className, camera, onCanvas,
   onWheel, onMouseMove, onMouseDown, onMouseUp, onMouseLeave, onClick,
-  onTouchStart, onTouchMove, onTouchEnd,
+  onTouchStart, onTouchMove, onTouchEnd, onKeyDown,
 }: AnimatedCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawRef = useRef(draw);
@@ -125,8 +126,15 @@ export function AnimatedCanvas({
       ref={canvasRef}
       className={className}
       role="img"
+      tabIndex={0}
       aria-label="Interactive cryptographic visualization"
-      style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        touchAction: 'none',
+        cursor: camera && 'cursor' in camera ? String(camera.cursor) : 'default',
+      }}
       onWheel={onWheel}
       onMouseMove={onMouseMove}
       onMouseDown={onMouseDown}
@@ -136,6 +144,7 @@ export function AnimatedCanvas({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onKeyDown={onKeyDown}
     />
   );
 }

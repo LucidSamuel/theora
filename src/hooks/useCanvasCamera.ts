@@ -4,18 +4,26 @@ export interface CanvasCamera {
   panX: number;
   panY: number;
   zoom: number;
+  mode: 'inspect' | 'pan';
+  cursor: string;
   /** Convert screen-space CSS coords to world-space coords */
   toWorld: (screenX: number, screenY: number) => { x: number; y: number };
   /** Reset camera to default */
   reset: () => void;
+  panBy: (dx: number, dy: number) => void;
+  zoomBy: (factor: number) => void;
+  setMode: (mode: 'inspect' | 'pan') => void;
+  shouldHandleClick: () => boolean;
   handlers: {
     onWheel: (e: ReactWheelEvent<HTMLCanvasElement>) => void;
     onMouseDown: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
     onMouseMove: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
     onMouseUp: (e: ReactMouseEvent<HTMLCanvasElement>) => void;
+    onMouseLeave: () => void;
     onTouchStart: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
     onTouchMove: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
     onTouchEnd: (e: ReactTouchEvent<HTMLCanvasElement>) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLCanvasElement>) => void;
   };
 }
 
@@ -26,7 +34,9 @@ export function useCanvasCamera(): CanvasCamera {
   const panXRef = useRef(0);
   const panYRef = useRef(0);
   const zoomRef = useRef(1);
+  const modeRef = useRef<'inspect' | 'pan'>('inspect');
   const isPanningRef = useRef(false);
+  const suppressClickRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOriginRef = useRef({ x: 0, y: 0 });
 
@@ -45,6 +55,23 @@ export function useCanvasCamera(): CanvasCamera {
     panYRef.current = 0;
     zoomRef.current = 1;
   }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    panXRef.current += dx;
+    panYRef.current += dy;
+  }, []);
+
+  const zoomBy = useCallback((factor: number) => {
+    zoomRef.current = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomRef.current * factor));
+  }, []);
+
+  const setMode = useCallback((mode: 'inspect' | 'pan') => {
+    modeRef.current = mode;
+    isPanningRef.current = false;
+    suppressClickRef.current = false;
+  }, []);
+
+  const shouldHandleClick = useCallback(() => !suppressClickRef.current && modeRef.current !== 'pan', []);
 
   // Zoom centered on cursor
   const handleWheel = useCallback((e: ReactWheelEvent<HTMLCanvasElement>) => {
@@ -65,7 +92,9 @@ export function useCanvasCamera(): CanvasCamera {
 
   // Pan with middle mouse or Alt+left click
   const handleMouseDown = useCallback((e: ReactMouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    suppressClickRef.current = false;
+    const panIntent = e.button === 1 || (e.button === 0 && (e.altKey || modeRef.current === 'pan'));
+    if (panIntent) {
       e.preventDefault();
       isPanningRef.current = true;
       const rect = e.currentTarget.getBoundingClientRect();
@@ -79,11 +108,18 @@ export function useCanvasCamera(): CanvasCamera {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    if (Math.abs(x - panStartRef.current.x) > 2 || Math.abs(y - panStartRef.current.y) > 2) {
+      suppressClickRef.current = true;
+    }
     panXRef.current = panOriginRef.current.x + (x - panStartRef.current.x);
     panYRef.current = panOriginRef.current.y + (y - panStartRef.current.y);
   }, []);
 
   const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
     isPanningRef.current = false;
   }, []);
 
@@ -122,7 +158,45 @@ export function useCanvasCamera(): CanvasCamera {
 
   const handleTouchEnd = useCallback((_e: ReactTouchEvent<HTMLCanvasElement>) => {
     lastPinchDistRef.current = 0;
+    isPanningRef.current = false;
   }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLCanvasElement>) => {
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      zoomBy(1.1);
+      return;
+    }
+    if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      zoomBy(0.9);
+      return;
+    }
+    if (e.key === '0') {
+      e.preventDefault();
+      reset();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      panBy(0, 24);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      panBy(0, -24);
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      panBy(24, 0);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      panBy(-24, 0);
+    }
+  }, [panBy, reset, zoomBy]);
 
   const cameraRef = useRef<CanvasCamera | null>(null);
   if (!cameraRef.current) {
@@ -130,16 +204,29 @@ export function useCanvasCamera(): CanvasCamera {
       get panX() { return panXRef.current; },
       get panY() { return panYRef.current; },
       get zoom() { return zoomRef.current; },
+      get mode() { return modeRef.current; },
+      get cursor() {
+        if (modeRef.current === 'pan') {
+          return isPanningRef.current ? 'grabbing' : 'grab';
+        }
+        return 'default';
+      },
       toWorld,
       reset,
+      panBy,
+      zoomBy,
+      setMode,
+      shouldHandleClick,
       handlers: {
         onWheel: handleWheel,
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
         onMouseUp: handleMouseUp,
+        onMouseLeave: handleMouseLeave,
         onTouchStart: handleTouchStart,
         onTouchMove: handleTouchMove,
         onTouchEnd: handleTouchEnd,
+        onKeyDown: handleKeyDown,
       },
     };
   }
@@ -150,9 +237,11 @@ export function useCanvasCamera(): CanvasCamera {
     onMouseDown: handleMouseDown,
     onMouseMove: handleMouseMove,
     onMouseUp: handleMouseUp,
+    onMouseLeave: handleMouseLeave,
     onTouchStart: handleTouchStart,
     onTouchMove: handleTouchMove,
     onTouchEnd: handleTouchEnd,
+    onKeyDown: handleKeyDown,
   };
 
   return cameraRef.current;

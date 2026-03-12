@@ -31,6 +31,7 @@
   --status-error: #ef4444;
   --surface-element: rgba(12, 12, 14, 0.9);
   --surface-element-border: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.06);
 
   --font-display: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -68,6 +69,7 @@
   --status-error: #dc2626;
   --surface-element: rgba(255, 255, 255, 0.9);
   --surface-element-border: rgba(0, 0, 0, 0.08);
+  --bg-hover: rgba(0, 0, 0, 0.04);
 
   color-scheme: light;
 }
@@ -941,4 +943,119 @@ input[type="range"]::-moz-range-thumb {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+
+/* ── GitHub Import Modal ─────────────────────────────────────────── */
+.github-import-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(10px);
+}
+
+.github-import-modal {
+  width: min(560px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+  box-shadow: 0 24px 64px rgba(10, 8, 6, 0.32);
+  padding: 20px;
+}
+
+.github-import-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.github-import-modal__title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.github-import-modal__subtitle {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.github-import-modal__close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--button-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.github-import-modal__label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.github-import-modal__input {
+  width: 100%;
+  height: 42px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--button-bg);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.github-import-modal__help {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.github-import-modal__divider {
+  margin: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.github-import-modal__export {
+  margin-top: 4px;
+}
+
+.github-import-modal__title-sm {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.github-import-modal__error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  font-size: 12px;
+}
+
+.github-import-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.github-import-modal__actions--stack {
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
