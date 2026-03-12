@@ -7,7 +7,10 @@ interface ControlGroupProps {
 export function ControlGroup({ label, children }: ControlGroupProps) {
   return (
     <div className="control-section">
-      <div className="text-[10px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+      <div
+        className="text-[10px] font-semibold uppercase tracking-widest mb-4"
+        style={{ color: 'var(--text-muted)', letterSpacing: '0.12em' }}
+      >
         {label}
       </div>
       <div className="space-y-2.5">{children}</div>
@@ -28,7 +31,7 @@ interface SliderControlProps {
 export function SliderControl({ label, value, min, max, step = 1, onChange }: SliderControlProps) {
   const percent = ((value - min) / (max - min)) * 100;
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-2">
       <div className="flex justify-between text-[11px]">
         <span style={{ color: 'var(--text-muted)' }}>{label}</span>
         <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</span>
@@ -59,7 +62,7 @@ interface ToggleControlProps {
 export function ToggleControl({ label, checked, onChange }: ToggleControlProps) {
   return (
     <div className="flex items-center justify-between py-0.5">
-      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+      <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </span>
       <button
@@ -109,7 +112,8 @@ export function ButtonControl({ label, onClick, disabled, variant = 'primary' }:
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`w-full h-8 rounded-lg text-[11px] font-medium disabled:opacity-30 disabled:cursor-not-allowed ${isPrimary ? 'app-btn-primary' : 'app-btn-secondary'}`}
+      className={`w-full rounded-lg disabled:opacity-30 disabled:cursor-not-allowed ${isPrimary ? 'app-btn-primary' : 'app-btn-secondary'}`}
+      style={{ height: 36, fontSize: 12 }}
     >
       {label}
     </button>
@@ -135,12 +139,14 @@ export function TextInput({ value, onChange, placeholder, onSubmit }: TextInputP
       }}
       placeholder={placeholder}
       aria-label={placeholder}
-      className="w-full h-8 px-3 rounded-lg text-[11px] outline-none"
+      className="w-full px-3 rounded-lg text-[12px] outline-none"
       style={{
+        height: 36,
         backgroundColor: 'var(--button-bg)',
         color: 'var(--text-primary)',
         border: '1px solid var(--border)',
         transition: 'border-color 150ms ease',
+        fontFamily: 'var(--font-mono)',
       }}
     />
   );
@@ -156,15 +162,16 @@ interface SelectControlProps {
 
 export function SelectControl({ label, value, options, onChange }: SelectControlProps) {
   return (
-    <label className="flex flex-col gap-1">
+    <label className="flex flex-col gap-1.5">
       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-8 px-2.5 rounded-lg text-[11px] outline-none cursor-pointer"
+        className="w-full px-3 rounded-lg text-[12px] outline-none cursor-pointer"
         style={{
+          height: 36,
           backgroundColor: 'var(--button-bg)',
           color: 'var(--text-primary)',
           border: '1px solid var(--border)',

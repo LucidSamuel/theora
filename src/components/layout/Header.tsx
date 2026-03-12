@@ -18,14 +18,17 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
 
   return (
     <header
-      className="flex items-center justify-between px-5 h-12 border-b"
+      className="flex items-center justify-between border-b shrink-0"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
+        height: 48,
+        paddingLeft: 20,
+        paddingRight: 16,
       }}
     >
+      {/* Left — mobile demo tabs + title */}
       <div className="flex items-center gap-3">
-        {/* Mobile demo selector */}
         <div className="flex md:hidden gap-0.5">
           {DEMOS.map((d) => (
             <button
@@ -37,44 +40,53 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
               }}
               aria-label={d.title}
             >
-              <DemoIcon id={d.id} size={14} color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'} />
+              <DemoIcon
+                id={d.id}
+                size={14}
+                color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'}
+              />
             </button>
           ))}
         </div>
-        <span className="text-[13px] font-medium font-display" style={{ color: 'var(--text-primary)' }}>
+        <span
+          className="text-[13px] font-semibold font-display"
+          style={{ color: 'var(--text-primary)' }}
+        >
           {demo.title}
         </span>
       </div>
-      <div className="flex items-center gap-1">
+
+      {/* Right — icon controls */}
+      <div className="flex items-center gap-0.5">
         <button
           onClick={onToggleNav}
-          className="hidden md:flex w-7 h-7 items-center justify-center rounded-md text-[10px]"
+          className="hidden md:flex w-8 h-8 items-center justify-center rounded-md text-[11px]"
           style={{
             color: 'var(--text-muted)',
             backgroundColor: navCollapsed ? 'var(--button-bg)' : 'transparent',
           }}
           aria-label="Toggle sidebar"
         >
-          {navCollapsed ? '\u203A' : '\u2039'}
+          {navCollapsed ? '›' : '‹'}
         </button>
         <button
           onClick={onToggleInfo}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-[10px]"
+          className="w-8 h-8 flex items-center justify-center rounded-md text-[11px]"
           style={{
             color: infoOpen ? 'var(--text-primary)' : 'var(--text-muted)',
             backgroundColor: infoOpen ? 'var(--button-bg)' : 'transparent',
           }}
           aria-label="Toggle info panel"
         >
-          {infoOpen ? '\u2715' : '\u2139'}
+          {infoOpen ? '✕' : 'ℹ'}
         </button>
         <button
           onClick={onToggleTheme}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-[10px]"
+          className="w-8 h-8 flex items-center justify-center rounded-md text-[11px]"
           style={{ color: 'var(--text-muted)' }}
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {theme === 'dark' ? '\u2600' : '\u263E'}
+          {theme === 'dark' ? '☀' : '☾'}
         </button>
       </div>
     </header>

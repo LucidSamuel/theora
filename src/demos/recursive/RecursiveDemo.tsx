@@ -486,7 +486,7 @@ export function RecursiveDemo(): JSX.Element {
   return (
     <div className="flex h-full">
       {/* Controls */}
-      <div className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
 
         <ControlGroup label="Mode">
           <div className="flex gap-2">
@@ -630,7 +630,7 @@ export function RecursiveDemo(): JSX.Element {
       </div>
 
       {/* Stats Panel */}
-      <div className="w-48 shrink-0 overflow-y-auto p-5 border-l panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-48 shrink-0 overflow-y-auto border-l" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: '#22c55e' }}>
           Statistics
         </h3>

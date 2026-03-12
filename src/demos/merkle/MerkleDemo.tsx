@@ -572,10 +572,8 @@ export function MerkleDemo() {
   return (
     <div className="flex h-full">
       <div
-        className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface"
-        style={{
-          borderColor: 'var(--border)',
-        }}
+        className="w-72 shrink-0 overflow-y-auto border-r"
+        style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}
       >
         <ControlGroup label="Merkle Tree">
           <div className="space-y-2">

@@ -527,7 +527,7 @@ export function PolynomialDemo() {
   return (
     <div className="flex h-full">
       {/* Controls */}
-      <div className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         <ControlGroup label="Polynomial Mode">
           <ToggleControl
             label="Lagrange Interpolation"

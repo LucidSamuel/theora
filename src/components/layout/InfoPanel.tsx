@@ -122,10 +122,12 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
 
   return (
     <aside
-      className="hidden lg:flex flex-col h-full overflow-y-auto py-5 px-5 border-l panel-surface"
+      className="hidden lg:flex flex-col h-full overflow-y-auto border-l"
       style={{
         borderColor: 'var(--border)',
-        width: 300,
+        backgroundColor: 'var(--bg-primary)',
+        width: 288,
+        padding: '24px 20px',
       }}
     >
       <h3 className="text-[11px] font-bold uppercase tracking-wider mb-2 font-display" style={{ color: demo.accent }}>

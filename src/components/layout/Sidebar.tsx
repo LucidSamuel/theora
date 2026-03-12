@@ -11,81 +11,90 @@ interface SidebarProps {
 export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: SidebarProps) {
   return (
     <aside
-      className="hidden md:flex flex-col h-full py-5 px-2.5 border-r transition-all"
+      className="hidden md:flex flex-col h-full border-r transition-all"
       style={{
         borderColor: 'var(--border)',
-        width: collapsed ? 64 : 220,
+        width: collapsed ? 56 : 224,
         backgroundColor: 'var(--bg-primary)',
+        padding: collapsed ? '24px 8px' : '24px 16px',
       }}
     >
-      <div className="mb-6 px-1.5 flex items-center justify-between">
+      {/* Logo row */}
+      <div className="flex items-center justify-between mb-8">
         <a href="/" className="no-underline block">
-          <span className="text-[13px] font-semibold font-display" style={{ color: 'var(--text-primary)' }}>
-            {collapsed ? <span style={{ opacity: 0.4 }}>∴</span> : <><span style={{ opacity: 0.4 }}>∴</span> theora</>}
+          <span
+            className="text-[13px] font-semibold font-display"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {collapsed ? (
+              <span style={{ opacity: 0.4 }}>∴</span>
+            ) : (
+              <><span style={{ opacity: 0.4 }}>∴</span> theora</>
+            )}
           </span>
         </a>
         <button
           onClick={onToggleCollapse}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-[10px]"
+          className="w-6 h-6 flex items-center justify-center rounded-md text-[11px]"
           style={{ color: 'var(--text-muted)' }}
           aria-label="Collapse sidebar"
         >
-          {collapsed ? '\u203A' : '\u2039'}
+          {collapsed ? '›' : '‹'}
         </button>
       </div>
 
-      <nav className="flex-1 space-y-0.5" role="navigation" aria-label="Demo navigation">
+      {/* Nav */}
+      <nav className="flex-1 flex flex-col gap-0.5" role="navigation" aria-label="Demo navigation">
         {DEMOS.map((demo) => {
           const isActive = activeDemo === demo.id;
           return (
             <button
               key={demo.id}
               onClick={() => onSwitch(demo.id)}
-              className={
-                collapsed
-                  ? 'w-full flex items-center justify-center h-10 rounded-lg transition-all'
-                  : 'w-full flex items-center gap-3 px-3 h-10 rounded-lg text-left transition-all'
-              }
+              className="relative flex items-center rounded-lg transition-all text-left"
               style={{
+                gap: collapsed ? 0 : 10,
+                height: 38,
+                padding: collapsed ? '0' : '0 10px',
+                justifyContent: collapsed ? 'center' : 'flex-start',
                 backgroundColor: isActive ? 'var(--button-bg-strong)' : 'transparent',
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                position: 'relative',
               }}
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && (
                 <span
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-                  style={{
-                    height: 16,
-                    backgroundColor: 'var(--text-primary)',
-                  }}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full"
+                  style={{ width: 3, height: 16, backgroundColor: 'var(--text-primary)' }}
                 />
               )}
-              <DemoIcon id={demo.id} size={16} color={isActive ? 'var(--text-primary)' : 'var(--text-muted)'} />
+              <DemoIcon
+                id={demo.id}
+                size={15}
+                color={isActive ? 'var(--text-primary)' : 'var(--text-muted)'}
+              />
               {!collapsed && (
-                <span className="text-xs font-medium truncate">{demo.title}</span>
+                <span className="text-[12px] font-medium truncate">{demo.title}</span>
               )}
             </button>
           );
         })}
       </nav>
 
+      {/* Footer credit */}
       {!collapsed && (
-        <div className="mt-auto px-2 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-            <a
-              href="https://x.com/lucidzk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-underline"
-              style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-            >
-              Lucid Samuel
-            </a>
-          </p>
+        <div className="mt-auto pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+          <a
+            href="https://x.com/lucidzk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="no-underline text-[11px]"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            Lucid Samuel
+          </a>
         </div>
       )}
     </aside>

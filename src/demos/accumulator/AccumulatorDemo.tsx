@@ -643,7 +643,7 @@ export function AccumulatorDemo() {
   return (
     <div className="flex h-full">
       {/* Left Controls Panel */}
-      <div className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         {errorMsg && (
           <div className="mb-3 rounded px-3 py-2 text-xs" style={{
             backgroundColor: 'rgba(239,68,68,0.15)',
@@ -842,7 +842,7 @@ export function AccumulatorDemo() {
       </div>
 
       {/* Right History Panel */}
-      <div className="w-56 shrink-0 overflow-y-auto p-5 border-l panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-56 shrink-0 overflow-y-auto border-l" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#f59e0b' }}>History</h3>
         <div className="space-y-2">
           {state.history.length === 0 && (
