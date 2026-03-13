@@ -574,13 +574,11 @@ export function MerkleDemo() {
   return (
     <div className="flex h-full">
       <div
-        className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface"
-        style={{
-          borderColor: 'var(--border)',
-        }}
+        className="w-72 shrink-0 overflow-y-auto border-r"
+        style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}
       >
         <ControlGroup label="Merkle Tree">
-          <div className="space-y-2">
+          <div className="flex flex-col gap-3">
             <TextInput
               value={state.newLeafInput}
               onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
@@ -594,8 +592,7 @@ export function MerkleDemo() {
             />
           </div>
 
-          <div className="mt-4">
-            <SelectControl
+          <SelectControl
               label="Hash Function"
               value={state.hashMode}
               options={[
@@ -604,60 +601,50 @@ export function MerkleDemo() {
               ]}
               onChange={(value) => dispatch({ type: 'SET_HASH_MODE', mode: value as HashFunction })}
             />
-          </div>
 
           {state.leaves.length > 64 && (
-            <div className="mt-2 text-xs" style={{ color: '#f59e0b' }}>
+            <div className="text-xs" style={{ color: '#f59e0b' }}>
               Large tree detected. Using FNV-1a for performance.
             </div>
           )}
 
           {state.isBuilding && (
-            <div className="mt-2 text-xs text-gray-500">Building tree...</div>
+            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Building…</div>
           )}
         </ControlGroup>
 
         <ControlGroup label="Leaves">
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
             {state.leaves.length === 0 && (
-              <div className="text-xs text-gray-500">No leaves yet. Add some above.</div>
+              <div className="text-[11px] py-2" style={{ color: 'var(--text-muted)' }}>
+                No leaves yet. Add some above.
+              </div>
             )}
-          {state.leaves.map((leaf, index) => (
-            <div
-              key={index}
-                className="flex items-center gap-2 p-2 rounded"
-                style={{
-                  backgroundColor:
-                    state.selectedLeafIndex === index
-                      ? 'var(--bg-hover)'
-                      : 'transparent',
-                }}
+            {state.leaves.map((leaf, index) => (
+              <div
+                key={index}
+                className={`app-leaf-row${state.selectedLeafIndex === index ? ' is-selected' : ''}`}
               >
                 <input
                   type="text"
                   value={leaf}
-                  onChange={(e) =>
-                    dispatch({ type: 'EDIT_LEAF', index, value: e.target.value })
-                  }
-                  className="flex-1 px-2 py-1 text-xs rounded bg-transparent border"
-                  style={{ borderColor: 'var(--border)' }}
+                  onChange={(e) => dispatch({ type: 'EDIT_LEAF', index, value: e.target.value })}
+                  className="app-leaf-input"
+                  aria-label={`Leaf ${index}`}
                 />
                 <button
-                  onClick={() => dispatch({ type: 'REMOVE_LEAF', index })}
-                  className="px-2 py-1 text-xs rounded hover:bg-red-500/20 text-red-500"
-                >
-                  ×
-                </button>
-                <button
+                  className="app-leaf-prove"
                   onClick={() => dispatch({ type: 'GENERATE_PROOF', leafIndex: index })}
-                  className="px-2 py-1 text-xs rounded"
-                  style={{
-                    backgroundColor: 'var(--bg-hover)',
-                    color: 'var(--text-primary)',
-                  }}
                   disabled={!state.tree || state.isBuilding}
                 >
                   Prove
+                </button>
+                <button
+                  className="app-leaf-remove"
+                  onClick={() => dispatch({ type: 'REMOVE_LEAF', index })}
+                  aria-label={`Remove ${leaf}`}
+                >
+                  ×
                 </button>
               </div>
             ))}
@@ -665,12 +652,12 @@ export function MerkleDemo() {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
@@ -709,11 +696,12 @@ export function MerkleDemo() {
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <ButtonControl
                   label="← Back"
                   onClick={() => dispatch({ type: 'STEP_BACK' })}
                   disabled={state.proofStep === 0}
+                  variant="secondary"
                 />
                 <ButtonControl
                   label="Next →"
@@ -722,7 +710,7 @@ export function MerkleDemo() {
                 />
               </div>
 
-              <div className="mt-2 rounded p-2 text-xs panel-inset">
+              <div className="rounded p-2 text-xs panel-inset">
                 <div className="font-semibold mb-1">Current Hash</div>
                 {state.proofProgressHash ? (
                   <HashBadge hash={state.proofProgressHash} />
@@ -731,14 +719,14 @@ export function MerkleDemo() {
                 )}
               </div>
 
-              <div className="mt-2 flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <ButtonControl label="Copy JSON" onClick={handleCopyProof} />
                 <ButtonControl label="Download" onClick={handleDownloadProof} variant="secondary" />
               </div>
 
               {state.proofVerified !== null && (
                 <div
-                  className="mt-2 rounded p-2 text-xs"
+                  className="rounded p-2 text-xs"
                   style={{
                     backgroundColor: state.proofVerified ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                     color: state.proofVerified ? '#22c55e' : '#ef4444',

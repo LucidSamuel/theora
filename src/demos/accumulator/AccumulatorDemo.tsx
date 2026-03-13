@@ -678,7 +678,7 @@ export function AccumulatorDemo() {
   return (
     <div className="flex h-full">
       {/* Left Controls Panel */}
-      <div className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         {errorMsg && (
           <div className="mb-3 rounded px-3 py-2 text-xs" style={{
             backgroundColor: 'rgba(239,68,68,0.15)',
@@ -690,15 +690,17 @@ export function AccumulatorDemo() {
         )}
 
         <ControlGroup label="Add Element">
-          <TextInput
-            value={primeInput}
-            onChange={setPrimeInput}
-            placeholder="Enter prime"
-            onSubmit={handleAddPrime}
-          />
-          <div className="flex gap-2 mt-2">
-            <ButtonControl onClick={handleAddPrime} label="Add" />
-            <ButtonControl onClick={handleRandomPrime} label="Random" />
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={primeInput}
+              onChange={setPrimeInput}
+              placeholder="Enter prime"
+              onSubmit={handleAddPrime}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonControl onClick={handleAddPrime} label="Add" />
+              <ButtonControl onClick={handleRandomPrime} label="Random" />
+            </div>
           </div>
         </ControlGroup>
 
@@ -715,7 +717,7 @@ export function AccumulatorDemo() {
                 value={state.batchPrimes}
                 onChange={(e) => dispatch({ type: 'SET_BATCH_PRIMES', primes: e.target.value })}
                 placeholder="Enter primes separated by commas (e.g., 3,5,7,11)"
-                className="w-full h-20 px-3 py-2 text-xs rounded resize-none mt-2"
+                className="w-full h-20 px-3 py-2 text-xs rounded resize-none"
                 style={{
                   backgroundColor: 'var(--bg-primary)',
                   color: 'var(--text-primary)',
@@ -728,7 +730,7 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Elements">
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2.5 max-h-48 overflow-y-auto">
             {state.elements.length === 0 && (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No elements yet</p>
             )}
@@ -752,13 +754,14 @@ export function AccumulatorDemo() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => dispatch({ type: 'SELECT_ELEMENT', index })}
-                      className="px-2 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600"
+                      className="app-leaf-prove"
                     >
                       Select
                     </button>
                     <button
                       onClick={() => dispatch({ type: 'REMOVE_ELEMENT', index })}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                      className="app-leaf-remove"
+                      aria-label="Remove element"
                     >
                       ×
                     </button>
@@ -771,7 +774,6 @@ export function AccumulatorDemo() {
 
         {state.selectedIndex !== null && (
           <ControlGroup label="Witness">
-            <div className="space-y-2">
               <ButtonControl
                 onClick={() => dispatch({ type: 'COMPUTE_WITNESS' })}
                 label="Compute Witness"
@@ -799,7 +801,6 @@ export function AccumulatorDemo() {
                   )}
                 </>
               )}
-            </div>
           </ControlGroup>
         )}
 
@@ -835,15 +836,17 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Non-Membership">
-          <TextInput
-            value={nonMemberInput}
-            onChange={setNonMemberInput}
-            placeholder="Prime not in set"
-            onSubmit={handleNonMemberSet}
-          />
-          <div className="flex gap-2">
-            <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
-            <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={nonMemberInput}
+              onChange={setNonMemberInput}
+              placeholder="Prime not in set"
+              onSubmit={handleNonMemberSet}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
+              <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
+            </div>
           </div>
           {state.nonMembership && (
             <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
@@ -866,15 +869,13 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Parameters">
-          <div className="space-y-2">
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Modulus (n):</p>
-              <HashBadge hash={state.n.toString()} truncate={10} color="blue" />
-            </div>
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Generator (g):</p>
-              <HashBadge hash={state.g.toString()} truncate={10} color="purple" />
-            </div>
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Modulus (n):</p>
+            <HashBadge hash={state.n.toString()} truncate={10} color="blue" />
+          </div>
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Generator (g):</p>
+            <HashBadge hash={state.g.toString()} truncate={10} color="purple" />
           </div>
         </ControlGroup>
 
@@ -886,12 +887,12 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
       </div>
@@ -908,7 +909,7 @@ export function AccumulatorDemo() {
       </div>
 
       {/* Right History Panel */}
-      <div className="w-56 shrink-0 overflow-y-auto p-5 border-l panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-56 shrink-0 overflow-y-auto border-l" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#f59e0b' }}>History</h3>
         <div className="space-y-2">
           {state.history.length === 0 && (

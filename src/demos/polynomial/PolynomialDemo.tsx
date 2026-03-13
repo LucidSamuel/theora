@@ -528,7 +528,7 @@ export function PolynomialDemo() {
   return (
     <div className="flex h-full">
       {/* Controls */}
-      <div className="w-72 shrink-0 overflow-y-auto p-5 border-r panel-surface" style={{ borderColor: 'var(--border)' }}>
+      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
         <ControlGroup label="Polynomial Mode">
           <ToggleControl
             label="Lagrange Interpolation"
@@ -551,14 +551,13 @@ export function PolynomialDemo() {
                   onChange={(value) => handleCoeffChange(index, value)}
                 />
               ))}
-              <div className="flex gap-2">
-                <ButtonControl label="Add Term" onClick={() => dispatch({ type: 'ADD_TERM' })} />
-                <ButtonControl
-                  label="Remove Term"
-                  onClick={() => dispatch({ type: 'REMOVE_TERM' })}
-                  disabled={state.coefficients.length <= 1}
-                />
-              </div>
+              <ButtonControl label="+ Add Term" onClick={() => dispatch({ type: 'ADD_TERM' })} variant="secondary" />
+              <ButtonControl
+                label="− Remove Term"
+                onClick={() => dispatch({ type: 'REMOVE_TERM' })}
+                disabled={state.coefficients.length <= 1}
+                variant="secondary"
+              />
             </ControlGroup>
 
             <ControlGroup label="Compare Polynomials">
@@ -571,7 +570,7 @@ export function PolynomialDemo() {
                 <ButtonControl label="Resample Compare" onClick={handleResampleCompare} variant="secondary" />
               )}
               {state.compareEnabled && state.compareCoefficients && state.compareCoefficients.length > 0 && (
-                <div className="space-y-2">
+                <>
                   {state.compareCoefficients.map((coeff, index) => (
                     <SliderControl
                       key={`compare-${index}`}
@@ -588,7 +587,7 @@ export function PolynomialDemo() {
                       accentColor="#8b5a3c"
                     />
                   ))}
-                </div>
+                </>
               )}
               {state.compareEnabled && (
                 <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
@@ -608,7 +607,7 @@ export function PolynomialDemo() {
               onClick={() => dispatch({ type: 'CLEAR_LAGRANGE' })}
             />
             {state.coefficients.length > 0 && (
-              <div className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 <p>Computed coefficients:</p>
                 <ul className="mt-1 list-inside list-disc">
                   {state.coefficients.map((c, i) => (
@@ -623,22 +622,24 @@ export function PolynomialDemo() {
         )}
 
         <ControlGroup label="Evaluate">
-          <TextInput
-            value={evalInput}
-            onChange={setEvalInput}
-            placeholder="Enter x value"
-            onSubmit={() => {
-              handleEvaluate(evalInput);
-              setEvalInput('');
-            }}
-          />
-          {state.evalPoints.length > 0 && (
-            <ButtonControl
-              label={`Clear Points (${state.evalPoints.length})`}
-              onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
-              variant="secondary"
+          <div className="flex flex-col gap-3">
+            <TextInput
+              value={evalInput}
+              onChange={setEvalInput}
+              placeholder="Enter x value"
+              onSubmit={() => {
+                handleEvaluate(evalInput);
+                setEvalInput('');
+              }}
             />
-          )}
+            {state.evalPoints.length > 0 && (
+              <ButtonControl
+                label={`Clear Points (${state.evalPoints.length})`}
+                onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
+                variant="secondary"
+              />
+            )}
+          </div>
         </ControlGroup>
 
         <ControlGroup label="View">
@@ -646,17 +647,16 @@ export function PolynomialDemo() {
         </ControlGroup>
 
         <ControlGroup label="Share">
-          <div className="space-y-2">
-            <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-            <ButtonControl label="Copy Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Copy Embed Iframe" onClick={handleCopyEmbed} variant="secondary" />
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="grid grid-cols-2 gap-3">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Copy Audit Summary" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
           <ControlGroup label="KZG Commitment">
-            <div className="space-y-3">
             <ButtonControl
               label="1. Commit"
               onClick={handleKzgCommit}
@@ -715,7 +715,6 @@ export function PolynomialDemo() {
             <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
               Schwartz-Zippel intuition: two distinct degree‑d polynomials can agree on at most d points.
             </div>
-          </div>
         </ControlGroup>
       </div>
 

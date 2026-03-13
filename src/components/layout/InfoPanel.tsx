@@ -14,33 +14,53 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
 }
 
-function CollapsibleSection({ title, accent, defaultOpen = false, children }: CollapsibleSectionProps) {
+function CollapsibleSection({ title, defaultOpen = false, children }: CollapsibleSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="mb-4">
+    <div
+      style={{
+        borderTop: '1px solid var(--border)',
+        paddingTop: 18,
+        paddingBottom: 18,
+      }}
+    >
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full text-left cursor-pointer py-1"
-        style={{ background: 'none', border: 'none', padding: 0 }}
+        className="flex items-center justify-between w-full text-left"
+        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
-        <h4
-          className="text-[10px] font-bold uppercase tracking-wider"
-          style={{ color: accent }}
+        <span
+          className="text-[10px] font-bold uppercase"
+          style={{ color: 'var(--text-muted)', letterSpacing: '0.1em' }}
         >
           {title}
-        </h4>
+        </span>
         <span
-          className="text-[10px] transition-transform"
+          className="text-[10px]"
           style={{
             color: 'var(--text-muted)',
             transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
             display: 'inline-block',
+            transition: 'transform 150ms ease',
           }}
         >
           ▸
         </span>
       </button>
-      {open && <div className="mt-2">{children}</div>}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          transition: 'grid-template-rows 200ms ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ marginTop: 14 }}>
+            {children}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -64,7 +84,7 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
   },
   accumulator: {
     concepts: [
-      'The RSA accumulator relies on the Strong RSA assumption: given n and a random y, it\'s hard to find x and e>1 such that x^e = y mod n.',
+      "The RSA accumulator relies on the Strong RSA assumption: given n and a random y, it's hard to find x and e>1 such that x^e = y mod n.",
       'Non-membership proofs are also possible using Bezout coefficients from the extended GCD.',
       'Accumulators are used in anonymous credentials, stateless blockchains, and revocation systems.',
     ],
@@ -178,26 +198,51 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
 
   return (
     <aside
-      className="hidden lg:flex flex-col h-full overflow-y-auto py-4 px-4 border-l panel-surface"
+      className="hidden lg:flex flex-col h-full overflow-y-auto border-l"
       style={{
         borderColor: 'var(--border)',
-        width: 300,
+        backgroundColor: 'var(--bg-primary)',
+        width: 288,
+        padding: '24px 20px 32px',
       }}
     >
-      <h3 className="text-xs font-bold uppercase tracking-wider mb-1 font-display" style={{ color: demo.accent }}>
-        About {demo.title}
-      </h3>
-      <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
-        {demo.description}
-      </p>
+      {/* Demo title + description */}
+      <div style={{ paddingBottom: 20, marginBottom: 2 }}>
+        <h3
+          className="text-[10px] font-bold uppercase font-display"
+          style={{ color: demo.accent, letterSpacing: '0.1em', marginBottom: 10 }}
+        >
+          About {demo.title}
+        </h3>
+        <p
+          className="text-[12px] leading-relaxed"
+          style={{ color: 'var(--text-secondary)', lineHeight: 1.65 }}
+        >
+          {demo.description}
+        </p>
+      </div>
 
+      {/* Collapsible sections */}
       {contextEntry && (
         <CollapsibleSection title="Live Context" accent="var(--text-muted)" defaultOpen>
-          <div className="rounded border px-3 py-3 panel-inset" style={{ borderColor: 'var(--border)' }}>
-            <div className="text-[11px] font-semibold mb-1" style={{ color: demo.accent }}>
+          <div
+            className="rounded-lg"
+            style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              padding: '12px 14px',
+            }}
+          >
+            <div
+              className="text-[11px] font-semibold"
+              style={{ color: demo.accent, marginBottom: 6 }}
+            >
               {contextEntry.title}
             </div>
-            <div className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            <div
+              className="text-[12px] leading-relaxed"
+              style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}
+            >
               {contextEntry.body}
             </div>
           </div>
@@ -205,9 +250,18 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
       )}
 
       <CollapsibleSection title="Suggested Next" accent="var(--text-muted)" defaultOpen>
-        <ul className="space-y-3">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {nextSteps.map((step, i) => (
-            <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
+            <li
+              key={i}
+              style={{
+                fontSize: 12,
+                lineHeight: 1.55,
+                color: 'var(--text-secondary)',
+                paddingLeft: 12,
+                borderLeft: `2px solid ${demo.accent}`,
+              }}
+            >
               {step}
             </li>
           ))}
@@ -215,9 +269,18 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
       </CollapsibleSection>
 
       <CollapsibleSection title="Key Concepts" accent="var(--text-muted)">
-        <ul className="space-y-3">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {extra.concepts.map((c, i) => (
-            <li key={i} className="text-[11px] leading-relaxed pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: demo.accent }}>
+            <li
+              key={i}
+              style={{
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: 'var(--text-secondary)',
+                paddingLeft: 12,
+                borderLeft: `2px solid ${demo.accent}`,
+              }}
+            >
               {c}
             </li>
           ))}
@@ -225,12 +288,10 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
       </CollapsibleSection>
 
       <CollapsibleSection title="Mini Glossary" accent="var(--text-muted)">
-        <ul className="space-y-3">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {glossary.map((item, i) => (
-            <li key={i} className="text-[11px] leading-relaxed">
-              <span className="font-semibold" style={{ color: demo.accent }}>
-                {item.term}
-              </span>
+            <li key={i} style={{ fontSize: 12, lineHeight: 1.55 }}>
+              <span style={{ fontWeight: 600, color: demo.accent }}>{item.term}</span>
               <span style={{ color: 'var(--text-secondary)' }}> — {item.definition}</span>
             </li>
           ))}
@@ -238,9 +299,9 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
       </CollapsibleSection>
 
       <CollapsibleSection title="Further Reading" accent="var(--text-muted)">
-        <ul className="space-y-1">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {extra.resources.map((r, i) => (
-            <li key={i} className="text-[11px]" style={{ color: demo.accent }}>
+            <li key={i} style={{ fontSize: 12, color: demo.accent }}>
               {r}
             </li>
           ))}
