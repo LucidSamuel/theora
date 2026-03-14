@@ -841,6 +841,12 @@ body::before {
 
 /* ─── App panels ─── */
 
+.demo-sidebar {
+  padding: 24px 20px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border);
+}
+
 .panel-surface {
   background: var(--bg-primary);
   border: 1px solid var(--border);

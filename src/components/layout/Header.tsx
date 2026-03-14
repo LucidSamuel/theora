@@ -90,7 +90,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
 
   return (
     <header
-      className="flex items-center justify-between px-5 h-11 border-b"
+      className="flex items-center justify-between px-6 h-12 border-b"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',

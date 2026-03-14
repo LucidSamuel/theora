@@ -36,7 +36,7 @@ export function LookupDemo(): JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar panel-surface">
+      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
         <ControlGroup label="Lookup Table">
           <TextInput value={tableInput} onChange={setTableInput} placeholder="1,2,3,5,8,13" />
         </ControlGroup>

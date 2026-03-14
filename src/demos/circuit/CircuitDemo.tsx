@@ -43,7 +43,7 @@ export function CircuitDemo(): JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar panel-surface">
+      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
         <ControlGroup label="Witness">
           <SliderControl label="x" value={x} min={0} max={8} onChange={setX} />
           <SliderControl label="y" value={y} min={0} max={12} onChange={setY} />

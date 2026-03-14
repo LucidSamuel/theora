@@ -66,7 +66,7 @@ export function EllipticDemo(): JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar panel-surface">
+      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
         <ControlGroup label="Point Addition">
           <SelectControl label="Point A" value={String(pointAIndex)} options={options} onChange={(value) => setPointAIndex(Number(value))} />
           <SelectControl label="Point B" value={String(pointBIndex)} options={options} onChange={(value) => setPointBIndex(Number(value))} />
