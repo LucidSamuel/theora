@@ -42,13 +42,14 @@ interface HeaderProps {
   theme: Theme;
   onToggleTheme: () => void;
   onToggleInfo: () => void;
+  onOpenImport: () => void;
   infoOpen: boolean;
   navCollapsed: boolean;
   onToggleNav: () => void;
   onSwitchDemo?: (id: DemoId) => void;
 }
 
-export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
+export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenImport, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
 
   return (
@@ -81,6 +82,11 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpe
         </span>
       </div>
       <div className="flex items-center gap-0.5">
+        <HeaderBtn onClick={onOpenImport} label="Import from GitHub">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-0.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z" fill="currentColor"/>
+          </svg>
+        </HeaderBtn>
         <HeaderBtn
           onClick={onToggleNav}
           label="Toggle sidebar"
