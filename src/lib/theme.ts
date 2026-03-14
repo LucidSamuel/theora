@@ -1,14 +1,16 @@
 export type Theme = 'dark' | 'light';
 
+const THEME_KEY = 'theora-theme-v2';
+
 export function getInitialTheme(): Theme {
-  const stored = localStorage.getItem('theora-theme');
+  const stored = localStorage.getItem(THEME_KEY);
   if (stored === 'light' || stored === 'dark') return stored;
-  return 'light';
+  return 'dark';
 }
 
 export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theora-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
 }
 
 export const DEMO_COLORS = {

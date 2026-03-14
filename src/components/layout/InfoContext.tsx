@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { DemoId } from '@/types';
 
 export interface InfoContextEntry {
@@ -26,25 +26,11 @@ export function InfoProvider({ children }: { children: ReactNode }) {
         delete next[demoId];
         return next;
       }
-      const existing = prev[demoId];
-      if (
-        existing &&
-        existing.title === entry.title &&
-        existing.body === entry.body
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        [demoId]: { ...entry, updatedAt: Date.now() },
-      };
+      return { ...prev, [demoId]: { ...entry, updatedAt: Date.now() } };
     });
   }, []);
 
-  const value = useMemo<InfoContextValue>(
-    () => ({ entries, setEntry }),
-    [entries, setEntry]
-  );
+  const value = useMemo<InfoContextValue>(() => ({ entries, setEntry }), [entries, setEntry]);
 
   return <InfoContext.Provider value={value}>{children}</InfoContext.Provider>;
 }

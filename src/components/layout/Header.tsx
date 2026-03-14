@@ -1,35 +1,66 @@
+import { useState } from 'react';
 import { DEMOS, type DemoId } from '@/types';
 import { DemoIcon } from '@/components/shared/DemoIcon';
 import type { Theme } from '@/lib/theme';
+
+function HeaderBtn({
+  onClick,
+  label,
+  active = false,
+  className = '',
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  active?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className={`w-7 h-7 flex items-center justify-center rounded-md ${className}`}
+      style={{
+        background: active || hovered ? 'var(--button-bg-strong)' : 'transparent',
+        color: active ? 'var(--text-primary)' : hovered ? 'var(--text-secondary)' : 'var(--text-muted)',
+        border: 'none',
+        cursor: 'pointer',
+        transition: 'background 120ms ease, color 120ms ease',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {children}
+    </button>
+  );
+}
 
 interface HeaderProps {
   activeDemo: DemoId;
   theme: Theme;
   onToggleTheme: () => void;
   onToggleInfo: () => void;
-  onOpenImport: () => void;
   infoOpen: boolean;
   navCollapsed: boolean;
   onToggleNav: () => void;
   onSwitchDemo?: (id: DemoId) => void;
 }
 
-export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenImport, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
+export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
 
   return (
     <header
-      className="flex items-center justify-between border-b shrink-0"
+      className="flex items-center justify-between px-5 h-11 border-b"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
-        height: 48,
-        paddingLeft: 20,
-        paddingRight: 16,
       }}
     >
-      {/* Left — mobile demo tabs + title */}
       <div className="flex items-center gap-3">
+        {/* Mobile demo selector */}
         <div className="flex md:hidden gap-0.5">
           {DEMOS.map((d) => (
             <button
@@ -41,91 +72,64 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
               }}
               aria-label={d.title}
             >
-              <DemoIcon
-                id={d.id}
-                size={14}
-                color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'}
-              />
+              <DemoIcon id={d.id} size={14} color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'} />
             </button>
           ))}
         </div>
-        <span
-          className="text-[13px] font-semibold font-display"
-          style={{ color: 'var(--text-primary)' }}
-        >
+        <span className="text-[13px] font-medium font-display" style={{ color: 'var(--text-primary)' }}>
           {demo.title}
         </span>
       </div>
-
-      {/* Right — icon controls */}
       <div className="flex items-center gap-0.5">
-        <button
-          onClick={onOpenImport}
-          className="h-7 px-3 hidden sm:flex items-center gap-1.5 rounded-md text-[11px] font-medium border"
-          style={{
-            color: 'var(--text-secondary)',
-            backgroundColor: 'var(--button-bg)',
-            borderColor: 'var(--border)',
-          }}
-          aria-label="Import / Export"
-        >
-          <span style={{ fontSize: 12, lineHeight: 1 }}>⇅</span>
-          Import
-        </button>
-        <button
-          onClick={onOpenImport}
-          className="w-7 h-7 flex sm:hidden items-center justify-center rounded-md text-[12px]"
-          style={{ color: 'var(--text-muted)' }}
-          aria-label="Import / Export"
-        >
-          ⇅
-        </button>
-        <button
-          onClick={onOpenImport}
-          className="h-7 px-2 hidden sm:flex items-center justify-center rounded-md text-[10px]"
-          style={{ color: 'var(--text-muted)', backgroundColor: 'var(--button-bg)' }}
-          aria-label="Import from GitHub"
-        >
-          Import
-        </button>
-        <button
-          onClick={onOpenImport}
-          className="w-7 h-7 flex sm:hidden items-center justify-center rounded-md text-[10px]"
-          style={{ color: 'var(--text-muted)' }}
-          aria-label="Import from GitHub"
-        >
-          ↓
-        </button>
-        <button
+        <HeaderBtn
           onClick={onToggleNav}
-          className="hidden md:flex w-8 h-8 items-center justify-center rounded-md text-[11px]"
-          style={{
-            color: 'var(--text-muted)',
-            backgroundColor: navCollapsed ? 'var(--button-bg)' : 'transparent',
-          }}
-          aria-label="Toggle sidebar"
+          label="Toggle sidebar"
+          active={navCollapsed}
+          className="hidden md:flex"
         >
-          {navCollapsed ? '›' : '‹'}
-        </button>
-        <button
-          onClick={onToggleInfo}
-          className="w-8 h-8 flex items-center justify-center rounded-md text-[11px]"
-          style={{
-            color: infoOpen ? 'var(--text-primary)' : 'var(--text-muted)',
-            backgroundColor: infoOpen ? 'var(--button-bg)' : 'transparent',
-          }}
-          aria-label="Toggle info panel"
-        >
-          {infoOpen ? '✕' : 'ℹ'}
-        </button>
-        <button
-          onClick={onToggleTheme}
-          className="w-8 h-8 flex items-center justify-center rounded-md text-[11px]"
-          style={{ color: 'var(--text-muted)' }}
-          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? '☀' : '☾'}
-        </button>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            {navCollapsed ? (
+              <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            ) : (
+              <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            )}
+          </svg>
+        </HeaderBtn>
+        <HeaderBtn onClick={onToggleInfo} label="Toggle info" active={infoOpen}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            {infoOpen ? (
+              <>
+                <line x1="3" y1="3" x2="11" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="3" x2="3" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </>
+            ) : (
+              <>
+                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
+                <line x1="7" y1="6" x2="7" y2="10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <circle cx="7" cy="4.2" r="0.7" fill="currentColor"/>
+              </>
+            )}
+          </svg>
+        </HeaderBtn>
+        <HeaderBtn onClick={onToggleTheme} label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            {theme === 'dark' ? (
+              <>
+                <circle cx="7" cy="7" r="2.8" stroke="currentColor" strokeWidth="1.2"/>
+                <line x1="7" y1="1" x2="7" y2="2.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="7" y1="11.8" x2="7" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="1" y1="7" x2="2.2" y2="7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="11.8" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="2.93" y1="2.93" x2="3.78" y2="3.78" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="10.22" y1="10.22" x2="11.07" y2="11.07" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="11.07" y1="2.93" x2="10.22" y2="3.78" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <line x1="3.78" y1="10.22" x2="2.93" y2="11.07" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              </>
+            ) : (
+              <path d="M11.5 8.5A5 5 0 0 1 5.5 2.5a5 5 0 1 0 6 6z" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+            )}
+          </svg>
+        </HeaderBtn>
       </div>
     </header>
   );

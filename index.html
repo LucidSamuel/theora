@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <title>Theora — Interactive Cryptographic Primitive Visualizer</title>
     <meta name="description" content="Interactive visualizer for Merkle trees, polynomial commitments (KZG), RSA accumulators, and recursive proof composition. Animated, shareable, and embeddable." />
     <meta property="og:title" content="Theora — Cryptographic Primitive Visualizer" />
     <meta property="og:description" content="Build intuition for ZK primitives with interactive, animated visualizations." />
     <meta property="og:type" content="website" />
+    <script>
+      (function () {
+        var stored = localStorage.getItem('theora-theme-v2');
+        var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

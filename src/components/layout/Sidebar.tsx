@@ -116,7 +116,7 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
-            Lucid Samuel
+            by @lucidzk
           </a>
         </div>
       )}
