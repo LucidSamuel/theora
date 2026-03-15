@@ -7,30 +7,30 @@ import { getConstantProofSize } from './logic';
 
 const PAL = {
   dark: {
-    bg0: '#090910',
-    bg1: '#0e0e18',
-    text: '#e8e8f0',
-    textMuted: '#72728a',
-    pending:  { border: '#3d3d55', fill: 'rgba(61,61,85,0.12)',  glow: '#3d3d55' },
-    verifying:{ border: '#f59e0b', fill: 'rgba(245,158,11,0.10)', glow: '#f59e0b' },
-    verified: { border: '#22c55e', fill: 'rgba(34,197,94,0.08)',  glow: '#22c55e' },
-    failed:   { border: '#ef4444', fill: 'rgba(239,68,68,0.10)',  glow: '#ef4444' },
-    pallas:   '#6366f1',
-    vesta:    '#a855f7',
-    edge:     '#2a2a3a',
+    bg0: '#09090b',   // zinc-950 — matches --bg-primary
+    bg1: '#111113',   // zinc-900 — matches --bg-secondary
+    text: '#fafafa',  // zinc-50
+    textMuted: '#52525b',  // zinc-600
+    pending:  { border: '#3f3f46', fill: 'rgba(63,63,70,0.12)',  glow: '#3f3f46' },   // zinc-700
+    verifying:{ border: '#f59e0b', fill: 'rgba(245,158,11,0.10)', glow: '#f59e0b' },  // amber
+    verified: { border: '#22c55e', fill: 'rgba(34,197,94,0.08)',  glow: '#22c55e' },  // green
+    failed:   { border: '#ef4444', fill: 'rgba(239,68,68,0.10)',  glow: '#ef4444' },  // red
+    pallas:   '#e4e4e7',  // zinc-200 — Pallas is the "base" curve, bright
+    vesta:    '#71717a',  // zinc-500 — Vesta is the "secondary" curve, muted
+    edge:     '#27272a',  // zinc-800
   },
   light: {
-    bg0: '#f8f8fc',
-    bg1: '#f1f1f8',
-    text: '#1a1a2e',
-    textMuted: '#6b6b8a',
-    pending:  { border: '#c4c4d8', fill: 'rgba(180,180,210,0.10)', glow: '#c4c4d8' },
+    bg0: '#ffffff',
+    bg1: '#fafafa',
+    text: '#09090b',
+    textMuted: '#a1a1aa',  // zinc-400
+    pending:  { border: '#d4d4d8', fill: 'rgba(212,212,216,0.12)', glow: '#d4d4d8' },  // zinc-300
     verifying:{ border: '#d97706', fill: 'rgba(217,119,6,0.08)',   glow: '#d97706' },
     verified: { border: '#16a34a', fill: 'rgba(22,163,74,0.07)',   glow: '#16a34a' },
     failed:   { border: '#dc2626', fill: 'rgba(220,38,38,0.08)',   glow: '#dc2626' },
-    pallas:   '#4f46e5',
-    vesta:    '#9333ea',
-    edge:     '#d4d4e8',
+    pallas:   '#3f3f46',  // zinc-700 — dark, visible on white
+    vesta:    '#a1a1aa',  // zinc-400 — lighter secondary
+    edge:     '#e4e4e7',  // zinc-200
   },
 };
 
