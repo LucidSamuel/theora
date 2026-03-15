@@ -1009,6 +1009,10 @@ body::before {
   color: var(--status-error);
 }
 
+.control-choice-button.is-warning {
+  color: #d97706;
+}
+
 .control-kicker {
   display: inline-block;
   margin-bottom: 6px;

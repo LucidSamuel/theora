@@ -1,8 +1,9 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { applyImportedState, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { applyImportedState, createPublicGist, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
 import { getActiveDemoLocation } from '@/hooks/useActiveDemo';
 
 const originalWindow = (globalThis as { window?: unknown }).window;
+const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   const mockLocation = {
@@ -29,10 +30,17 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   if (originalWindow === undefined) {
     delete (globalThis as { window?: unknown }).window;
   } else {
     Object.defineProperty(globalThis, 'window', { value: originalWindow, configurable: true });
+  }
+
+  if (originalFetch === undefined) {
+    delete (globalThis as { fetch?: unknown }).fetch;
+  } else {
+    Object.defineProperty(globalThis, 'fetch', { value: originalFetch, configurable: true });
   }
 });
 
@@ -60,6 +68,11 @@ describe('parseTheoraImport', () => {
     expect(parsed.demo).toBe('merkle');
   });
 
+  it('accepts pipeline scenarios as supported import envelopes', () => {
+    const parsed = parseTheoraImport('{"demo":"pipeline","state":{"scenarioName":"Audit path","x":3,"stage":"challenge","fault":"none"}}');
+    expect(parsed.demo).toBe('pipeline');
+  });
+
   it('rejects unsupported demo ids', () => {
     expect(() => parseTheoraImport('{"demo":"lookup","state":{}}')).toThrow();
   });
@@ -78,6 +91,16 @@ describe('export envelope helpers', () => {
 
   it('returns null for unsupported demos', () => {
     expect(getCurrentExportEnvelope('lookup')).toBeNull();
+  });
+
+  it('extracts pipeline scenario state from search params when hash state is absent', () => {
+    window.history.replaceState(null, '', '/app?pl=eyJzY2VuYXJpb05hbWUiOiJBdWRpdCBwYXRoIiwieCI6Mywic3RhZ2UiOiJjaGFsbGVuZ2UiLCJmYXVsdCI6Im5vbmUifQ%3D%3D');
+    const payload = getCurrentExportEnvelope('pipeline');
+    expect(payload).toEqual({
+      version: 1,
+      demo: 'pipeline',
+      state: { scenarioName: 'Audit path', x: 3, stage: 'challenge', fault: 'none' },
+    });
   });
 
   it('serializes export envelopes as pretty json', () => {
@@ -107,5 +130,26 @@ describe('same-demo import regression', () => {
     expect(after.activeDemo).toBe('merkle');
     expect(after.locationKey).not.toBe(before.locationKey);
     expect(after.locationKey).toContain('selectedLeafIndex');
+  });
+});
+
+describe('gist publishing', () => {
+  it('creates a public gist and returns its url', async () => {
+    Object.defineProperty(globalThis, 'fetch', {
+      value: vi.fn(async () => ({
+        ok: true,
+        status: 201,
+        json: async () => ({ html_url: 'https://gist.github.com/user/abc123' }),
+      })),
+      configurable: true,
+    });
+
+    const result = await createPublicGist({
+      version: 1,
+      demo: 'pipeline',
+      state: { scenarioName: 'Audit path', x: 3, stage: 'challenge', fault: 'none' },
+    }, 'ghp_test');
+
+    expect(result.url).toBe('https://gist.github.com/user/abc123');
   });
 });

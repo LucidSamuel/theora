@@ -1,6 +1,7 @@
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, drawLine, drawGlowCircle, hexToRgba } from '@/lib/canvas';
-import type { CurvePoint, ScalarStep } from './logic';
+import type { CurveConfig, CurvePoint, ScalarStep } from './logic';
+import { DEFAULT_CURVE } from './logic';
 
 interface RenderEllipticArgs {
   ctx: CanvasRenderingContext2D;
@@ -12,6 +13,7 @@ interface RenderEllipticArgs {
   scalarSteps: ScalarStep[];
   theme: 'dark' | 'light';
   frame: FrameInfo;
+  curve?: CurveConfig;
 }
 
 export function renderElliptic({
@@ -24,6 +26,7 @@ export function renderElliptic({
   scalarSteps,
   theme,
   frame,
+  curve = DEFAULT_CURVE,
 }: RenderEllipticArgs): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -45,7 +48,7 @@ export function renderElliptic({
   const plotSize = Math.max(220, Math.min(width - 320, height - 96));
   const originX = margin;
   const originY = height - margin;
-  const scale = plotSize / 96;
+  const scale = plotSize / Math.max(curve.p - 1, 1);
 
   const axisColor = hexToRgba(isDark ? '#a1a1aa' : '#52525b', 0.6);
   drawLine(ctx, originX, originY, originX + plotSize, originY, axisColor, 1);
@@ -88,15 +91,16 @@ export function renderElliptic({
   ctx.fillText('Elliptic Arithmetic', panelX + 12, panelY + 16);
   ctx.font = '10px monospace';
   ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
-  ctx.fillText(`Scalar k = ${scalar}`, panelX + 12, panelY + 34);
-  ctx.fillText(`A = ${pointText(pointA)}`, panelX + 12, panelY + 54);
-  ctx.fillText(`B = ${pointText(pointB)}`, panelX + 12, panelY + 72);
-  ctx.fillText(`A + B = ${pointText(result)}`, panelX + 12, panelY + 90);
+  ctx.fillText(`y² = x³ + ${curve.a}x + ${curve.b} (mod ${curve.p})`, panelX + 12, panelY + 34);
+  ctx.fillText(`${points.length} points | k = ${scalar}`, panelX + 12, panelY + 50);
+  ctx.fillText(`A = ${pointText(pointA)}`, panelX + 12, panelY + 68);
+  ctx.fillText(`B = ${pointText(pointB)}`, panelX + 12, panelY + 86);
+  ctx.fillText(`A + B = ${pointText(result)}`, panelX + 12, panelY + 104);
 
   ctx.fillStyle = isDark ? '#e4e4e7' : '#09090b';
-  ctx.fillText('Double-and-add trace', panelX + 12, panelY + 116);
+  ctx.fillText('Double-and-add trace', panelX + 12, panelY + 128);
   scalarSteps.slice(0, 8).forEach((step, index) => {
-    const y = panelY + 136 + index * 16;
+    const y = panelY + 148 + index * 16;
     // add = zinc-200 (bright), double = zinc-500 (muted) — clear without arbitrary hue
     ctx.fillStyle = step.type === 'add' ? (isDark ? '#e4e4e7' : '#3f3f46') : (isDark ? '#71717a' : '#a1a1aa');
     ctx.fillText(`${index + 1}. ${step.type}`, panelX + 12, y);

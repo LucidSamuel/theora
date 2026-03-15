@@ -13,4 +13,39 @@ describe('circuit logic', () => {
     expect(witnessSatisfiesAll(witness, true)).toBe(true);
     expect(evaluateCircuit(witness, false)[1]!.satisfied).toBe(false);
   });
+
+  it('manual t override: t=0 exploit passes in broken mode', () => {
+    // Underconstrained exploit: set t=0 instead of t=x*x=9
+    // Circuit: constraint 1 = t=x*x, constraint 2 = z=t+y
+    // With t overridden to 0: z should be 0+4=4 to satisfy constraint 2
+    const witness = { x: 3, y: 4, z: 4, t: 0 };
+    // In broken mode (only constraint 1 active, but t=0!=9 so still fails)
+    // Actually broken mode drops constraint 2 only, constraint 1 still checks t=x*x
+    expect(witnessSatisfiesAll(witness, true)).toBe(false);
+    // If we also fix constraint 1 by making x match: x=0, t=0
+    const witness2 = { x: 0, y: 4, z: 4, t: 0 };
+    expect(witnessSatisfiesAll(witness2, false)).toBe(true); // t=0*0=0, z=0+4=4
+    // But with t overridden to wrong value and broken mode, constraint 2 is dropped
+    const witness3 = { x: 3, y: 4, z: 999, t: 0 };
+    // broken=true means only constraint 1 (t=x*x) is checked. t=0, x*x=9 → fails
+    expect(witnessSatisfiesAll(witness3, true)).toBe(false);
+  });
+
+  it('valid witness for f(x)=x²+y circuit', () => {
+    // Circuit constraints: t=x*x, z=t+y
+    // x=3, y=4: t=9, z=13
+    const witness = buildWitness(3, 4, 13);
+    expect(witnessSatisfiesAll(witness, false)).toBe(true);
+    const constraints = evaluateCircuit(witness, false);
+    expect(constraints[0]!.satisfied).toBe(true); // t=x*x
+    expect(constraints[1]!.satisfied).toBe(true); // z=t+y
+  });
+
+  it('invalid z is rejected', () => {
+    // x=3, y=4, t=9, z should be 13 but we set 14
+    const witness = buildWitness(3, 4, 14);
+    expect(witnessSatisfiesAll(witness, false)).toBe(false);
+    // But in broken mode (constraint 2 dropped), only t=x*x is checked → passes
+    expect(witnessSatisfiesAll(witness, true)).toBe(true);
+  });
 });

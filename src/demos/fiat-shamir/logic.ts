@@ -11,6 +11,16 @@ export interface TranscriptProof {
   valid: boolean;
 }
 
+export interface ImportedTranscriptTrace {
+  source: 'pipeline';
+  commitment: string;
+  publicOutput: number;
+  transcriptInputs: string[];
+  challenge: number;
+  detail: string;
+  predictable: boolean;
+}
+
 const MODULUS = 97;
 const GENERATOR = 7;
 

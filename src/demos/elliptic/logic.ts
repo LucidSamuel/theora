@@ -17,6 +17,31 @@ export interface ScalarStep {
 
 export const DEFAULT_CURVE: CurveConfig = { p: 97, a: 2, b: 3 };
 
+export const PRESET_CURVES: { label: string; config: CurveConfig }[] = [
+  { label: 'y² = x³ + 2x + 3 (mod 97)', config: { p: 97, a: 2, b: 3 } },
+  { label: 'y² = x³ + x + 1 (mod 7)', config: { p: 7, a: 1, b: 1 } },
+  { label: 'y² = x³ + 1 (mod 13)', config: { p: 13, a: 0, b: 1 } },
+  { label: 'y² = x³ + 2x + 3 (mod 23)', config: { p: 23, a: 2, b: 3 } },
+  { label: 'y² = x³ + x (mod 31)', config: { p: 31, a: 1, b: 0 } },
+];
+
+export function isPrime(n: number): boolean {
+  if (n < 2) return false;
+  if (n < 4) return true;
+  if (n % 2 === 0 || n % 3 === 0) return false;
+  for (let i = 5; i * i <= n; i += 6) {
+    if (n % i === 0 || n % (i + 2) === 0) return false;
+  }
+  return true;
+}
+
+export function isCurveValid(curve: CurveConfig): boolean {
+  if (!isPrime(curve.p) || curve.p < 3) return false;
+  // Discriminant check: 4a³ + 27b² ≢ 0 (mod p)
+  const disc = mod(4 * curve.a * curve.a * curve.a + 27 * curve.b * curve.b, curve.p);
+  return disc !== 0;
+}
+
 export function mod(value: number, p: number): number {
   return ((value % p) + p) % p;
 }

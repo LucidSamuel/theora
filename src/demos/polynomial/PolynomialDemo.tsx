@@ -51,7 +51,8 @@ type PolynomialAction =
   | { type: 'ADD_TERM' }
   | { type: 'REMOVE_TERM' }
   | { type: 'TOGGLE_COMPARE' }
-  | { type: 'SET_COMPARE_COEFFS'; coefficients: number[] };
+  | { type: 'SET_COMPARE_COEFFS'; coefficients: number[] }
+  | { type: 'SET_KZG_STATE'; kzg: PolynomialState['kzg'] };
 
 // Initial state
 const initialState: PolynomialState = {
@@ -232,6 +233,12 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
         compareCoefficients: action.coefficients,
       };
 
+    case 'SET_KZG_STATE':
+      return {
+        ...state,
+        kzg: action.kzg,
+      };
+
     default:
       return state;
   }
@@ -246,6 +253,7 @@ export function PolynomialDemo() {
     title: string;
     body: string;
   } | null>(null);
+  const [pipelineHash, setPipelineHash] = useState<string | null>(null);
   const hoverKeyRef = useRef<string | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -274,6 +282,8 @@ export function PolynomialDemo() {
   const interaction = useCanvasInteraction(handleCanvasClickWorld);
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [evalInput, setEvalInput] = useState('');
+  const [lagrangeInput, setLagrangeInput] = useState('');
+  const [challengeInput, setChallengeInput] = useState('');
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
 
@@ -331,6 +341,19 @@ export function PolynomialDemo() {
     dispatch({ type: 'SET_COMPARE_COEFFS', coefficients: next });
   }, [state.coefficients]);
 
+  const handleAddLagrangePoint = useCallback(
+    (input: string) => {
+      const parts = input.split(',').map((s) => s.trim());
+      if (parts.length !== 2) return;
+      const x = parseFloat(parts[0]!);
+      const y = parseFloat(parts[1]!);
+      if (isNaN(x) || isNaN(y)) return;
+      dispatch({ type: 'ADD_LAGRANGE_POINT', x, y });
+      setLagrangeInput('');
+    },
+    []
+  );
+
   const handleEvaluate = useCallback(
     (xStr: string) => {
       const x = parseFloat(xStr);
@@ -351,8 +374,8 @@ export function PolynomialDemo() {
     dispatch({ type: 'KZG_COMMIT', commitment });
   }, [state.coefficients]);
 
-  const handleKzgChallenge = useCallback(() => {
-    const challengeZ = simulateKzgChallenge();
+  const handleKzgChallenge = useCallback((fixedZ?: number) => {
+    const challengeZ = simulateKzgChallenge(fixedZ);
     dispatch({ type: 'KZG_CHALLENGE', challengeZ });
   }, []);
 
@@ -399,6 +422,7 @@ export function PolynomialDemo() {
     coefficients: state.coefficients,
     compareEnabled: state.compareEnabled,
     compareCoefficients: state.compareCoefficients,
+    kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
   });
 
   const handleCopyShareUrl = () => {
@@ -456,6 +480,8 @@ export function PolynomialDemo() {
       coefficients?: number[];
       compareEnabled?: boolean;
       compareCoefficients?: number[];
+      kzg?: PolynomialState['kzg'];
+      pipelineHash?: string;
     }>(rawHash);
 
     const raw = decodedHash ? null : getSearchParam('p');
@@ -464,6 +490,8 @@ export function PolynomialDemo() {
       coefficients?: number[];
       compareEnabled?: boolean;
       compareCoefficients?: number[];
+      kzg?: PolynomialState['kzg'];
+      pipelineHash?: string;
     }>(raw);
 
     const payload = decodedHash ?? decoded;
@@ -480,6 +508,12 @@ export function PolynomialDemo() {
         dispatch({ type: 'SET_COMPARE_COEFFS', coefficients: payload.compareCoefficients });
       }
     }
+    if (payload.kzg) {
+      dispatch({ type: 'SET_KZG_STATE', kzg: payload.kzg });
+    }
+    if (typeof payload.pipelineHash === 'string') {
+      setPipelineHash(payload.pipelineHash);
+    }
   }, []);
 
   // Sync to URL
@@ -491,9 +525,10 @@ export function PolynomialDemo() {
       coefficients: state.coefficients,
       compareEnabled: state.compareEnabled,
       compareCoefficients: state.compareCoefficients,
+      kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
     };
     setSearchParams({ p: encodeState(payload) });
-  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients]);
+  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients, state.kzg]);
 
   useEffect(() => {
     if (hoverInfo) {
@@ -559,6 +594,7 @@ export function PolynomialDemo() {
                   max={10}
                   step={0.1}
                   onChange={(value) => handleCoeffChange(index, value)}
+                  editable
                 />
               ))}
               <ButtonControl label="+ Add Term" onClick={() => dispatch({ type: 'ADD_TERM' })} variant="secondary" />
@@ -595,6 +631,7 @@ export function PolynomialDemo() {
                         dispatch({ type: 'SET_COMPARE_COEFFS', coefficients: next });
                       }}
                       accentColor="#8b5a3c"
+                      editable
                     />
                   ))}
                 </>
@@ -609,17 +646,37 @@ export function PolynomialDemo() {
         ) : (
           <ControlGroup label="Lagrange Points">
             <ControlNote>
-              Click on the canvas to place points. The polynomial will interpolate through all
-              points.
+              Click on the canvas or type exact coordinates below.
             </ControlNote>
-            <ButtonControl
-              label="Clear Points"
-              onClick={() => dispatch({ type: 'CLEAR_LAGRANGE' })}
-            />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <TextInput
+                  value={lagrangeInput}
+                  onChange={setLagrangeInput}
+                  placeholder="x, y (e.g. 2, 7)"
+                  onSubmit={() => handleAddLagrangePoint(lagrangeInput)}
+                />
+              </div>
+              <ButtonControl
+                label="Add"
+                onClick={() => handleAddLagrangePoint(lagrangeInput)}
+                disabled={!lagrangeInput.includes(',')}
+              />
+            </div>
+            {state.lagrangePoints.length > 0 && (
+              <ControlCard>
+                <span className="control-kicker">Points ({state.lagrangePoints.length})</span>
+                <ul className="mt-1 list-inside list-disc" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  {state.lagrangePoints.map((pt, i) => (
+                    <li key={i}>({pt.x}, {pt.y})</li>
+                  ))}
+                </ul>
+              </ControlCard>
+            )}
             {state.coefficients.length > 0 && (
               <ControlCard>
                 <span className="control-kicker">Computed coefficients</span>
-                <ul className="mt-1 list-inside list-disc">
+                <ul className="mt-1 list-inside list-disc" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
                   {state.coefficients.map((c, i) => (
                     <li key={i}>
                       x^{i}: {c.toFixed(3)}
@@ -628,31 +685,64 @@ export function PolynomialDemo() {
                 </ul>
               </ControlCard>
             )}
+            <ButtonControl
+              label="Clear Points"
+              onClick={() => dispatch({ type: 'CLEAR_LAGRANGE' })}
+              variant="secondary"
+              disabled={state.lagrangePoints.length === 0}
+            />
           </ControlGroup>
         )}
 
         <ControlGroup label="Evaluate">
-          <div className="flex flex-col gap-3">
-            <TextInput
-              value={evalInput}
-              onChange={setEvalInput}
-              placeholder="Enter x value"
-              onSubmit={() => {
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <TextInput
+                value={evalInput}
+                onChange={setEvalInput}
+                placeholder="Enter x value"
+                onSubmit={() => {
+                  handleEvaluate(evalInput);
+                  setEvalInput('');
+                }}
+              />
+            </div>
+            <ButtonControl
+              label="Eval"
+              onClick={() => {
                 handleEvaluate(evalInput);
                 setEvalInput('');
               }}
+              disabled={evalInput === ''}
             />
-            {state.evalPoints.length > 0 && (
-              <ButtonControl
-                label={`Clear Points (${state.evalPoints.length})`}
-                onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
-                variant="secondary"
-              />
-            )}
           </div>
+          {state.evalPoints.length > 0 && (
+            <ControlCard>
+              <span className="control-kicker">Results ({state.evalPoints.length})</span>
+              <ul className="mt-1" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                {state.evalPoints.map((pt, i) => (
+                  <li key={i} style={{ color: 'var(--text-secondary)', padding: '1px 0' }}>{pt.label}</li>
+                ))}
+              </ul>
+            </ControlCard>
+          )}
+          {state.evalPoints.length > 0 && (
+            <ButtonControl
+              label="Clear Evaluations"
+              onClick={() => dispatch({ type: 'CLEAR_EVAL_POINTS' })}
+              variant="secondary"
+            />
+          )}
         </ControlGroup>
 
         <ControlGroup label="View">
+          {pipelineHash && (
+            <ButtonControl
+              label="Back to Pipeline"
+              onClick={() => { window.location.hash = pipelineHash; }}
+              variant="secondary"
+            />
+          )}
           <ButtonControl label="Auto Scale" onClick={handleAutoScale} />
         </ControlGroup>
 
@@ -678,16 +768,43 @@ export function PolynomialDemo() {
               </ControlCard>
             )}
 
-            <ButtonControl
-              label="2. Challenge"
-              onClick={handleKzgChallenge}
-              disabled={state.kzg.currentStep < 1}
-            />
+            {state.kzg.currentStep < 2 && (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <TextInput
+                    value={challengeInput}
+                    onChange={setChallengeInput}
+                    placeholder="z (or leave blank for random)"
+                    onSubmit={() => {
+                      const z = challengeInput ? parseFloat(challengeInput) : undefined;
+                      handleKzgChallenge(z !== undefined && !isNaN(z) ? z : undefined);
+                      setChallengeInput('');
+                    }}
+                  />
+                </div>
+                <ButtonControl
+                  label="2. Challenge"
+                  onClick={() => {
+                    const z = challengeInput ? parseFloat(challengeInput) : undefined;
+                    handleKzgChallenge(z !== undefined && !isNaN(z) ? z : undefined);
+                    setChallengeInput('');
+                  }}
+                  disabled={state.kzg.currentStep < 1}
+                />
+              </div>
+            )}
+            {state.kzg.currentStep >= 2 && (
+              <ButtonControl
+                label="2. Challenge"
+                onClick={() => handleKzgChallenge()}
+                disabled
+              />
+            )}
             {state.kzg.challengeZ !== null && (
               <ControlCard>
                 <span className="control-kicker">Challenge point</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-                z = {state.kzg.challengeZ.toFixed(2)}
+                z = {state.kzg.challengeZ}
                 </div>
               </ControlCard>
             )}
@@ -706,6 +823,18 @@ export function PolynomialDemo() {
                 {state.kzg.proofHash && (
                   <HashBadge hash={state.kzg.proofHash} truncate={8} color="#10b981" />
                 )}
+              </ControlCard>
+            )}
+            {state.kzg.quotientPoly && (
+              <ControlCard>
+                <span className="control-kicker">Quotient q(x)</span>
+                <ul className="mt-1" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  {state.kzg.quotientPoly.map((c, i) => (
+                    <li key={i} style={{ color: 'var(--text-secondary)', padding: '1px 0' }}>
+                      x^{i}: {Number.isInteger(c) ? c : c.toFixed(4)}
+                    </li>
+                  ))}
+                </ul>
               </ControlCard>
             )}
 

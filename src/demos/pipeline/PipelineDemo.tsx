@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useRef } from 'react';
+import { useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
@@ -9,12 +9,16 @@ import {
   SelectControl,
   ControlCard,
   ControlNote,
+  TextInput,
 } from '@/components/shared/Controls';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { copyToClipboard } from '@/lib/clipboard';
+import { showToast } from '@/lib/toast';
+import { decodeState, decodeStatePlain, encodeState, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import {
   STAGES,
   STAGE_LABELS,
@@ -25,11 +29,13 @@ import {
   type FaultType,
   type PipelineResults,
 } from './logic';
+import { buildLinkedDemoTarget, buildPipelineHash, getIssueLabel, getLinkedDemoDescriptor, getPrimaryPipelineIssue, getStageDiagnostic } from './linkedState';
 import { renderPipeline } from './renderer';
 
 // ── State ──────────────────────────────────────────────────────────
 
 interface PipelineState {
+  scenarioName: string;
   secretX: number;
   activeStageIdx: number;
   fault: FaultType;
@@ -39,6 +45,7 @@ interface PipelineState {
 }
 
 type Action =
+  | { type: 'SET_SCENARIO_NAME'; name: string }
   | { type: 'SET_X'; x: number }
   | { type: 'SET_FAULT'; fault: FaultType }
   | { type: 'STEP_FORWARD' }
@@ -54,6 +61,7 @@ function recompute(x: number, stageIdx: number, fault: FaultType): PipelineResul
 }
 
 const initialState: PipelineState = {
+  scenarioName: 'Honest pipeline trace',
   secretX: 3,
   activeStageIdx: 0,
   fault: 'none',
@@ -64,6 +72,8 @@ const initialState: PipelineState = {
 
 function reducer(state: PipelineState, action: Action): PipelineState {
   switch (action.type) {
+    case 'SET_SCENARIO_NAME':
+      return { ...state, scenarioName: action.name };
     case 'SET_X': {
       const x = action.x;
       return {
@@ -129,8 +139,56 @@ export function PipelineDemo() {
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const { setEntry } = useInfoPanel();
+  const [linkBusy, setLinkBusy] = useState(false);
 
   const activeStage = STAGES[state.activeStageIdx]!;
+  const linkedDescriptor = useMemo(() => getLinkedDemoDescriptor(activeStage), [activeStage]);
+  const primaryIssue = useMemo(() => getPrimaryPipelineIssue(state.results, state.fault), [state.fault, state.results]);
+  const buildShareState = useCallback(() => ({
+    scenarioName: state.scenarioName,
+    x: state.secretX,
+    stage: activeStage,
+    fault: state.fault,
+  }), [activeStage, state.fault, state.scenarioName, state.secretX]);
+
+  useEffect(() => {
+    const hashState = getHashState();
+    const rawHash = hashState?.demo === 'pipeline' ? hashState.state : null;
+    const payload = decodeStatePlain<{
+      scenarioName?: string;
+      x?: number;
+      stage?: PipelineStage;
+      fault?: FaultType;
+    }>(rawHash);
+    const raw = payload ? null : getSearchParam('pl');
+    const decoded = decodeState<{
+      scenarioName?: string;
+      x?: number;
+      stage?: PipelineStage;
+      fault?: FaultType;
+    }>(raw);
+    const statePayload = payload ?? decoded;
+
+    if (!statePayload) return;
+
+    const nextStageIdx = statePayload.stage ? Math.max(0, STAGES.indexOf(statePayload.stage)) : 0;
+    const nextX = typeof statePayload.x === 'number' ? statePayload.x : initialState.secretX;
+    const nextFault = statePayload.fault ?? initialState.fault;
+    const nextName = statePayload.scenarioName ?? initialState.scenarioName;
+
+    dispatch({ type: 'SET_SCENARIO_NAME', name: nextName });
+    dispatch({ type: 'SET_X', x: nextX });
+    dispatch({ type: 'SET_FAULT', fault: nextFault });
+    if (nextStageIdx > 0) {
+      dispatch({ type: 'JUMP_TO', stageIdx: nextStageIdx });
+    }
+  }, []);
+
+  useEffect(() => {
+    const hashState = getHashState();
+    if (hashState?.demo === 'pipeline') return;
+    setSearchParams({ pl: encodeState(buildShareState()) });
+  }, [buildShareState]);
 
   // Auto-play timer
   const lastAutoStepRef = useRef(0);
@@ -193,11 +251,42 @@ export function PipelineDemo() {
     label,
   }));
 
+  const openLinkedDemo = useCallback(async () => {
+    const target = await buildLinkedDemoTarget(activeStage, state.results, state.fault, {
+      x: state.secretX,
+      stage: activeStage,
+      fault: state.fault,
+      scenarioName: state.scenarioName,
+    });
+    if (!target) return;
+    setLinkBusy(true);
+    window.location.hash = target.hash;
+  }, [activeStage, state.fault, state.results, state.secretX]);
+
+  const copyLinkedDemoUrl = useCallback(async () => {
+    const target = await buildLinkedDemoTarget(activeStage, state.results, state.fault, {
+      x: state.secretX,
+      stage: activeStage,
+      fault: state.fault,
+      scenarioName: state.scenarioName,
+    });
+    if (!target) return;
+    const url = new URL(window.location.href);
+    url.hash = target.hash;
+    copyToClipboard(url.toString());
+    showToast('Deep link copied', `Open ${target.label} with the current pipeline state`);
+  }, [activeStage, state.fault, state.results, state.secretX]);
+
   return (
     <DemoLayout>
       <DemoSidebar>
 
         <ControlGroup label="Computation">
+          <TextInput
+            value={state.scenarioName}
+            onChange={(value) => dispatch({ type: 'SET_SCENARIO_NAME', name: value })}
+            placeholder="Scenario name"
+          />
           <ControlCard>
             <span className="control-kicker">Circuit relation</span>
             <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -278,9 +367,9 @@ export function PipelineDemo() {
             {STAGES.map((stage, i) => {
               const isCurrent = i === state.activeStageIdx;
               const isComplete = i < state.activeStageIdx;
-              const hasError =
-                (stage === 'constraints' && state.results.constraints && !state.results.constraints.allSatisfied) ||
-                (stage === 'verify' && state.results.verify && !state.results.verify.passed);
+              const diagnostic = getStageDiagnostic(stage, state.results, state.fault);
+              const hasError = diagnostic.severity === 'error';
+              const hasWarning = diagnostic.severity === 'warning';
 
               return (
                 <button
@@ -290,14 +379,18 @@ export function PipelineDemo() {
                     isCurrent ? 'is-active' : '',
                     isComplete && !hasError ? 'is-complete' : '',
                     hasError ? 'is-error' : '',
+                    hasWarning ? 'is-warning' : '',
                   ].filter(Boolean).join(' ')}
                   onClick={() => dispatch({ type: 'JUMP_TO', stageIdx: i })}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{i + 1}. {STAGE_LABELS[stage]}</span>
                     <span style={{ fontFamily: 'var(--font-mono)' }}>
-                      {isComplete && !hasError ? '✓' : hasError ? '✗' : '·'}
+                      {hasError ? '✗' : hasWarning ? '!' : isComplete ? '✓' : '·'}
                     </span>
+                  </div>
+                  <div className="control-caption" style={{ marginTop: 4 }}>
+                    {diagnostic.summary}
                   </div>
                 </button>
               );
@@ -305,7 +398,62 @@ export function PipelineDemo() {
           </div>
         </ControlGroup>
 
+        <ControlGroup label="Linked Trace">
+          {primaryIssue ? (
+            <ControlNote tone={primaryIssue.severity === 'warning' ? 'default' : 'error'}>
+              First divergence: {getIssueLabel(primaryIssue)}
+            </ControlNote>
+          ) : (
+            <ControlNote tone="success">
+              No divergence so far. The current trace is internally consistent through {STAGE_LABELS[activeStage]}.
+            </ControlNote>
+          )}
+
+          {linkedDescriptor ? (
+            <>
+              <ControlCard>
+                <span className="control-kicker">Underlying demo</span>
+                <div className="control-value">{linkedDescriptor.label}</div>
+                <div className="control-caption">{linkedDescriptor.description}</div>
+                <div className="control-caption" style={{ marginTop: 6 }}>
+                  {linkedDescriptor.exact ? 'Exact state handoff' : 'Analogous handoff'}
+                </div>
+                <div className="control-caption" style={{ marginTop: 6 }}>
+                  Scenario: {state.scenarioName || 'Untitled scenario'}
+                </div>
+              </ControlCard>
+              <div className="control-button-row">
+                <ButtonControl
+                  label={linkBusy ? 'Opening…' : `Open ${linkedDescriptor.label}`}
+                  onClick={() => {
+                    setLinkBusy(true);
+                    void openLinkedDemo().finally(() => setLinkBusy(false));
+                  }}
+                  disabled={linkBusy}
+                />
+                <ButtonControl
+                  label="Copy Deep Link"
+                  onClick={() => void copyLinkedDemoUrl()}
+                  variant="secondary"
+                />
+              </div>
+            </>
+          ) : (
+            <ControlNote>No linked demo is defined for this stage yet.</ControlNote>
+          )}
+        </ControlGroup>
+
         <ControlGroup label="Actions">
+            <ButtonControl
+              label="Copy Pipeline Hash"
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.hash = buildPipelineHash(buildShareState());
+                copyToClipboard(url.toString());
+                showToast('Pipeline link copied', 'Restore this exact pipeline stage and fault state');
+              }}
+            variant="secondary"
+          />
           <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} />
         </ControlGroup>
       </DemoSidebar>

@@ -1,6 +1,6 @@
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, hexToRgba } from '@/lib/canvas';
-import type { FiatShamirMode, TranscriptProof } from './logic';
+import type { FiatShamirMode, ImportedTranscriptTrace, TranscriptProof } from './logic';
 
 export function renderFiatShamir(
   ctx: CanvasRenderingContext2D,
@@ -8,7 +8,8 @@ export function renderFiatShamir(
   proof: TranscriptProof,
   forged: TranscriptProof | null,
   mode: FiatShamirMode,
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light',
+  importedTrace: ImportedTranscriptTrace | null = null
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -31,23 +32,31 @@ export function renderFiatShamir(
   // ── Transcript steps ──────────────────────────────────────────────────────
   // Step 2 (Challenge) gets amber highlight — it's the cryptographically
   // sensitive step that distinguishes interactive from non-interactive proofs.
-  const steps = [
-    { label: '1. Commit',   value: `t = ${proof.commitment}` },
-    { label: '2. Challenge',value: `c = ${proof.challenge}` },
-    { label: '3. Respond',  value: `z = ${proof.response}` },
-    { label: '4. Verify',   value: proof.valid ? 'passes' : 'fails' },
-  ];
+  const steps = importedTrace
+    ? [
+        { label: '1. Commit', value: `C = ${truncate(importedTrace.commitment, 18)}` },
+        { label: '2. Transcript', value: importedTrace.transcriptInputs.join(' | ') || '(fixed challenge)' },
+        { label: '3. Challenge', value: `z = ${importedTrace.challenge}` },
+        { label: '4. Outcome', value: importedTrace.predictable ? 'predictable' : 'bound to transcript' },
+      ]
+    : [
+        { label: '1. Commit',   value: `t = ${proof.commitment}` },
+        { label: '2. Challenge',value: `c = ${proof.challenge}` },
+        { label: '3. Respond',  value: `z = ${proof.response}` },
+        { label: '4. Verify',   value: proof.valid ? 'passes' : 'fails' },
+      ];
 
   steps.forEach((step, index) => {
     const x = 56 + index * 170;
     const y = 120;
     const isChallenge = index === 1;
     const isVerify = index === 3;
+    const verifyValid = importedTrace ? !importedTrace.predictable : proof.valid;
 
     const borderColor = isChallenge
       ? '#f59e0b'  // amber — challenge is the semantic highlight
       : isVerify
-        ? (proof.valid ? '#22c55e' : '#ef4444')
+        ? (verifyValid ? '#22c55e' : '#ef4444')
         : (isDark ? '#3f3f46' : '#d4d4d8');
 
     ctx.fillStyle = hexToRgba(isDark ? '#111113' : '#ffffff', 0.96);
@@ -62,7 +71,7 @@ export function renderFiatShamir(
       ctx.fillRect(x, y, 146, 6);
     }
     if (isVerify) {
-      ctx.fillStyle = hexToRgba(proof.valid ? '#22c55e' : '#ef4444', 0.12);
+      ctx.fillStyle = hexToRgba(verifyValid ? '#22c55e' : '#ef4444', 0.12);
       ctx.fillRect(x, y, 146, 88);
     }
 
@@ -83,14 +92,32 @@ export function renderFiatShamir(
     mode === 'interactive' ? 'Interactive verifier challenge' :
     mode === 'fs-correct'  ? 'Fiat-Shamir with full transcript hash' :
                              'Broken Fiat-Shamir transcript';
-  ctx.fillText(modeLabel, 56, 56);
+  ctx.fillText(importedTrace ? `${modeLabel} · imported from proof pipeline` : modeLabel, 56, 56);
 
   ctx.font = '11px monospace';
   ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
-  ctx.fillText(`Public key y = ${proof.publicKey}, statement = ${proof.statement}`, 56, 78);
+  ctx.fillText(
+    importedTrace
+      ? `Committed output y = ${importedTrace.publicOutput}, challenge = ${importedTrace.challenge}`
+      : `Public key y = ${proof.publicKey}, statement = ${proof.statement}`,
+    56,
+    78
+  );
 
   // ── Forgery panel ─────────────────────────────────────────────────────────
-  if (forged) {
+  if (importedTrace) {
+    ctx.fillStyle = hexToRgba(importedTrace.predictable ? '#ef4444' : '#22c55e', isDark ? 0.08 : 0.05);
+    ctx.fillRect(56, height - 132, width - 112, 88);
+    ctx.strokeStyle = hexToRgba(importedTrace.predictable ? '#ef4444' : '#22c55e', isDark ? 0.5 : 0.4);
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(56, height - 132, width - 112, 88);
+    ctx.fillStyle = importedTrace.predictable ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#86efac' : '#166534');
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(importedTrace.predictable ? 'Challenge is predictable before the opening proof is formed.' : 'Challenge stays bound to the committed transcript.', 72, height - 102);
+    ctx.font = '11px monospace';
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+    ctx.fillText(importedTrace.detail, 72, height - 76);
+  } else if (forged) {
     ctx.fillStyle = hexToRgba('#ef4444', isDark ? 0.08 : 0.05);
     ctx.fillRect(56, height - 132, width - 112, 88);
     ctx.strokeStyle = hexToRgba('#ef4444', isDark ? 0.5 : 0.4);
@@ -106,4 +133,8 @@ export function renderFiatShamir(
       72, height - 76
     );
   }
+}
+
+function truncate(value: string, limit: number): string {
+  return value.length <= limit ? value : `${value.slice(0, limit)}…`;
 }

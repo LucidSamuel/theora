@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
 import type { DemoId } from '@/types';
-import { applyImportedState, fetchTheoraImport, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { applyImportedState, createPublicGist, fetchTheoraImport, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
 
 interface GitHubImportModalProps {
   isOpen: boolean;
@@ -14,8 +14,16 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [gistToken, setGistToken] = useState('');
+  const [gistUrl, setGistUrl] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   const exportEnvelope = useMemo(() => getCurrentExportEnvelope(activeDemo), [activeDemo]);
   const exportJson = exportEnvelope ? serializeTheoraImport(exportEnvelope) : '';
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('theora:gist-token');
+    if (saved) setGistToken(saved);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -27,6 +35,7 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
       applyImportedState(payload);
       onClose();
       setSourceUrl('');
+      setGistUrl(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed');
     } finally {
@@ -56,6 +65,22 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
     if (!exportEnvelope) return;
     copyToClipboard(exportJson);
     window.open('https://gist.github.com/', '_blank', 'noopener,noreferrer');
+  };
+
+  const handlePublishGist = async () => {
+    if (!exportEnvelope || !gistToken.trim()) return;
+    setError(null);
+    setIsPublishing(true);
+    try {
+      window.localStorage.setItem('theora:gist-token', gistToken.trim());
+      const result = await createPublicGist(exportEnvelope, gistToken.trim());
+      setGistUrl(result.url);
+      copyToClipboard(result.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gist publish failed');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -179,11 +204,11 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
 
           {exportEnvelope ? (
             <>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Ready to export{' '}
-                <code className="font-mono" style={{ fontSize: 11 }}>{exportEnvelope.demo}</code>{' '}
-                as <code className="font-mono" style={{ fontSize: 11 }}>theora.json</code>
-              </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+              Ready to export{' '}
+              <code className="font-mono" style={{ fontSize: 11 }}>{exportEnvelope.demo}</code>{' '}
+              as <code className="font-mono" style={{ fontSize: 11 }}>theora.json</code>
+            </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className="app-btn-secondary rounded-lg"
@@ -207,10 +232,50 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
                   Copy + Open Gist ↗
                 </button>
               </div>
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.5 }}>
+                  Optional: paste a GitHub token with <code className="font-mono" style={{ fontSize: 10 }}>gist</code> scope to publish a public Gist directly from Theora.
+                </div>
+                <input
+                  className="github-import-modal__input"
+                  value={gistToken}
+                  onChange={(e) => setGistToken(e.target.value)}
+                  placeholder="GitHub token with gist scope"
+                  style={{ marginTop: 0, marginBottom: 8 }}
+                />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    className="app-btn-primary rounded-lg"
+                    onClick={handlePublishGist}
+                    disabled={isPublishing || gistToken.trim().length === 0}
+                    style={{ height: 34, padding: '0 14px', fontSize: 12, flex: '1 1 auto', opacity: (isPublishing || !gistToken.trim()) ? 0.4 : 1 }}
+                  >
+                    {isPublishing ? 'Publishing…' : 'Create Public Gist'}
+                  </button>
+                  <button
+                    className="app-btn-secondary rounded-lg"
+                    onClick={() => {
+                      window.localStorage.removeItem('theora:gist-token');
+                      setGistToken('');
+                    }}
+                    style={{ height: 34, padding: '0 14px', fontSize: 12, flex: '1 1 auto' }}
+                  >
+                    Clear Token
+                  </button>
+                </div>
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  The token is stored only in this browser&apos;s local storage until you clear it.
+                </div>
+                {gistUrl && (
+                  <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--status-success-bg)', color: 'var(--status-success)', fontSize: 12 }}>
+                    Public Gist created and URL copied: <a href={gistUrl} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>{gistUrl}</a>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              Export is available for merkle, polynomial, accumulator, and recursive demos.
+              Export is available for pipeline, merkle, polynomial, accumulator, and recursive demos.
             </div>
           )}
         </div>

@@ -44,9 +44,10 @@ export async function simulateKzgCommit(coeffs: number[]): Promise<string> {
 }
 
 /**
- * Generates a random challenge point
+ * Generates a random challenge point, or returns the provided value
  */
-export function simulateKzgChallenge(): number {
+export function simulateKzgChallenge(fixedZ?: number): number {
+  if (fixedZ !== undefined) return fixedZ;
   const randomValue = Math.random() * 10 - 5; // Range: [-5, 5]
   return Math.round(randomValue * 100) / 100; // Round to 2 decimal places
 }

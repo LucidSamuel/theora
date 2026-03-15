@@ -1,7 +1,7 @@
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import type { DemoId } from '@/types';
 
-export type GitHubImportDemo = 'merkle' | 'polynomial' | 'accumulator' | 'recursive';
+export type GitHubImportDemo = 'pipeline' | 'merkle' | 'polynomial' | 'accumulator' | 'recursive';
 
 export interface TheoraImportEnvelope {
   version?: 1;
@@ -10,17 +10,18 @@ export interface TheoraImportEnvelope {
 }
 
 const DEMO_QUERY_KEYS: Record<GitHubImportDemo, string> = {
+  pipeline: 'pl',
   merkle: 'm',
   polynomial: 'p',
   accumulator: 'a',
   recursive: 'r',
 };
 
-const SUPPORTED_DEMOS: GitHubImportDemo[] = ['merkle', 'polynomial', 'accumulator', 'recursive'];
+const SUPPORTED_DEMOS: GitHubImportDemo[] = ['pipeline', 'merkle', 'polynomial', 'accumulator', 'recursive'];
 
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
-  const updates: Record<string, string | null> = { m: null, p: null, a: null, r: null };
+  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null };
   updates[DEMO_QUERY_KEYS[demo]] = encodeState(payload.state);
   setSearchParams(updates);
   window.location.hash = `${demo}|${encodeStatePlain(payload.state)}`;
@@ -50,6 +51,41 @@ export function getCurrentExportEnvelope(activeDemo: DemoId): TheoraImportEnvelo
 
 export function serializeTheoraImport(payload: TheoraImportEnvelope): string {
   return JSON.stringify(payload, null, 2);
+}
+
+export async function createPublicGist(payload: TheoraImportEnvelope, token: string): Promise<{ url: string }> {
+  const response = await fetch('https://api.github.com/gists', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      public: true,
+      description: buildGistDescription(payload),
+      files: {
+        'theora.json': {
+          content: serializeTheoraImport(payload),
+        },
+      },
+    }),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error('GitHub rejected the token. Use a token with gist scope.');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Gist creation failed (${response.status})`);
+  }
+
+  const gist = await response.json() as { html_url?: string };
+  if (!gist.html_url) {
+    throw new Error('GitHub did not return a public Gist URL');
+  }
+
+  return { url: gist.html_url };
 }
 
 export async function fetchTheoraImport(sourceUrl: string): Promise<TheoraImportEnvelope> {
@@ -137,4 +173,13 @@ function isImportEnvelope(value: unknown): value is TheoraImportEnvelope {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
   return SUPPORTED_DEMOS.includes(candidate.demo as GitHubImportDemo) && 'state' in candidate;
+}
+
+function buildGistDescription(payload: TheoraImportEnvelope): string {
+  const scenarioName = typeof payload.state === 'object' && payload.state && 'scenarioName' in (payload.state as Record<string, unknown>)
+    ? (payload.state as Record<string, unknown>).scenarioName
+    : null;
+  return scenarioName && typeof scenarioName === 'string'
+    ? `Theora ${payload.demo} scenario: ${scenarioName}`
+    : `Theora ${payload.demo} export`;
 }

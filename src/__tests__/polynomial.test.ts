@@ -187,6 +187,95 @@ describe('generatePlotPoints', () => {
   });
 });
 
+// ── Test Kit Vectors ──
+
+describe('Test Kit A: p(x) = 2x² + 3x + 1', () => {
+  const coeffs = [1, 3, 2]; // constant, linear, quadratic
+  it.each([
+    [0, 1],
+    [1, 6],
+    [2, 15],
+    [-1, 0],
+    [3, 28],
+    [5, 66],
+  ])('p(%d) = %d', (x, expected) => {
+    expect(evaluatePolynomial(coeffs, x)).toBe(expected);
+  });
+});
+
+describe('Test Kit B: Lagrange interpolation', () => {
+  it('(0,1),(1,3),(2,7) → x² + x + 1', () => {
+    const coeffs = fitLagrangePolynomial([
+      { x: 0, y: 1 },
+      { x: 1, y: 3 },
+      { x: 2, y: 7 },
+    ]);
+    expect(coeffs.length).toBe(3);
+    expect(coeffs[0]).toBeCloseTo(1, 6); // constant
+    expect(coeffs[1]).toBeCloseTo(1, 6); // linear
+    expect(coeffs[2]).toBeCloseTo(1, 6); // quadratic
+    expect(evaluatePolynomial(coeffs, 3)).toBeCloseTo(13, 6);
+  });
+
+  it('(1,1),(2,4),(3,9) → x²', () => {
+    const coeffs = fitLagrangePolynomial([
+      { x: 1, y: 1 },
+      { x: 2, y: 4 },
+      { x: 3, y: 9 },
+    ]);
+    expect(coeffs[0]).toBeCloseTo(0, 6);
+    expect(coeffs[1]).toBeCloseTo(0, 6);
+    expect(coeffs[2]).toBeCloseTo(1, 6);
+    expect(evaluatePolynomial(coeffs, 4)).toBeCloseTo(16, 6);
+  });
+
+  it('(0,0),(1,1) → x', () => {
+    const coeffs = fitLagrangePolynomial([
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+    ]);
+    expect(coeffs[0]).toBeCloseTo(0, 6);
+    expect(coeffs[1]).toBeCloseTo(1, 6);
+    expect(evaluatePolynomial(coeffs, 5)).toBeCloseTo(5, 6);
+  });
+});
+
+describe('Test Kit C: KZG flow with p(x) = x² - 1 at z=3', () => {
+  const coeffs = [-1, 0, 1]; // -1 + 0x + x²
+
+  it('p(3) = 8', () => {
+    expect(evaluatePolynomial(coeffs, 3)).toBe(8);
+  });
+
+  it('quotient q(x) = x + 3', () => {
+    const q = computeQuotientPolynomial(coeffs, 3);
+    expect(q.length).toBe(2);
+    expect(q[0]).toBeCloseTo(3, 10); // constant term
+    expect(q[1]).toBeCloseTo(1, 10); // linear term
+  });
+
+  it('fixed challenge z=3 is returned', () => {
+    expect(simulateKzgChallenge(3)).toBe(3);
+  });
+
+  it('full KZG flow verifies', async () => {
+    const commitment = await simulateKzgCommit(coeffs);
+    const proof = await simulateKzgProof(coeffs, 3);
+    expect(proof.revealedValue).toBe(8);
+    expect(proof.quotientPoly[0]).toBeCloseTo(3, 10);
+    expect(proof.quotientPoly[1]).toBeCloseTo(1, 10);
+    const ok = await simulateKzgVerify(commitment, 3, proof.revealedValue, proof.proofHash, coeffs);
+    expect(ok).toBe(true);
+  });
+});
+
+describe('Test Kit E: constant polynomial p(x) = 7', () => {
+  const coeffs = [7];
+  it.each([0, 1, -1, 5, 100])('p(%d) = 7', (x) => {
+    expect(evaluatePolynomial(coeffs, x)).toBe(7);
+  });
+});
+
 describe('autoScale', () => {
   it('returns default y range for empty coefficients', () => {
     const result = autoScale([], [-5, 5]);

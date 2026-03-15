@@ -46,15 +46,45 @@ interface SliderControlProps {
   step?: number;
   onChange: (v: number) => void;
   accentColor?: string;
+  editable?: boolean;
 }
 
-export function SliderControl({ label, value, min, max, step = 1, onChange }: SliderControlProps) {
+export function SliderControl({ label, value, min, max, step = 1, onChange, editable }: SliderControlProps) {
   const percent = ((value - min) / (max - min)) * 100;
   return (
     <label className="flex flex-col gap-2">
-      <div className="flex justify-between text-[11px]">
+      <div className="flex justify-between text-[11px] items-center">
         <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-        <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</span>
+        {editable ? (
+          <input
+            type="number"
+            value={value}
+            min={min}
+            max={max}
+            step={step}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
+            }}
+            onBlur={(e) => {
+              const v = Number(e.target.value);
+              if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
+            }}
+            className="tabular-nums text-right w-16 rounded px-1 outline-none"
+            style={{
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--button-bg)',
+              border: '1px solid var(--border)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              height: 22,
+            }}
+            aria-label={`${label} value`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</span>
+        )}
       </div>
       <input
         type="range"
@@ -67,6 +97,46 @@ export function SliderControl({ label, value, min, max, step = 1, onChange }: Sl
         style={{
           background: `linear-gradient(to right, var(--text-secondary) 0%, var(--text-secondary) ${percent}%, var(--button-bg-strong) ${percent}%, var(--button-bg-strong) 100%)`,
         }}
+      />
+    </label>
+  );
+}
+
+interface NumberInputControlProps {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (v: number) => void;
+}
+
+export function NumberInputControl({ label, value, min, max, step = 1, onChange }: NumberInputControlProps) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          if (!isNaN(v)) {
+            const clamped = max !== undefined ? Math.min(max, v) : v;
+            onChange(min !== undefined ? Math.max(min, clamped) : clamped);
+          }
+        }}
+        className="w-full px-3 rounded-lg text-[12px] outline-none"
+        style={{
+          height: 36,
+          backgroundColor: 'var(--button-bg)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border)',
+          fontFamily: 'var(--font-mono)',
+        }}
+        aria-label={label}
       />
     </label>
   );
