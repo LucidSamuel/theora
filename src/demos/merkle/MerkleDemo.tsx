@@ -27,6 +27,8 @@ import {
 } from './logic';
 import { renderMerkleTree } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 
 interface MerkleState {
   leaves: string[];
@@ -221,6 +223,8 @@ export function MerkleDemo() {
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [positions, setPositions] = useState(new Map<string, { x: number; y: number }>());
   const [hoverInfo, setHoverInfo] = useState<MerkleHoverInfo | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
   const hoverKeyRef = useRef<string | null>(null);
   const canvasRef = useRef<{ width: number; height: number }>({ width: 800, height: 600 });
   const buildAbortRef = useRef<AbortController | null>(null);
@@ -531,6 +535,7 @@ export function MerkleDemo() {
 
   const handleCopyShareUrl = () => {
     copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
   };
 
   const handleCopyHashUrl = () => {
@@ -538,14 +543,15 @@ export function MerkleDemo() {
     url.searchParams.delete('m');
     url.hash = `merkle|${encodeStatePlain(buildShareState())}`;
     copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
   };
 
   const handleCopyEmbed = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('embed', 'merkle');
     url.searchParams.set('m', encodeState(buildShareState()));
-    const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    copyToClipboard(iframe);
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
   };
 
   const handleExportPng = () => {
@@ -556,6 +562,7 @@ export function MerkleDemo() {
     a.href = data;
     a.download = 'theora-merkle.png';
     a.click();
+    showDownloadToast('theora-merkle.png');
   };
 
   const handleCopyAuditSummary = () => {
@@ -569,6 +576,7 @@ export function MerkleDemo() {
       verified: state.proofVerified,
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Proof, leaves, root hash & verification status');
   };
 
   return (
@@ -657,7 +665,7 @@ export function MerkleDemo() {
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
@@ -744,6 +752,13 @@ export function MerkleDemo() {
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:merkle" />
       </div>
+
+      <EmbedModal
+        isOpen={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        embedUrl={embedUrl}
+        demoName="Merkle Tree"
+      />
     </div>
   );
 }

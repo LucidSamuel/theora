@@ -17,6 +17,8 @@ import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashSt
 import { createSpring2D, spring2DStep, spring2DSetTarget } from '@/lib/animation';
 import { isPrime } from '@/lib/math';
 import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 import type { AccumulatorState, AccElement, HistoryEntry } from '@/types/accumulator';
 import { renderAccumulator } from './renderer';
 import {
@@ -359,6 +361,8 @@ export function AccumulatorDemo() {
   const { setEntry } = useInfoPanel();
   const [primeInput, setPrimeInput] = useState('');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
   const [nonMemberInput, setNonMemberInput] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -622,6 +626,7 @@ export function AccumulatorDemo() {
 
   const handleCopyShareUrl = () => {
     copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
   };
 
   const handleCopyHashUrl = () => {
@@ -629,14 +634,15 @@ export function AccumulatorDemo() {
     url.searchParams.delete('a');
     url.hash = `accumulator|${encodeStatePlain(buildShareState())}`;
     copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
   };
 
   const handleCopyEmbed = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('embed', 'accumulator');
     url.searchParams.set('a', encodeState(buildShareState()));
-    const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    copyToClipboard(iframe);
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
   };
 
   const handleExportPng = () => {
@@ -647,6 +653,7 @@ export function AccumulatorDemo() {
     a.href = data;
     a.download = 'theora-accumulator.png';
     a.click();
+    showDownloadToast('theora-accumulator.png');
   };
 
   const handleCopyAuditSummary = () => {
@@ -673,6 +680,7 @@ export function AccumulatorDemo() {
         : null,
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Accumulator value, witnesses & membership proofs');
   };
 
   return (
@@ -894,7 +902,7 @@ export function AccumulatorDemo() {
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
       </div>
@@ -952,6 +960,13 @@ export function AccumulatorDemo() {
           ))}
         </div>
       </div>
+
+      <EmbedModal
+        isOpen={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        embedUrl={embedUrl}
+        demoName="RSA Accumulator"
+      />
     </div>
   );
 }

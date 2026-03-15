@@ -27,6 +27,8 @@ import {
 } from './logic';
 import { renderProofTree, renderIvcChain } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 
 type Action =
   | { type: 'SET_MODE'; mode: RecursiveMode }
@@ -215,6 +217,8 @@ export function RecursiveDemo(): JSX.Element {
   const hoverKeyRef = useRef<string | null>(null);
   const [badProofInput, setBadProofInput] = useState('');
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   // Auto-build tree on mount
@@ -408,6 +412,7 @@ export function RecursiveDemo(): JSX.Element {
 
   const handleCopyShareUrl = () => {
     copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
   };
 
   const handleCopyHashUrl = () => {
@@ -415,14 +420,15 @@ export function RecursiveDemo(): JSX.Element {
     url.searchParams.delete('r');
     url.hash = `recursive|${encodeStatePlain(buildShareState())}`;
     copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
   };
 
   const handleCopyEmbed = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('embed', 'recursive');
     url.searchParams.set('r', encodeState(buildShareState()));
-    const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    copyToClipboard(iframe);
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
   };
 
   const handleExportPng = () => {
@@ -433,6 +439,7 @@ export function RecursiveDemo(): JSX.Element {
     a.href = data;
     a.download = 'theora-recursive.png';
     a.click();
+    showDownloadToast('theora-recursive.png');
   };
 
   const handleCopyAuditSummary = () => {
@@ -447,6 +454,7 @@ export function RecursiveDemo(): JSX.Element {
       showProofSize: state.showProofSize,
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Proof tree depth, IVC chain config & session metadata');
   };
 
   useEffect(() => {
@@ -619,7 +627,7 @@ export function RecursiveDemo(): JSX.Element {
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
@@ -704,6 +712,13 @@ export function RecursiveDemo(): JSX.Element {
           </div>
         )}
       </div>
+
+      <EmbedModal
+        isOpen={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        embedUrl={embedUrl}
+        demoName="Recursive Proofs"
+      />
     </div>
   );
 }

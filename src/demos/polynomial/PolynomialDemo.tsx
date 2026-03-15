@@ -27,6 +27,8 @@ import {
 } from './logic';
 import { renderPolynomial, canvasToMath } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 
 // Action types
 type PolynomialAction =
@@ -269,6 +271,8 @@ export function PolynomialDemo() {
   const interaction = useCanvasInteraction(handleCanvasClickWorld);
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [evalInput, setEvalInput] = useState('');
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
 
   // Draw function
   const draw = useCallback(
@@ -396,6 +400,7 @@ export function PolynomialDemo() {
 
   const handleCopyShareUrl = () => {
     copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
   };
 
   const handleCopyHashUrl = () => {
@@ -403,14 +408,15 @@ export function PolynomialDemo() {
     url.searchParams.delete('p');
     url.hash = `polynomial|${encodeStatePlain(buildShareState())}`;
     copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
   };
 
   const handleCopyEmbed = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('embed', 'polynomial');
     url.searchParams.set('p', encodeState(buildShareState()));
-    const iframe = `<iframe src="${url.toString()}" width="100%" height="620" style="border:0;border-radius:16px;"></iframe>`;
-    copyToClipboard(iframe);
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
   };
 
   const handleExportPng = () => {
@@ -421,6 +427,7 @@ export function PolynomialDemo() {
     a.href = data;
     a.download = 'theora-polynomial.png';
     a.click();
+    showDownloadToast('theora-polynomial.png');
   };
 
   const handleCopyAuditSummary = () => {
@@ -434,6 +441,7 @@ export function PolynomialDemo() {
       kzg: state.kzg,
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Polynomial coefficients, KZG proof & session metadata');
   };
 
   // Initialize from URL state (hash-only preferred)
@@ -652,7 +660,7 @@ export function PolynomialDemo() {
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit Log" onClick={handleCopyAuditSummary} variant="secondary" />
+            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
 
@@ -723,6 +731,13 @@ export function PolynomialDemo() {
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:polynomial" />
       </div>
+
+      <EmbedModal
+        isOpen={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        embedUrl={embedUrl}
+        demoName="KZG Commitments"
+      />
     </div>
   );
 }
