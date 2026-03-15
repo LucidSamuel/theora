@@ -839,13 +839,16 @@ body::before {
 
 .lp-footer-link:hover { color: var(--text-primary); }
 
-/* ─── App panels ─── */
+
+/* ─── Demo sidebar ─── */
 
 .demo-sidebar {
   padding: 24px 20px;
   background: var(--bg-primary);
   border-right: 1px solid var(--border);
 }
+
+/* ─── App panels ─── */
 
 .panel-surface {
   background: var(--bg-primary);

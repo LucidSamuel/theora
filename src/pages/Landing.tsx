@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import { HeroAnimation } from '@/components/landing/HeroAnimation';
 
+const PRIMITIVES = ['Merkle Trees', 'KZG Commitments', 'RSA Accumulators', 'Recursive Proofs', 'Elliptic Curves', 'Fiat-Shamir', 'R1CS Circuits', 'Lookup Arguments'];
+
 const DEMO_DATA = [
   {
     id: 'merkle',
@@ -117,6 +119,48 @@ const TICKER_ITEMS = [
   'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
 ];
 
+function CyclingText() {
+  const [index, setIndex] = useState(0);
+  const [state, setState] = useState<'visible' | 'exit' | 'enter'>('visible');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setState('exit');
+      setTimeout(() => {
+        setIndex((i) => (i + 1) % PRIMITIVES.length);
+        setState('enter');
+        setTimeout(() => setState('visible'), 350);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const transforms: Record<string, string> = {
+    visible: 'translateY(0) skewY(0deg)',
+    exit: 'translateY(-28px) skewY(-2deg)',
+    enter: 'translateY(28px) skewY(2deg)',
+  };
+  const opacities: Record<string, number> = { visible: 1, exit: 0, enter: 0 };
+
+  return (
+    <span className="relative block overflow-hidden" style={{ height: '1.15em' }}>
+      <span className="invisible block" aria-hidden="true">Polynomial Commitments</span>
+      <span
+        className="absolute inset-0 flex items-center"
+        style={{
+          opacity: opacities[state],
+          transform: transforms[state],
+          transition: state === 'visible'
+            ? 'opacity 350ms cubic-bezier(0.16,1,0.3,1), transform 350ms cubic-bezier(0.16,1,0.3,1)'
+            : 'opacity 280ms ease, transform 280ms ease',
+        }}
+      >
+        {PRIMITIVES[index]}
+      </span>
+    </span>
+  );
+}
+
 function useScrollY() {
   const [y, setY] = useState(0);
   useEffect(() => {
@@ -216,21 +260,24 @@ export function Landing() {
             <span className="lp-mono-label hidden sm:block">EST. 2025 · MIT LICENSE</span>
           </div>
 
-          {/* Full-width heading */}
+          {/* Full-width heading with cycling text */}
           <h1 className="lp-hero-title mb-8 sm:mb-10">
-            Cryptography,<br />
-            <span className="lp-hero-title-dim">made</span>{' '}
-            <span className="lp-hero-title-accent">visible.</span>
+            Cryptography you<br />
+            <span className="lp-hero-title-dim">can see</span><br />
+            <span style={{ display: 'block', marginTop: '0.05em' }}>
+              through <CyclingText />
+            </span>
           </h1>
 
           {/* Description + buttons row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-16">
-            <p className="lp-hero-sub sm:max-w-[480px]">
-              A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, recursive proofs, elliptic curves, transcript hashing, circuit constraints, and lookup arguments.
+            <p className="lp-hero-sub sm:max-w-[520px]">
+              Stop reading about ZK proofs. Start watching them work. Drag, break, and rebuild
+              Merkle trees, KZG commitments, RSA accumulators, and recursive proofs — live in your browser.
             </p>
             <div className="flex flex-wrap gap-3 flex-shrink-0">
               <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
-                Explore Demos →
+                Open the Lab →
               </button>
               <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
                 className="lp-btn-ghost lp-btn-lg no-underline">
@@ -389,14 +436,14 @@ export function Landing() {
       <div className="lp-container pb-40 sm:pb-56">
         <div className="lp-cta-block">
           <div className="lp-cta-inner">
-            <p className="lp-mono-label mb-5">§ 06 · START</p>
+            <p className="lp-mono-label mb-5">∴ Start exploring</p>
             <h2 className="lp-cta-title">
-              Open the lab.<br />
-              Test your intuition.
+              The math is elegant.<br />
+              Now watch it move.
             </h2>
             <p className="lp-cta-sub">
-              No installation. No account. No ceremony.<br />
-              Manipulate real cryptographic primitives in your browser.
+              No installation. No login. No setup.<br />
+              Just open the lab and start breaking things.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
