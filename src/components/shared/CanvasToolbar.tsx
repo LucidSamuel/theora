@@ -117,17 +117,22 @@ export function CanvasToolbar({ camera, className, storageKey }: CanvasToolbarPr
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           <ToolbarButton label="+" onClick={() => camera.zoomBy(1.15)} title="Zoom in" />
-          <ToolbarButton label="0" onClick={() => camera.reset()} title="Reset view" />
+          <ToolbarButton label="↑" onClick={() => camera.panBy(0, 30)} title="Pan up" />
           <ToolbarButton label="-" onClick={() => camera.zoomBy(1 / 1.15)} title="Zoom out" />
           <ToolbarButton label="←" onClick={() => camera.panBy(30, 0)} title="Pan left" />
-          <ToolbarButton label="↑" onClick={() => camera.panBy(0, 30)} title="Pan up" />
-          <ToolbarButton label="→" onClick={() => camera.panBy(-30, 0)} title="Pan right" />
-          <ToolbarButton label="·" onClick={() => camera.reset()} title="Center view" />
           <ToolbarButton label="↓" onClick={() => camera.panBy(0, -30)} title="Pan down" />
-          <div className="flex items-center justify-center text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
-            pan
-          </div>
+          <ToolbarButton label="→" onClick={() => camera.panBy(-30, 0)} title="Pan right" />
         </div>
+        <button
+          type="button"
+          className="app-btn-secondary rounded-lg text-xs font-medium mt-1.5"
+          onClick={() => camera.reset()}
+          title="Reset view to origin (key: 0)"
+          aria-label="Reset view"
+          style={{ width: '100%', height: 30, letterSpacing: '0.02em' }}
+        >
+          Reset View
+        </button>
         <div className="mt-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           Drag header · Scroll to zoom · <span className="font-mono">0</span> resets
         </div>
