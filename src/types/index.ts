@@ -1,4 +1,5 @@
 export type DemoId =
+  | 'pipeline'
   | 'merkle'
   | 'accumulator'
   | 'polynomial'
@@ -17,6 +18,14 @@ export interface DemoMeta {
 }
 
 export const DEMOS: DemoMeta[] = [
+  {
+    id: 'pipeline',
+    title: 'Proof Pipeline',
+    subtitle: 'See how primitives compose into a complete proof system.',
+    description:
+      'A proof system is not one primitive — it is a pipeline. A computation becomes constraints, constraints become a polynomial, the polynomial is committed to, a Fiat-Shamir challenge is derived, the polynomial is opened, and the verifier checks everything. This demo shows the full flow end-to-end, with fault injection to see exactly where and why verification breaks.',
+    accent: '#a78bfa',
+  },
   {
     id: 'merkle',
     title: 'Merkle Tree',

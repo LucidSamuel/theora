@@ -1,12 +1,14 @@
 import { useReducer, useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { AnimatedCanvas } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
+import { DemoLayout, DemoSidebar, DemoCanvasArea, DemoAside } from '@/components/shared/DemoLayout';
 import {
   ControlGroup,
   SliderControl,
   ToggleControl,
   ButtonControl,
   TextInput,
+  ControlCard,
 } from '@/components/shared/Controls';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
@@ -493,29 +495,20 @@ export function RecursiveDemo(): JSX.Element {
   }, [hoverInfo, state.mode, state.ivcLength, state.badProofTarget, state.verification.isRunning, state.treeDepth, setEntry]);
 
   return (
-    <div className="flex h-full">
-      {/* Controls */}
-      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+    <DemoLayout>
+      <DemoSidebar width="compact">
 
         <ControlGroup label="Mode">
-          <div className="flex gap-3">
+          <div className="control-button-row">
             <button
               onClick={() => dispatch({ type: 'SET_MODE', mode: 'tree' })}
-              className="flex-1 rounded px-3 py-2 text-sm font-medium"
-              style={{
-                backgroundColor: state.mode === 'tree' ? '#3b82f6' : 'var(--surface-element)',
-                color: state.mode === 'tree' ? '#fff' : 'var(--text-secondary)',
-              }}
+              className={state.mode === 'tree' ? 'app-btn-primary rounded-lg h-9 text-sm font-medium' : 'app-btn-secondary rounded-lg h-9 text-sm font-medium'}
             >
               Tree
             </button>
             <button
               onClick={() => dispatch({ type: 'SET_MODE', mode: 'ivc' })}
-              className="flex-1 rounded px-3 py-2 text-sm font-medium"
-              style={{
-                backgroundColor: state.mode === 'ivc' ? '#3b82f6' : 'var(--surface-element)',
-                color: state.mode === 'ivc' ? '#fff' : 'var(--text-secondary)',
-              }}
+              className={state.mode === 'ivc' ? 'app-btn-primary rounded-lg h-9 text-sm font-medium' : 'app-btn-secondary rounded-lg h-9 text-sm font-medium'}
             >
               IVC
             </button>
@@ -537,7 +530,7 @@ export function RecursiveDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Verification">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="control-button-row">
                 <ButtonControl
                   label={state.verification.isRunning ? '⏸ Pause' : '▶ Auto'}
                   onClick={() =>
@@ -623,7 +616,7 @@ export function RecursiveDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="control-button-row" style={{ flexWrap: 'wrap' }}>
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -634,84 +627,82 @@ export function RecursiveDemo(): JSX.Element {
         <ControlGroup label="Actions">
           <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} />
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      {/* Canvas */}
-      <div className="flex-1 relative">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:recursive" />
-      </div>
+      </DemoCanvasArea>
 
-      {/* Stats Panel */}
-      <div className="w-48 shrink-0 overflow-y-auto border-l" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+      <DemoAside width="narrow">
         <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: '#22c55e' }}>
           Statistics
         </h3>
 
         {state.mode === 'tree' && stats && (
           <div className="space-y-3 text-sm">
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Nodes</div>
+            <ControlCard>
+              <div className="control-kicker">Total nodes</div>
               <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
                 {stats.totalNodes}
               </div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Verified</div>
+            </ControlCard>
+            <ControlCard tone="success">
+              <div className="control-kicker">Verified</div>
               <div className="font-mono" style={{ color: 'var(--status-success)' }}>{stats.verified}</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Failed</div>
+            </ControlCard>
+            <ControlCard tone="error">
+              <div className="control-kicker">Failed</div>
               <div className="font-mono" style={{ color: 'var(--status-error)' }}>{stats.failed}</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Current Step</div>
+            </ControlCard>
+            <ControlCard>
+              <div className="control-kicker">Current step</div>
               <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
                 {stats.currentStep} / {state.verification.order.length}
               </div>
-            </div>
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Proof Size</div>
+            </ControlCard>
+            <ControlCard>
+              <div className="control-kicker">Proof size</div>
               <div className="font-mono font-bold" style={{ color: '#3b82f6' }}>
                 {proofSize.description}
               </div>
-              <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="control-caption">
                 Constant regardless of depth
               </div>
-            </div>
+            </ControlCard>
           </div>
         )}
 
         {state.mode === 'ivc' && stats && (
           <div className="space-y-3 text-sm">
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Steps</div>
+            <ControlCard>
+              <div className="control-kicker">Total steps</div>
               <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
                 {stats.totalSteps}
               </div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Folded</div>
+            </ControlCard>
+            <ControlCard tone="success">
+              <div className="control-kicker">Folded</div>
               <div className="font-mono" style={{ color: 'var(--status-success)' }}>{stats.folded}</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Accumulator</div>
+            </ControlCard>
+            <ControlCard>
+              <div className="control-kicker">Accumulator</div>
               <div className="break-all font-mono text-xs" style={{ color: 'var(--text-primary)' }}>
                 {stats.currentHash}
               </div>
-            </div>
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Proof Size</div>
+            </ControlCard>
+            <ControlCard>
+              <div className="control-kicker">Proof size</div>
               <div className="font-mono font-bold" style={{ color: '#3b82f6' }}>
                 {proofSize.description}
               </div>
-              <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="control-caption">
                 Constant per fold
               </div>
-            </div>
+            </ControlCard>
           </div>
         )}
-      </div>
+      </DemoAside>
 
       <EmbedModal
         isOpen={embedOpen}
@@ -719,6 +710,6 @@ export function RecursiveDemo(): JSX.Element {
         embedUrl={embedUrl}
         demoName="Recursive Proofs"
       />
-    </div>
+    </DemoLayout>
   );
 }

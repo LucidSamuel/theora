@@ -1,11 +1,14 @@
 import { useReducer, useCallback, useRef, useEffect, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
+import { DemoLayout, DemoSidebar, DemoCanvasArea, DemoAside } from '@/components/shared/DemoLayout';
 import {
   ControlGroup,
   ToggleControl,
   ButtonControl,
   TextInput,
+  ControlCard,
+  ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
@@ -684,16 +687,13 @@ export function AccumulatorDemo() {
   };
 
   return (
-    <div className="flex h-full">
-      {/* Left Controls Panel */}
-      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+    <DemoLayout>
+      <DemoSidebar width="compact">
         {errorMsg && (
-          <div className="mb-3 rounded px-3 py-2 text-xs" style={{
-            backgroundColor: 'rgba(239,68,68,0.15)',
-            color: '#ef4444',
-            border: '1px solid rgba(239,68,68,0.3)',
-          }}>
+          <div className="mb-3">
+          <ControlNote tone="error">
             {errorMsg}
+          </ControlNote>
           </div>
         )}
 
@@ -705,7 +705,7 @@ export function AccumulatorDemo() {
               placeholder="Enter prime"
               onSubmit={handleAddPrime}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="control-button-row">
               <ButtonControl onClick={handleAddPrime} label="Add" />
               <ButtonControl onClick={handleRandomPrime} label="Random" />
             </div>
@@ -725,11 +725,12 @@ export function AccumulatorDemo() {
                 value={state.batchPrimes}
                 onChange={(e) => dispatch({ type: 'SET_BATCH_PRIMES', primes: e.target.value })}
                 placeholder="Enter primes separated by commas (e.g., 3,5,7,11)"
-                className="w-full h-20 px-3 py-2 text-xs rounded resize-none"
+                className="w-full h-20 px-3 py-2 text-xs rounded-lg resize-none"
                 style={{
-                  backgroundColor: 'var(--bg-primary)',
+                  backgroundColor: 'var(--button-bg)',
                   color: 'var(--text-primary)',
                   border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-mono)',
                 }}
               />
               <ButtonControl onClick={handleBatchAdd} label="Batch Add" />
@@ -745,17 +746,9 @@ export function AccumulatorDemo() {
               </div>
             )}
             {state.elements.map((element, index) => (
-              <div
+              <ControlCard
                 key={index}
-                className="p-2 rounded border"
-                style={{
-                  borderColor: state.selectedIndex === index
-                    ? '#f59e0b'
-                    : 'var(--surface-element-border)',
-                  backgroundColor: state.selectedIndex === index
-                    ? 'rgba(245,158,11,0.1)'
-                    : 'transparent',
-                }}
+                tone={state.selectedIndex === index ? 'success' : 'default'}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
@@ -777,7 +770,7 @@ export function AccumulatorDemo() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </ControlCard>
             ))}
           </div>
         </ControlGroup>
@@ -795,19 +788,9 @@ export function AccumulatorDemo() {
                     label="Verify"
                   />
                   {state.witness.verified !== null && (
-                    <div
-                      className="p-2 rounded text-sm"
-                      style={{
-                        backgroundColor: state.witness.verified
-                          ? 'var(--status-success-bg)'
-                          : 'var(--status-error-bg)',
-                        color: state.witness.verified
-                          ? 'var(--status-success)'
-                          : 'var(--status-error)',
-                      }}
-                    >
+                    <ControlNote tone={state.witness.verified ? 'success' : 'error'}>
                       {state.witness.verified ? '✓ Verified' : '✗ Failed'}
-                    </div>
+                    </ControlNote>
                   )}
                 </>
               )}
@@ -816,30 +799,29 @@ export function AccumulatorDemo() {
 
         <ControlGroup label="Witness Cascade">
           {state.witnessCascade.length === 0 ? (
-            <div className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            <ControlNote>
               Add or remove an element to watch how the surviving witnesses all update.
-            </div>
+            </ControlNote>
           ) : (
             <div className="space-y-2">
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="control-caption">
                 {state.witnessCascade.filter((entry) => entry.changed).length} / {state.witnessCascade.length} witnesses updated
               </div>
               {state.witnessCascade.slice(0, 8).map((entry) => (
-                <div
+                <ControlCard
                   key={entry.label}
-                  className="rounded-lg border p-3 text-xs"
-                  style={{ borderColor: 'var(--border)', background: 'var(--surface-element)' }}
+                  tone={entry.changed ? 'success' : 'default'}
                 >
                   <div style={{ color: 'var(--text-primary)' }}>
                     {entry.label} = {entry.prime.toString()}
                   </div>
-                  <div style={{ color: 'var(--text-muted)' }}>
+                  <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>
                     before: {entry.witnessBefore ? `...${entry.witnessBefore.toString().slice(-8)}` : 'new member'}
                   </div>
-                  <div style={{ color: entry.changed ? 'var(--status-success)' : 'var(--text-muted)' }}>
+                  <div className="control-caption" style={{ color: entry.changed ? 'var(--status-success)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                     after: ...{entry.witnessAfter.toString().slice(-8)}
                   </div>
-                </div>
+                </ControlCard>
               ))}
             </div>
           )}
@@ -853,7 +835,7 @@ export function AccumulatorDemo() {
               placeholder="Prime not in set"
               onSubmit={handleNonMemberSet}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="control-button-row">
               <ButtonControl onClick={handleNonMemberSet} label="Set Target" />
               <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
             </div>
@@ -862,31 +844,21 @@ export function AccumulatorDemo() {
             <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
           )}
           {state.nonMembership && state.nonMembership.verified !== null && (
-            <div
-              className="p-2 rounded text-sm"
-              style={{
-                backgroundColor: state.nonMembership.verified
-                  ? 'var(--status-success-bg)'
-                  : 'var(--status-error-bg)',
-                color: state.nonMembership.verified
-                  ? 'var(--status-success)'
-                  : 'var(--status-error)',
-              }}
-            >
+            <ControlNote tone={state.nonMembership.verified ? 'success' : 'error'}>
               {state.nonMembership.verified ? '✓ Non-member verified' : '✗ Verification failed'}
-            </div>
+            </ControlNote>
           )}
         </ControlGroup>
 
         <ControlGroup label="Parameters">
-          <div>
-            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Modulus (n):</p>
+          <ControlCard>
+            <span className="control-kicker">Modulus (n)</span>
             <HashBadge hash={state.n.toString()} truncate={10} color="blue" />
-          </div>
-          <div>
-            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Generator (g):</p>
+          </ControlCard>
+          <ControlCard>
+            <span className="control-kicker">Generator (g)</span>
             <HashBadge hash={state.g.toString()} truncate={10} color="purple" />
-          </div>
+          </ControlCard>
         </ControlGroup>
 
         <ControlGroup label="Actions">
@@ -898,17 +870,16 @@ export function AccumulatorDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="control-button-row" style={{ flexWrap: 'wrap' }}>
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
             <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
           </div>
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      {/* Center Canvas */}
-      <div className="flex-1 relative">
+      <DemoCanvasArea>
         <AnimatedCanvas
           draw={handleDraw}
           camera={camera}
@@ -916,10 +887,9 @@ export function AccumulatorDemo() {
           {...mergedHandlers}
         />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:accumulator" />
-      </div>
+      </DemoCanvasArea>
 
-      {/* Right History Panel */}
-      <div className="w-56 shrink-0 overflow-y-auto border-l" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+      <DemoAside width="compact">
         <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#f59e0b' }}>History</h3>
         <div className="space-y-2">
           {state.history.length === 0 && (
@@ -928,13 +898,8 @@ export function AccumulatorDemo() {
             </div>
           )}
           {state.history.map((entry, index) => (
-            <div
+            <ControlCard
               key={index}
-              className="p-2 rounded border"
-              style={{
-                backgroundColor: 'var(--surface-element)',
-                borderColor: 'var(--surface-element-border)',
-              }}
             >
               <div className="flex items-center justify-between mb-1">
                 <span
@@ -956,10 +921,10 @@ export function AccumulatorDemo() {
                 <div>Before: ...{entry.accBefore.slice(-8)}</div>
                 <div>After: ...{entry.accAfter.slice(-8)}</div>
               </div>
-            </div>
+            </ControlCard>
           ))}
         </div>
-      </div>
+      </DemoAside>
 
       <EmbedModal
         isOpen={embedOpen}
@@ -967,6 +932,6 @@ export function AccumulatorDemo() {
         embedUrl={embedUrl}
         demoName="RSA Accumulator"
       />
-    </div>
+    </DemoLayout>
   );
 }

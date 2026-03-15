@@ -18,6 +18,26 @@ export function ControlGroup({ label, children }: ControlGroupProps) {
   );
 }
 
+interface ControlCardProps {
+  children: React.ReactNode;
+  tone?: 'default' | 'success' | 'error';
+}
+
+export function ControlCard({ children, tone = 'default' }: ControlCardProps) {
+  const className = tone === 'default' ? 'control-card' : `control-card control-card--${tone}`;
+  return <div className={className}>{children}</div>;
+}
+
+interface ControlNoteProps {
+  children: React.ReactNode;
+  tone?: 'default' | 'success' | 'error';
+}
+
+export function ControlNote({ children, tone = 'default' }: ControlNoteProps) {
+  const className = tone === 'default' ? 'control-note' : `control-note control-note--${tone}`;
+  return <div className={className}>{children}</div>;
+}
+
 interface SliderControlProps {
   label: string;
   value: number;

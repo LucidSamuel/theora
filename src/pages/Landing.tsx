@@ -22,7 +22,7 @@ const DEMO_DATA = [
     num: '02',
     title: 'KZG Commitments',
     tag: 'POLYNOMIAL EVALUATION · ELLIPTIC CURVES',
-    body: 'Commit to a polynomial, pick a challenge point, reveal a value, and verify — the full 4-step KZG flow animated. Drag coefficients to reshape the curve in real time.',
+    body: 'Commit to a polynomial, pick a challenge point, reveal a value, and verify the full 4-step KZG flow animated. Drag coefficients to reshape the curve in real time.',
     features: [
       'Lagrange interpolation by clicking the canvas',
       'Polynomial comparison via Schwartz-Zippel',
@@ -271,8 +271,7 @@ export function Landing() {
               </h2>
             </div>
             <div className="lp-about-body">
-              <p>zkREPL is a code playground, not a visualizer. Merkle tree demos are static and single-purpose. Conference talks rely on terminal output. Blog posts use static diagrams.</p>
-              <p className="mt-4">Theora is the missing piece — a unified, interactive, animated tool that lets you poke at the actual cryptographic primitives and build intuition before you write a line of Circom.</p>
+              <p className="mt-4">Theora is a unified, interactive, animated tool that lets you poke at the actual cryptographic primitives and build intuition before you write a line of code.</p>
               <div className="lp-audience-grid mt-8">
                 {['Engineers building ZK systems', 'Cryptographers & researchers', 'Security auditors', 'Educators & DevRel'].map((a) => (
                   <div key={a} className="lp-audience-item">
@@ -347,7 +346,7 @@ export function Landing() {
               {
                 num: '01',
                 title: 'State sharing & embedding',
-                body: 'Every demo serializes into the URL. Share a link, embed an iframe in docs or Notion — the recipient sees exactly what you see.',
+                body: 'Every demo serializes into the URL. Share a link, embed an iframe in docs, Notion and the recipient sees exactly what you see.',
               },
               {
                 num: '02',
@@ -362,12 +361,12 @@ export function Landing() {
               {
                 num: '04',
                 title: 'Dark & light themes',
-                body: 'System-aware with localStorage persistence. Every element responds via CSS custom properties — no dark: class overrides.',
+                body: 'System-aware with localStorage persistence. Every element responds via CSS custom properties, no dark: class overrides.',
               },
               {
                 num: '05',
                 title: 'Fault injection',
-                body: 'Inject bad proofs, wrong witnesses, and invalid inputs — watch verification fail in real time and trace the exact failure path.',
+                body: 'Inject bad proofs, wrong witnesses, and invalid inputs to watch verification fail in real time and trace the exact failure path.',
               },
               {
                 num: '06',

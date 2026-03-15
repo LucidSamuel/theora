@@ -1,7 +1,8 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
-import { ControlGroup, SelectControl, SliderControl, ToggleControl } from '@/components/shared/Controls';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { ControlGroup, SelectControl, SliderControl, ToggleControl, ControlCard, ControlNote } from '@/components/shared/Controls';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -65,43 +66,46 @@ export function EllipticDemo(): JSX.Element {
   }, [pointA, pointB, scalar, scalarResult.result, setEntry, sum]);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
+    <DemoLayout>
+      <DemoSidebar>
         <ControlGroup label="Point Addition">
           <SelectControl label="Point A" value={String(pointAIndex)} options={options} onChange={(value) => setPointAIndex(Number(value))} />
           <SelectControl label="Point B" value={String(pointBIndex)} options={options} onChange={(value) => setPointBIndex(Number(value))} />
-          <div className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <ControlNote>
             Finite-field curves are discrete, so this is a schematic line picture over the actual group law.
-          </div>
+          </ControlNote>
         </ControlGroup>
 
         <ControlGroup label="Scalar Multiply">
           <SliderControl label="Scalar k" value={scalar} min={2} max={16} step={1} onChange={setScalar} />
-          <div className="text-xs" style={{ color: 'var(--text-primary)' }}>
-            {scalar}·A = {pointLabel(scalarResult.result)}
-          </div>
+          <ControlCard>
+            <span className="control-kicker">Current result</span>
+            <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
+              {scalar}·A = {pointLabel(scalarResult.result)}
+            </div>
+          </ControlCard>
         </ControlGroup>
 
         <ControlGroup label="Pasta Cycle">
           <ToggleControl label="Show Cycle Summary" checked={showPasta} onChange={setShowPasta} />
           {showPasta && (
-            <div className="space-y-2 text-xs">
+            <div className="control-choice-list">
               {pasta.map((item) => (
-                <div key={item.curve} className="rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-element)' }}>
-                  <div style={{ color: 'var(--text-primary)' }}>{item.curve}</div>
-                  <div style={{ color: 'var(--text-muted)' }}>{item.field} / scalar {item.scalar}</div>
-                  <div style={{ color: 'var(--text-muted)' }}>{item.role}</div>
-                </div>
+                <ControlCard key={item.curve}>
+                  <span className="control-kicker">{item.curve}</span>
+                  <div className="control-value">{item.field} / scalar {item.scalar}</div>
+                  <div className="control-caption">{item.role}</div>
+                </ControlCard>
               ))}
             </div>
           )}
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      <div className="flex-1 relative min-w-0 overflow-hidden demo-canvas-area">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:elliptic" />
-      </div>
-    </div>
+      </DemoCanvasArea>
+    </DemoLayout>
   );
 }

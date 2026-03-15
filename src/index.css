@@ -840,12 +840,60 @@ body::before {
 .lp-footer-link:hover { color: var(--text-primary); }
 
 
-/* ─── Demo sidebar ─── */
+/* ─── Demo layout ─── */
 
-.demo-sidebar {
+.demo-layout {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-sidebar,
+.demo-aside {
   padding: 24px 20px;
   background: var(--bg-primary);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.demo-sidebar {
   border-right: 1px solid var(--border);
+}
+
+.demo-sidebar--standard {
+  width: 320px;
+}
+
+.demo-sidebar--compact {
+  width: 288px;
+}
+
+.demo-aside {
+  border-color: var(--border);
+}
+
+.demo-aside--right {
+  border-left: 1px solid var(--border);
+}
+
+.demo-aside--left {
+  border-right: 1px solid var(--border);
+}
+
+.demo-aside--compact {
+  width: 224px;
+}
+
+.demo-aside--narrow {
+  width: 192px;
+}
+
+.demo-canvas-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ─── App panels ─── */
@@ -881,6 +929,106 @@ body::before {
 
 .control-section:last-child {
   padding-bottom: 0;
+}
+
+.control-card,
+.control-note {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.control-card {
+  padding: 12px 14px;
+}
+
+.control-note {
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.control-card--success,
+.control-note--success {
+  border-color: color-mix(in srgb, var(--status-success) 35%, var(--border));
+  background: color-mix(in srgb, var(--status-success-bg) 70%, var(--bg-secondary));
+}
+
+.control-card--error,
+.control-note--error {
+  border-color: color-mix(in srgb, var(--status-error) 35%, var(--border));
+  background: color-mix(in srgb, var(--status-error-bg) 78%, var(--bg-secondary));
+}
+
+.control-button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.control-button-row > * {
+  flex: 1 1 0;
+}
+
+.control-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-choice-button {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.control-choice-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.control-choice-button.is-active {
+  background: var(--bg-hover);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.control-choice-button.is-complete {
+  color: var(--status-success);
+}
+
+.control-choice-button.is-error {
+  color: var(--status-error);
+}
+
+.control-kicker {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.control-value {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.control-caption {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 /* ─── App buttons ─── */

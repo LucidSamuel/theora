@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
-import { ControlGroup, TextInput, ButtonControl } from '@/components/shared/Controls';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { ControlGroup, TextInput, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -35,8 +36,8 @@ export function LookupDemo(): JSX.Element {
   }, [analysis, theme]);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
+    <DemoLayout>
+      <DemoSidebar>
         <ControlGroup label="Lookup Table">
           <TextInput value={tableInput} onChange={setTableInput} placeholder="1,2,3,5,8,13" />
         </ControlGroup>
@@ -48,22 +49,28 @@ export function LookupDemo(): JSX.Element {
         </ControlGroup>
 
         <ControlGroup label="Analysis">
-          <div className="text-xs leading-relaxed" style={{ color: analysis.passes ? 'var(--status-success)' : 'var(--status-error)' }}>
+          <ControlNote tone={analysis.passes ? 'success' : 'error'}>
             {analysis.passes ? 'Permutation-style lookup check passes.' : 'Lookup check fails.'}
-          </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Sorted table: [{analysis.sortedTable.join(', ')}]
-          </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Sorted wires: [{analysis.sortedWires.join(', ')}]
-          </div>
+          </ControlNote>
+          <ControlCard>
+            <span className="control-kicker">Sorted table</span>
+            <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+              [{analysis.sortedTable.join(', ')}]
+            </div>
+          </ControlCard>
+          <ControlCard>
+            <span className="control-kicker">Sorted wires</span>
+            <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+              [{analysis.sortedWires.join(', ')}]
+            </div>
+          </ControlCard>
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      <div className="flex-1 relative min-w-0 overflow-hidden demo-canvas-area">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:lookup" />
-      </div>
-    </div>
+      </DemoCanvasArea>
+    </DemoLayout>
   );
 }

@@ -66,6 +66,17 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
 }
 
 const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: string; url: string }[] }> = {
+  pipeline: {
+    concepts: [
+      'A proof system chains primitives: computation → constraints → polynomial → commitment → challenge → opening → verification.',
+      'Fiat-Shamir replaces the interactive verifier with a hash of the transcript, making the proof non-interactive.',
+      'The quotient polynomial trick proves polynomial evaluation without revealing the polynomial itself.',
+    ],
+    resources: [
+      { label: 'Vitalik – How do SNARKs work?', url: 'https://vitalik.eth.limo/general/2021/01/26/snarks.html' },
+      { label: 'ZK Whiteboard Sessions – SNARK Anatomy', url: 'https://zkhack.dev/whiteboard/' },
+    ],
+  },
   merkle: {
     concepts: [
       'Domain separation: leaf hashes use 0x00 prefix, internal nodes use 0x01, preventing second-preimage attacks.',
@@ -157,6 +168,11 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: strin
 };
 
 const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
+  pipeline: [
+    { term: 'R1CS', definition: 'Rank-1 constraint system encoding a computation.' },
+    { term: 'Commitment', definition: 'Binding hash of polynomial coefficients.' },
+    { term: 'Quotient', definition: 'Proof that (x−z) divides (p(x)−p(z)).' },
+  ],
   merkle: [
     { term: 'Leaf hash', definition: 'Hash of raw data at the tree edge.' },
     { term: 'Internal node', definition: 'Hash of left + right child hashes.' },
@@ -200,6 +216,7 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
 };
 
 const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
+  pipeline: ['Step through all 7 stages', 'Inject a bad witness fault', 'Try weak Fiat-Shamir'],
   merkle: ['Add a leaf', 'Generate a proof', 'Step through hashing'],
   polynomial: ['Adjust coefficients', 'Commit to the polynomial', 'Challenge and verify'],
   accumulator: ['Add primes', 'Select an element', 'Compute a witness'],

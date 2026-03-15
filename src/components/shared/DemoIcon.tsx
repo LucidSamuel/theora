@@ -1,7 +1,8 @@
 import type { DemoId } from '@/types';
-import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties } from 'lucide-react';
+import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties, Workflow } from 'lucide-react';
 
 const ICONS = {
+  pipeline: Workflow,
   merkle: TreePine,
   polynomial: Sigma,
   accumulator: Orbit,

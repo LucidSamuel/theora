@@ -2,12 +2,15 @@ import { useReducer, useCallback, useState, useRef, useEffect } from 'react';
 import type { PolynomialState, EvalPoint } from '@/types/polynomial';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import {
   ControlGroup,
   SliderControl,
   ToggleControl,
   ButtonControl,
   TextInput,
+  ControlCard,
+  ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
@@ -534,9 +537,8 @@ export function PolynomialDemo() {
   }, [hoverInfo, state.mode, state.lagrangePoints.length, state.kzg.currentStep, state.kzg.verified, setEntry]);
 
   return (
-    <div className="flex h-full">
-      {/* Controls */}
-      <div className="w-72 shrink-0 overflow-y-auto border-r" style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+    <DemoLayout>
+      <DemoSidebar width="compact">
         <ControlGroup label="Polynomial Mode">
           <ToggleControl
             label="Lagrange Interpolation"
@@ -598,25 +600,25 @@ export function PolynomialDemo() {
                 </>
               )}
               {state.compareEnabled && (
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <ControlNote>
                   The intersection count hints at the Schwartz‑Zippel bound.
-                </div>
+                </ControlNote>
               )}
             </ControlGroup>
           </>
         ) : (
           <ControlGroup label="Lagrange Points">
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            <ControlNote>
               Click on the canvas to place points. The polynomial will interpolate through all
               points.
-            </p>
+            </ControlNote>
             <ButtonControl
               label="Clear Points"
               onClick={() => dispatch({ type: 'CLEAR_LAGRANGE' })}
             />
             {state.coefficients.length > 0 && (
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                <p>Computed coefficients:</p>
+              <ControlCard>
+                <span className="control-kicker">Computed coefficients</span>
                 <ul className="mt-1 list-inside list-disc">
                   {state.coefficients.map((c, i) => (
                     <li key={i}>
@@ -624,7 +626,7 @@ export function PolynomialDemo() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </ControlCard>
             )}
           </ControlGroup>
         )}
@@ -656,7 +658,7 @@ export function PolynomialDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="control-button-row" style={{ flexWrap: 'wrap' }}>
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -671,9 +673,9 @@ export function PolynomialDemo() {
               disabled={state.coefficients.length === 0}
             />
             {state.kzg.commitment && (
-              <div className="rounded bg-blue-500/10 p-2">
+              <ControlCard>
                 <HashBadge hash={state.kzg.commitment} truncate={8} color="#3b82f6" />
-              </div>
+              </ControlCard>
             )}
 
             <ButtonControl
@@ -682,9 +684,12 @@ export function PolynomialDemo() {
               disabled={state.kzg.currentStep < 1}
             />
             {state.kzg.challengeZ !== null && (
-              <p className="text-sm" style={{ color: '#f59e0b' }}>
+              <ControlCard>
+                <span className="control-kicker">Challenge point</span>
+                <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
                 z = {state.kzg.challengeZ.toFixed(2)}
-              </p>
+                </div>
+              </ControlCard>
             )}
 
             <ButtonControl
@@ -693,12 +698,15 @@ export function PolynomialDemo() {
               disabled={state.kzg.currentStep < 2}
             />
             {state.kzg.revealedValue !== null && (
-              <div className="space-y-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <p>p(z) = {state.kzg.revealedValue.toFixed(4)}</p>
+              <ControlCard>
+                <span className="control-kicker">Opening</span>
+                <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+                  p(z) = {state.kzg.revealedValue.toFixed(4)}
+                </div>
                 {state.kzg.proofHash && (
                   <HashBadge hash={state.kzg.proofHash} truncate={8} color="#10b981" />
                 )}
-              </div>
+              </ControlCard>
             )}
 
             <ButtonControl
@@ -707,30 +715,22 @@ export function PolynomialDemo() {
               disabled={state.kzg.currentStep < 3}
             />
             {state.kzg.verified !== null && (
-              <p
-                className="text-sm font-bold"
-                style={{
-                  color: state.kzg.verified
-                    ? 'var(--status-success)'
-                    : 'var(--status-error)',
-                }}
-              >
+              <ControlNote tone={state.kzg.verified ? 'success' : 'error'}>
                 {state.kzg.verified ? '✓ Proof Verified' : '✗ Verification Failed'}
-              </p>
+              </ControlNote>
             )}
 
             <ButtonControl label="Reset" onClick={() => dispatch({ type: 'KZG_RESET' })} />
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            <ControlNote>
               Schwartz-Zippel intuition: two distinct degree‑d polynomials can agree on at most d points.
-            </div>
+            </ControlNote>
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      {/* Canvas */}
-      <div className="flex-1 relative">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:polynomial" />
-      </div>
+      </DemoCanvasArea>
 
       <EmbedModal
         isOpen={embedOpen}
@@ -738,6 +738,6 @@ export function PolynomialDemo() {
         embedUrl={embedUrl}
         demoName="KZG Commitments"
       />
-    </div>
+    </DemoLayout>
   );
 }

@@ -1,11 +1,14 @@
 import { useReducer, useEffect, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import {
   ControlGroup,
   ButtonControl,
   TextInput,
   SelectControl,
+  ControlCard,
+  ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
@@ -580,11 +583,8 @@ export function MerkleDemo() {
   };
 
   return (
-    <div className="flex h-full">
-      <div
-        className="w-72 shrink-0 overflow-y-auto border-r"
-        style={{ padding: '24px 20px', backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border)' }}
-      >
+    <DemoLayout>
+      <DemoSidebar width="compact">
         <ControlGroup label="Merkle Tree">
           <div className="flex flex-col gap-3">
             <TextInput
@@ -611,13 +611,13 @@ export function MerkleDemo() {
             />
 
           {state.leaves.length > 64 && (
-            <div className="text-xs" style={{ color: '#f59e0b' }}>
+            <ControlNote tone="error">
               Large tree detected. Using FNV-1a for performance.
-            </div>
+            </ControlNote>
           )}
 
           {state.isBuilding && (
-            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Building…</div>
+            <ControlNote>Building…</ControlNote>
           )}
         </ControlGroup>
 
@@ -661,7 +661,7 @@ export function MerkleDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+          <div className="control-button-row mt-1.5" style={{ flexWrap: 'wrap' }}>
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -672,18 +672,19 @@ export function MerkleDemo() {
         {state.proof && (
           <ControlGroup label="Merkle Proof">
             <div className="space-y-2">
-              <div className="text-xs">
-                <div className="font-semibold mb-1">Leaf Index: {state.proof.leafIndex}</div>
+              <ControlCard>
+                <span className="control-kicker">Leaf index</span>
+                <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>{state.proof.leafIndex}</div>
                 <div className="mb-2">
                   <HashBadge hash={state.proof.leafHash} />
                 </div>
                 <div className="mb-2">
                   <HashBadge hash={state.proof.root} />
                 </div>
-              </div>
+              </ControlCard>
 
-              <div className="border-t pt-2" style={{ borderColor: 'var(--border)' }}>
-                <div className="text-xs font-semibold mb-2">
+              <ControlCard>
+                <div className="control-kicker" style={{ marginBottom: 10 }}>
                   Proof Steps ({proofSteps.length})
                 </div>
                 {proofSteps.map((step, i) => (
@@ -702,9 +703,9 @@ export function MerkleDemo() {
                     </div>
                   </div>
                 ))}
-              </div>
+              </ControlCard>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="control-button-row">
                 <ButtonControl
                   label="← Back"
                   onClick={() => dispatch({ type: 'STEP_BACK' })}
@@ -718,40 +719,34 @@ export function MerkleDemo() {
                 />
               </div>
 
-              <div className="rounded p-2 text-xs panel-inset">
-                <div className="font-semibold mb-1">Current Hash</div>
+              <ControlCard>
+                <span className="control-kicker">Current hash</span>
                 {state.proofProgressHash ? (
                   <HashBadge hash={state.proofProgressHash} />
                 ) : (
                   <div style={{ color: 'var(--text-muted)' }}>No steps yet</div>
                 )}
-              </div>
+              </ControlCard>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="control-button-row">
                 <ButtonControl label="Copy JSON" onClick={handleCopyProof} />
                 <ButtonControl label="Download" onClick={handleDownloadProof} variant="secondary" />
               </div>
 
               {state.proofVerified !== null && (
-                <div
-                  className="rounded p-2 text-xs"
-                  style={{
-                    backgroundColor: state.proofVerified ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                    color: state.proofVerified ? '#22c55e' : '#ef4444',
-                  }}
-                >
+                <ControlNote tone={state.proofVerified ? 'success' : 'error'}>
                   {state.proofVerified ? '✓ Proof verified' : '✗ Proof failed'}
-                </div>
+                </ControlNote>
               )}
             </div>
           </ControlGroup>
         )}
-      </div>
+      </DemoSidebar>
 
-      <div className="flex-1 relative">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:merkle" />
-      </div>
+      </DemoCanvasArea>
 
       <EmbedModal
         isOpen={embedOpen}
@@ -759,6 +754,6 @@ export function MerkleDemo() {
         embedUrl={embedUrl}
         demoName="Merkle Tree"
       />
-    </div>
+    </DemoLayout>
   );
 }

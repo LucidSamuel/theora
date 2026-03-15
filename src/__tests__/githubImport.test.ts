@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { applyImportedState, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { getActiveDemoLocation } from '@/hooks/useActiveDemo';
 
 const originalWindow = (globalThis as { window?: unknown }).window;
 
@@ -83,5 +84,28 @@ describe('export envelope helpers', () => {
     const json = serializeTheoraImport({ version: 1, demo: 'recursive', state: { depth: 3 } });
     expect(json).toContain('"demo": "recursive"');
     expect(json).toContain('"depth": 3');
+  });
+});
+
+describe('same-demo import regression', () => {
+  it('changes the active location key when importing new state into the already-open demo', () => {
+    window.history.replaceState(null, '', '/app#merkle|%7B%22leaves%22%3A%5B%22a%22%2C%22b%22%5D%7D');
+
+    const before = getActiveDemoLocation();
+    expect(before).toEqual({
+      activeDemo: 'merkle',
+      locationKey: 'merkle|%7B%22leaves%22%3A%5B%22a%22%2C%22b%22%5D%7D',
+    });
+
+    applyImportedState({
+      version: 1,
+      demo: 'merkle',
+      state: { leaves: ['alpha', 'beta', 'gamma'], selectedLeafIndex: 2 },
+    });
+
+    const after = getActiveDemoLocation();
+    expect(after.activeDemo).toBe('merkle');
+    expect(after.locationKey).not.toBe(before.locationKey);
+    expect(after.locationKey).toContain('selectedLeafIndex');
   });
 });

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
-import { ControlGroup, SliderControl, ToggleControl, ButtonControl } from '@/components/shared/Controls';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { ControlGroup, SliderControl, ToggleControl, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -42,15 +43,15 @@ export function CircuitDemo(): JSX.Element {
   }, [broken, constraints, theme, witness]);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
+    <DemoLayout>
+      <DemoSidebar>
         <ControlGroup label="Witness">
           <SliderControl label="x" value={x} min={0} max={8} onChange={setX} />
           <SliderControl label="y" value={y} min={0} max={12} onChange={setY} />
           <SliderControl label="z" value={z} min={0} max={40} onChange={setZ} />
-          <div className="text-xs" style={{ color: valid ? 'var(--status-success)' : 'var(--status-error)' }}>
+          <ControlNote tone={valid ? 'success' : 'error'}>
             {valid ? 'Witness satisfies the active constraints.' : 'Witness violates at least one active constraint.'}
-          </div>
+          </ControlNote>
         </ControlGroup>
 
         <ControlGroup label="Constraint Model">
@@ -60,23 +61,23 @@ export function CircuitDemo(): JSX.Element {
         </ControlGroup>
 
         <ControlGroup label="R1CS Rows">
-          <div className="space-y-2 text-xs">
+          <div className="control-choice-list">
             {rows.map((row) => (
-              <div key={row.label} className="rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-element)' }}>
-                <div style={{ color: 'var(--text-primary)' }}>{row.label}</div>
-                <div style={{ color: 'var(--text-muted)' }}>A: [{row.A.join(', ')}]</div>
-                <div style={{ color: 'var(--text-muted)' }}>B: [{row.B.join(', ')}]</div>
-                <div style={{ color: 'var(--text-muted)' }}>C: [{row.C.join(', ')}]</div>
-              </div>
+              <ControlCard key={row.label}>
+                <span className="control-kicker">{row.label}</span>
+                <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>A: [{row.A.join(', ')}]</div>
+                <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>B: [{row.B.join(', ')}]</div>
+                <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>C: [{row.C.join(', ')}]</div>
+              </ControlCard>
             ))}
           </div>
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      <div className="flex-1 relative min-w-0 overflow-hidden demo-canvas-area">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:circuit" />
-      </div>
-    </div>
+      </DemoCanvasArea>
+    </DemoLayout>
   );
 }

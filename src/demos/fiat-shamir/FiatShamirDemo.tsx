@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
-import { ControlGroup, SelectControl, SliderControl, ButtonControl } from '@/components/shared/Controls';
+import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { ControlGroup, SelectControl, SliderControl, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -43,8 +44,8 @@ export function FiatShamirDemo(): JSX.Element {
   }, [forged, mode, proof, theme]);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <div className="w-[320px] shrink-0 overflow-y-auto demo-sidebar">
+    <DemoLayout>
+      <DemoSidebar>
         <ControlGroup label="Protocol Mode">
           <SelectControl
             label="Challenge source"
@@ -62,28 +63,34 @@ export function FiatShamirDemo(): JSX.Element {
           <SliderControl label="Secret" value={secret} min={2} max={15} onChange={setSecret} />
           <SliderControl label="Nonce" value={nonce} min={2} max={20} onChange={setNonce} />
           <SliderControl label="Verifier seed" value={verifierSeed} min={1} max={40} onChange={setVerifierSeed} />
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Public key y = {derivePublicKey(secret)}, statement = {statement}
-          </div>
+          <ControlCard>
+            <span className="control-kicker">Public statement</span>
+            <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
+              y = {derivePublicKey(secret)}, s = {statement}
+            </div>
+          </ControlCard>
         </ControlGroup>
 
         <ControlGroup label="Forgery">
           <ButtonControl label="Jump To Broken Mode" onClick={() => setMode('fs-broken')} />
-          <div className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <ControlNote>
             In broken mode, the prover can predict the challenge before choosing the commitment and back-solve a convincing transcript.
-          </div>
+          </ControlNote>
           {forged && (
-            <div className="rounded-lg border p-3 text-xs" style={{ borderColor: 'var(--border)', background: 'var(--surface-element)' }}>
-              forged `(t, c, z)` = ({forged.commitment}, {forged.challenge}, {forged.response})
-            </div>
+            <ControlCard tone="error">
+              <span className="control-kicker">Forged transcript</span>
+              <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+                (t, c, z) = ({forged.commitment}, {forged.challenge}, {forged.response})
+              </div>
+            </ControlCard>
           )}
         </ControlGroup>
-      </div>
+      </DemoSidebar>
 
-      <div className="flex-1 relative min-w-0 overflow-hidden demo-canvas-area">
+      <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:fiat-shamir" />
-      </div>
-    </div>
+      </DemoCanvasArea>
+    </DemoLayout>
   );
 }

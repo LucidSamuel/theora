@@ -13,9 +13,11 @@ import { EllipticDemo } from '@/demos/elliptic/EllipticDemo';
 import { FiatShamirDemo } from '@/demos/fiat-shamir/FiatShamirDemo';
 import { CircuitDemo } from '@/demos/circuit/CircuitDemo';
 import { LookupDemo } from '@/demos/lookup/LookupDemo';
+import { PipelineDemo } from '@/demos/pipeline/PipelineDemo';
 import { DEMOS } from '@/types';
 
 const DEMO_NAMES = {
+  pipeline: 'Proof Pipeline',
   merkle: 'Merkle Tree',
   polynomial: 'Polynomial Commitments',
   accumulator: 'RSA Accumulator',
@@ -28,7 +30,7 @@ const DEMO_NAMES = {
 
 export default function App() {
   const { theme, toggle } = useTheme();
-  const { activeDemo, switchDemo } = useActiveDemo();
+  const { activeDemo, activeLocationKey, switchDemo } = useActiveDemo();
   const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
@@ -56,6 +58,8 @@ export default function App() {
 
   const renderDemo = () => {
     switch (activeDemo) {
+      case 'pipeline':
+        return <PipelineDemo />;
       case 'merkle':
         return <MerkleDemo />;
       case 'polynomial':
@@ -85,7 +89,7 @@ export default function App() {
         onOpenImport={() => setImportOpen(true)}
       >
         <DemoContainer activeDemo={activeDemo}>
-          <DemoErrorBoundary key={activeDemo} demoName={DEMO_NAMES[activeDemo]}>
+          <DemoErrorBoundary key={activeLocationKey} demoName={DEMO_NAMES[activeDemo]}>
             {renderDemo()}
           </DemoErrorBoundary>
         </DemoContainer>
