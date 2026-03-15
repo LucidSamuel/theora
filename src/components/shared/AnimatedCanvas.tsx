@@ -95,6 +95,26 @@ export function AnimatedCanvas({
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
 
+        // ── Infinite background (screen space, before camera transform) ──
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        ctx.fillStyle = isDark ? '#0a0a0a' : '#f9f9f9';
+        ctx.fillRect(0, 0, w, h);
+
+        // Dot grid that scrolls with the camera to create infinite-canvas feel
+        const dotSpacing = 28;
+        const dotRadius = isDark ? 0.85 : 1;
+        const ox = ((cam.panX % dotSpacing) + dotSpacing) % dotSpacing;
+        const oy = ((cam.panY % dotSpacing) + dotSpacing) % dotSpacing;
+        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.09)';
+        for (let x = ox - dotSpacing; x <= w + dotSpacing; x += dotSpacing) {
+          for (let y = oy - dotSpacing; y <= h + dotSpacing; y += dotSpacing) {
+            ctx.beginPath();
+            ctx.arc(x, y, dotRadius, 0, 6.2832);
+            ctx.fill();
+          }
+        }
+        // ── end infinite background ──
+
         // Apply camera transform: translate then scale
         ctx.translate(cam.panX, cam.panY);
         ctx.scale(cam.zoom, cam.zoom);
