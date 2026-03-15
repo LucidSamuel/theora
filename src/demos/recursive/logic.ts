@@ -196,8 +196,10 @@ export function getAllNodes(root: ProofNode): Map<string, ProofNode> {
 }
 
 /**
- * Computes layout positions for tree nodes
- * Root at top, leaves at bottom, evenly distributed
+ * Computes layout positions for tree nodes using a leaf-first centering approach.
+ * Leaves get sequential horizontal slots; parents are centered above their children.
+ * The virtual canvas expands as needed so nodes never overlap — the camera handles
+ * showing the full tree via zoom/pan.
  */
 export function computeTreeLayout(
   root: ProofNode,
@@ -205,53 +207,79 @@ export function computeTreeLayout(
   height: number
 ): Map<string, { x: number; y: number }> {
   const positions = new Map<string, { x: number; y: number }>();
-  const padding = 60;
+
+  // Node geometry constants (must stay in sync with renderer)
+  const NODE_W = 118;
+  const NODE_H = 58;
+  const H_GAP = 22;  // min horizontal gap between sibling node edges
+  const V_GAP = 72;  // vertical gap between node edges
+
+  const slotW = NODE_W + H_GAP;  // horizontal distance between leaf centers
 
   // First pass: determine max depth
   let maxDepth = 0;
   function findMaxDepth(node: ProofNode): void {
     maxDepth = Math.max(maxDepth, node.depth);
-    for (const child of node.children) {
-      findMaxDepth(child);
-    }
+    for (const child of node.children) findMaxDepth(child);
   }
   findMaxDepth(root);
 
-  // Calculate vertical spacing
-  const usableHeight = height - padding * 2;
-  const verticalSpacing = maxDepth > 0 ? usableHeight / maxDepth : 0;
-
-  // Count nodes at each depth for horizontal spacing
-  const nodesAtDepth = new Map<number, number>();
-  function countNodes(node: ProofNode): void {
-    nodesAtDepth.set(node.depth, (nodesAtDepth.get(node.depth) ?? 0) + 1);
-    for (const child of node.children) {
-      countNodes(child);
+  // Assign each leaf a sequential slot index
+  let leafCounter = 0;
+  const leafSlot = new Map<string, number>();
+  function assignLeafSlots(node: ProofNode): void {
+    if (node.children.length === 0) {
+      leafSlot.set(node.id, leafCounter++);
     }
+    for (const child of node.children) assignLeafSlots(child);
   }
-  countNodes(root);
+  assignLeafSlots(root);
 
-  // Second pass: assign positions
-  const indexAtDepth = new Map<number, number>();
+  const totalLeaves = Math.max(leafCounter, 1);
 
-  function assignPosition(node: ProofNode): void {
-    const currentIndex = indexAtDepth.get(node.depth) ?? 0;
-    indexAtDepth.set(node.depth, currentIndex + 1);
+  // Total footprint: (n-1) gaps between centers + one node on each side
+  const treeFootprintW = (totalLeaves - 1) * slotW + NODE_W;
+  const treeFootprintH = (maxDepth + 1) * (NODE_H + V_GAP) - V_GAP;
+  const hMargin = 60;
+  const vMargin = 60;
 
-    const totalAtDepth = nodesAtDepth.get(node.depth) ?? 1;
-    const usableWidth = width - padding * 2;
+  // Virtual canvas dimensions (may exceed physical canvas — camera zooms to fit)
+  const vWidth = Math.max(width, treeFootprintW + hMargin * 2);
+  const vHeight = Math.max(height, treeFootprintH + vMargin * 2);
 
-    // Distribute nodes evenly across width
-    const x = padding + (usableWidth / (totalAtDepth + 1)) * (currentIndex + 1);
-    const y = padding + verticalSpacing * node.depth;
+  const levelH = NODE_H + V_GAP;
+  // Leaf 0 center: placed so left edge is at hMargin, then centered in vWidth
+  const treeLeft = (vWidth - treeFootprintW) / 2;
+  const originX = treeLeft + NODE_W / 2;
+  const originY = vMargin + NODE_H / 2;
 
-    positions.set(node.id, { x, y });
+  // Second pass: compute center x for each node bottom-up
+  const centerX = new Map<string, number>();
 
-    for (const child of node.children) {
-      assignPosition(child);
+  function assignX(node: ProofNode): number {
+    if (node.children.length === 0) {
+      const slot = leafSlot.get(node.id) ?? 0;
+      const cx = originX + slot * slotW;
+      centerX.set(node.id, cx);
+      return cx;
     }
+    // Parent is centered above children
+    const childCenters = node.children.map(c => assignX(c));
+    const cx = (Math.min(...childCenters) + Math.max(...childCenters)) / 2;
+    centerX.set(node.id, cx);
+    return cx;
   }
+  assignX(root);
 
-  assignPosition(root);
+  // Third pass: assign final positions
+  function assignPositions(node: ProofNode): void {
+    const cx = centerX.get(node.id) ?? width / 2;
+    const cy = originY + node.depth * levelH;  // originY already includes NODE_H/2
+    positions.set(node.id, { x: cx, y: cy });
+    for (const child of node.children) assignPositions(child);
+  }
+  assignPositions(root);
+
+  void vHeight;
   return positions;
 }

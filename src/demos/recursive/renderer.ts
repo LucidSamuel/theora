@@ -1,38 +1,272 @@
 import type { ProofNode, VerificationState, IvcChain } from '@/types/recursive';
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
-import { drawGrid, drawLine, drawRoundedRect, hexToRgba, drawArrow } from '@/lib/canvas';
+import { drawRoundedRect, hexToRgba } from '@/lib/canvas';
 import { getConstantProofSize } from './logic';
 
-const COLORS = {
+// ─── Palette ──────────────────────────────────────────────────────────────────
+
+const PAL = {
   dark: {
-    background: '#0a0a0a',
-    grid: '#1a1a1a',
-    text: '#e5e5e5',
-    textSecondary: '#a3a3a3',
-    pending: '#525252',
-    verifying: '#eab308',
-    verified: '#22c55e',
-    failed: '#ef4444',
-    pallas: '#d4d4d8',
-    vesta: '#71717a',
+    bg0: '#090910',
+    bg1: '#0e0e18',
+    text: '#e8e8f0',
+    textMuted: '#72728a',
+    pending:  { border: '#3d3d55', fill: 'rgba(61,61,85,0.12)',  glow: '#3d3d55' },
+    verifying:{ border: '#f59e0b', fill: 'rgba(245,158,11,0.10)', glow: '#f59e0b' },
+    verified: { border: '#22c55e', fill: 'rgba(34,197,94,0.08)',  glow: '#22c55e' },
+    failed:   { border: '#ef4444', fill: 'rgba(239,68,68,0.10)',  glow: '#ef4444' },
+    pallas:   '#6366f1',
+    vesta:    '#a855f7',
+    edge:     '#2a2a3a',
   },
   light: {
-    background: '#ffffff',
-    grid: '#f5f5f5',
-    text: '#171717',
-    textSecondary: '#525252',
-    pending: '#a3a3a3',
-    verifying: '#eab308',
-    verified: '#22c55e',
-    failed: '#ef4444',
-    pallas: '#3f3f46',
-    vesta: '#71717a',
+    bg0: '#f8f8fc',
+    bg1: '#f1f1f8',
+    text: '#1a1a2e',
+    textMuted: '#6b6b8a',
+    pending:  { border: '#c4c4d8', fill: 'rgba(180,180,210,0.10)', glow: '#c4c4d8' },
+    verifying:{ border: '#d97706', fill: 'rgba(217,119,6,0.08)',   glow: '#d97706' },
+    verified: { border: '#16a34a', fill: 'rgba(22,163,74,0.07)',   glow: '#16a34a' },
+    failed:   { border: '#dc2626', fill: 'rgba(220,38,38,0.08)',   glow: '#dc2626' },
+    pallas:   '#4f46e5',
+    vesta:    '#9333ea',
+    edge:     '#d4d4e8',
   },
 };
 
-/**
- * Renders the proof tree in tree mode
- */
+// ─── Node dimensions ──────────────────────────────────────────────────────────
+
+const NW = 118;
+const NH = 58;
+const NR = 13; // corner radius
+
+// ─── Bezier helpers ──────────────────────────────────────────────────────────
+
+function bezierPoint(t: number, p0: number, p1: number, p2: number, p3: number): number {
+  const u = 1 - t;
+  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+}
+
+function drawBezierEdge(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  color: string,
+  alpha: number,
+  lineWidth = 1.5
+): void {
+  const dy = y2 - y1;
+  const cy = dy * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.bezierCurveTo(x1, y1 + cy, x2, y2 - cy, x2, y2);
+  ctx.strokeStyle = hexToRgba(color, alpha);
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function drawFlowParticles(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  time: number,
+  color: string,
+  count = 2
+): void {
+  const dy = y2 - y1;
+  const cy = dy * 0.45;
+
+  for (let i = 0; i < count; i++) {
+    const rawT = ((time * 0.55 + i / count) % 1);
+    const t = rawT;
+    const px = bezierPoint(t, x1, x1, x2, x2);
+    const py = bezierPoint(t, y1, y1 + cy, y2 - cy, y2);
+
+    const outer = 7;
+    const inner = 2.5;
+    const grad = ctx.createRadialGradient(px, py, inner, px, py, outer);
+    grad.addColorStop(0, hexToRgba(color, 0.9));
+    grad.addColorStop(0.4, hexToRgba(color, 0.35));
+    grad.addColorStop(1, hexToRgba(color, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(px, py, outer, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ─── Node drawing ─────────────────────────────────────────────────────────────
+
+function drawNode(
+  ctx: CanvasRenderingContext2D,
+  node: ProofNode,
+  px: number, py: number,
+  time: number,
+  showPastaCurves: boolean,
+  showProofSize: boolean,
+  isRoot: boolean,
+  isHovered: boolean,
+  colors: typeof PAL.dark
+): void {
+  const x = px - NW / 2;
+  const y = py - NH / 2;
+
+  const statusPal = colors[node.status as keyof typeof colors] as { border: string; fill: string; glow: string };
+  const curveColor = node.curve === 'pallas' ? colors.pallas : colors.vesta;
+  const borderColor = showPastaCurves ? curveColor : statusPal.border;
+  const glowColor = showPastaCurves ? curveColor : statusPal.glow;
+
+  // ── Outer glow shadow ───
+  const glowAlpha = node.status === 'pending' ? 0 : node.status === 'verifying' ? 0.5 + Math.sin(time * 6) * 0.25 : 0.35;
+  if (glowAlpha > 0 || isHovered) {
+    ctx.save();
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = isHovered ? 22 : (node.status === 'verifying' ? 18 + Math.sin(time * 6) * 6 : 14);
+    ctx.strokeStyle = hexToRgba(borderColor, 0);
+    ctx.lineWidth = 0;
+    drawRoundedRect(ctx, x, y, NW, NH, NR);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Root pulsing outer ring ───
+  if (isRoot && node.status === 'verified') {
+    const pulse = Math.sin(time * 2.5) * 0.5 + 0.5;
+    ctx.strokeStyle = hexToRgba(glowColor, 0.15 + pulse * 0.12);
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, x - 8, y - 8, NW + 16, NH + 16, NR + 8);
+    ctx.stroke();
+  }
+
+  if (isRoot && node.status === 'verifying') {
+    const pulse = Math.sin(time * 7) * 0.5 + 0.5;
+    ctx.strokeStyle = hexToRgba(colors.verifying.border, 0.3 + pulse * 0.2);
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, x - 8, y - 8, NW + 16, NH + 16, NR + 8);
+    ctx.stroke();
+  }
+
+  // ── Node fill ───
+  ctx.fillStyle = statusPal.fill;
+  drawRoundedRect(ctx, x, y, NW, NH, NR);
+  ctx.fill();
+
+  // ── Node border ───
+  const borderAlpha = node.status === 'pending' ? 0.35 : 0.75;
+  ctx.strokeStyle = hexToRgba(borderColor, borderAlpha);
+  ctx.lineWidth = node.status === 'verified' || node.status === 'failed' ? 1.5 : 1.5;
+  drawRoundedRect(ctx, x, y, NW, NH, NR);
+  ctx.stroke();
+
+  // ── Status dot (top-right) ───
+  const dotX = x + NW - 14;
+  const dotY = y + 14;
+  const dotR = 5;
+  ctx.fillStyle = hexToRgba(statusPal.border, node.status === 'pending' ? 0.35 : 1);
+  ctx.beginPath();
+  ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (node.status === 'verifying') {
+    const pulse = Math.sin(time * 8) * 0.5 + 0.5;
+    ctx.strokeStyle = hexToRgba(colors.verifying.border, 0.5 + pulse * 0.4);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, dotR + 3 + pulse * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // ── Root crown badge (top-left) ───
+  if (isRoot) {
+    ctx.fillStyle = hexToRgba(borderColor, 0.7);
+    ctx.font = `bold 8px system-ui`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ROOT', x + 8, y + 6);
+  }
+
+  // ── Proof label ───
+  const centerX = px - (isRoot ? 8 : 0);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Greek π symbol
+  ctx.fillStyle = colors.text;
+  ctx.font = `bold 18px Georgia, serif`;
+  ctx.fillText('π', centerX - 8, py - 7);
+
+  // subscript (depth, index)
+  ctx.font = `500 10px system-ui, sans-serif`;
+  ctx.fillStyle = colors.textMuted;
+  ctx.fillText(`${node.depth},${node.index}`, centerX + 14, py - 2);
+
+  // ── Curve label or leaf marker ───
+  if (node.children.length === 0) {
+    // Leaf badge
+    ctx.fillStyle = hexToRgba(colors.textMuted, 0.7);
+    ctx.font = `500 9px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('leaf', px, py + 12);
+  } else if (showPastaCurves) {
+    const curveName = node.curve === 'pallas' ? 'Pallas' : 'Vesta';
+    ctx.fillStyle = hexToRgba(curveColor, 0.85);
+    ctx.font = `600 9px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(curveName, px, py + 13);
+  }
+
+  // ── Proof size bar ───
+  if (showProofSize && node.status === 'verified') {
+    getConstantProofSize();
+    const barW = 34;
+    const barH = 4;
+    const barX = x + NW + 6;
+    const barY = py - barH / 2;
+    ctx.fillStyle = hexToRgba(colors.verified.border, 0.25);
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = hexToRgba(colors.verified.border, 0.7);
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('288B', barX + barW + 4, py);
+  }
+}
+
+// ─── Background ───────────────────────────────────────────────────────────────
+
+function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number, colors: typeof PAL.dark): void {
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, width * 0.6, height);
+  bg.addColorStop(0, colors.bg0);
+  bg.addColorStop(1, colors.bg1);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // Subtle dot grid
+  const dotSpacing = 32;
+  const dotR = 0.8;
+  const dotColor = colors === PAL.dark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.065)';
+  ctx.fillStyle = dotColor;
+  for (let gx = dotSpacing; gx < width; gx += dotSpacing) {
+    for (let gy = dotSpacing; gy < height; gy += dotSpacing) {
+      ctx.beginPath();
+      ctx.arc(gx, gy, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Radial vignette
+  const vig = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.65);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, colors === PAL.dark ? 'rgba(0,0,0,0.45)' : 'rgba(80,80,120,0.07)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, width, height);
+}
+
+// ─── renderProofTree ─────────────────────────────────────────────────────────
+
 export function renderProofTree(
   ctx: CanvasRenderingContext2D,
   frame: FrameInfo,
@@ -45,65 +279,63 @@ export function renderProofTree(
   mouseY: number,
   theme: 'dark' | 'light'
 ): { hovered: { type: 'node'; id: string; label: string; status: string; curve: string } | null } {
-  const colors = COLORS[theme];
+  const colors = PAL[theme];
   const { time, width, height } = frame;
 
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  if (theme === 'dark') {
-    gradient.addColorStop(0, '#0a0a0a');
-    gradient.addColorStop(1, '#111111');
-  } else {
-    gradient.addColorStop(0, '#fafafa');
-    gradient.addColorStop(1, '#f4f4f5');
-  }
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  void verification;
 
-  // Grid
-  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(63, 63, 70, 0.08)');
-
-  // Vignette
-  const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
-  vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(63,63,70,0.08)');
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  drawBackground(ctx, width, height, colors);
 
   if (!root) return { hovered: null };
 
-  // Suppress unused lint for verification (used in render logic)
-  void verification;
-
-  // Helper to get status color
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'pending':
-        return colors.pending;
-      case 'verifying':
-        return colors.verifying;
-      case 'verified':
-        return colors.verified;
-      case 'failed':
-        return colors.failed;
-      default:
-        return colors.pending;
-    }
+  const statusColor = (status: string): string => {
+    const s = status as keyof typeof colors;
+    const entry = colors[s] as { border: string } | undefined;
+    return entry?.border ?? colors.pending.border;
   };
 
-  // Draw edges first
+  // ── Collect all nodes and their positions ────
+  const allNodes: ProofNode[] = [];
+  function collect(node: ProofNode): void {
+    allNodes.push(node);
+    for (const child of node.children) collect(child);
+  }
+  collect(root);
+
+  // ── Draw edges first ─────────────────────────
   function drawEdges(node: ProofNode): void {
     const pos = positions.get(node.id);
     if (!pos) return;
 
     for (const child of node.children) {
-      const childPos = positions.get(child.id);
-      if (!childPos) continue;
+      const cpos = positions.get(child.id);
+      if (!cpos) continue;
 
-      const edgeColor = getStatusColor(child.status);
-      ctx.strokeStyle = hexToRgba(edgeColor, 0.4);
-      ctx.lineWidth = 2;
-      drawLine(ctx, pos.x, pos.y + 20, childPos.x, childPos.y - 20, hexToRgba(edgeColor, 0.4), 2);
+      const childStatusColor = statusColor(child.status);
+      const isVerifying = child.status === 'verifying' || node.status === 'verifying';
+      const edgeAlpha = child.status === 'pending' ? 0.2 : 0.5;
+
+      // Main bezier edge
+      drawBezierEdge(
+        ctx,
+        pos.x, pos.y + NH / 2,
+        cpos.x, cpos.y - NH / 2,
+        childStatusColor,
+        edgeAlpha,
+        1.5
+      );
+
+      // Flowing particles when active
+      if (isVerifying) {
+        drawFlowParticles(
+          ctx,
+          pos.x, pos.y + NH / 2,
+          cpos.x, cpos.y - NH / 2,
+          time,
+          childStatusColor,
+          2
+        );
+      }
 
       drawEdges(child);
     }
@@ -111,120 +343,59 @@ export function renderProofTree(
 
   drawEdges(root);
 
+  // ── Draw nodes ───────────────────────────────
   let hovered: { type: 'node'; id: string; label: string; status: string; curve: string } | null = null;
 
-  // Draw nodes
-  function drawNodes(node: ProofNode): void {
+  for (const node of allNodes) {
     const pos = positions.get(node.id);
-    if (!pos) return;
+    if (!pos) continue;
 
-    const nodeWidth = 80;
-    const nodeHeight = 40;
-    const x = pos.x - nodeWidth / 2;
-    const y = pos.y - nodeHeight / 2;
+    const isRoot = node.id === root.id;
+    const isHovered =
+      mouseX >= pos.x - NW / 2 &&
+      mouseX <= pos.x + NW / 2 &&
+      mouseY >= pos.y - NH / 2 &&
+      mouseY <= pos.y + NH / 2;
 
-    // Determine node color
-    let nodeColor = colors.verified;
-    if (showPastaCurves) {
-      nodeColor = node.curve === 'pallas' ? colors.pallas : colors.vesta;
+    if (isHovered) {
+      hovered = { type: 'node', id: node.id, label: node.label, status: node.status, curve: node.curve };
     }
 
-    const statusColor = getStatusColor(node.status);
-
-    // Draw node background
-    ctx.fillStyle = hexToRgba(nodeColor, 0.15);
-    ctx.strokeStyle = hexToRgba(statusColor, 0.6);
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, x, y, nodeWidth, nodeHeight, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // Verification wave effect for verifying nodes
-    if (node.status === 'verifying') {
-      const pulse = Math.sin(time * 5) * 0.5 + 0.5;
-      const ringRadius = 25 + pulse * 10;
-
-      ctx.strokeStyle = hexToRgba(colors.verifying, 0.4 - pulse * 0.3);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Second ring
-      ctx.strokeStyle = hexToRgba(colors.verifying, 0.2 - pulse * 0.15);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, ringRadius + 8, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // Status icon
-    let icon = '⏳';
-    if (node.status === 'verifying') {
-      icon = '⚡';
-    } else if (node.status === 'verified') {
-      icon = '✓';
-    } else if (node.status === 'failed') {
-      icon = '✗';
-    }
-
-    ctx.fillStyle = statusColor;
-    ctx.font = 'bold 16px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(icon, pos.x, pos.y - 5);
-
-    // Label
-    ctx.fillStyle = colors.text;
-    ctx.font = '11px monospace';
-    ctx.fillText(node.label, pos.x, pos.y + 12);
-
-    // Proof size indicator
-    if (showProofSize) {
-      getConstantProofSize();
-      const barWidth = 40;
-      const barHeight = 6;
-      const barX = pos.x + nodeWidth / 2 + 8;
-      const barY = pos.y - barHeight / 2;
-
-      ctx.fillStyle = hexToRgba(colors.verified, 0.3);
-      ctx.fillRect(barX, barY, barWidth, barHeight);
-
-      ctx.fillStyle = colors.textSecondary;
-      ctx.font = '9px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('288B', barX + barWidth + 4, pos.y);
-    }
-
-    // Recursively draw children
-    for (const child of node.children) {
-      drawNodes(child);
-    }
-
-    // Hover detection
-    if (
-      mouseX >= x &&
-      mouseX <= x + nodeWidth &&
-      mouseY >= y &&
-      mouseY <= y + nodeHeight
-    ) {
-      hovered = {
-        type: 'node',
-        id: node.id,
-        label: node.label,
-        status: node.status,
-        curve: node.curve,
-      };
-    }
+    drawNode(ctx, node, pos.x, pos.y, time, showPastaCurves, showProofSize, isRoot, isHovered, colors);
   }
 
-  drawNodes(root);
+  // ── Legend bar (screen-space) ────────────────
+  const legendItems: { label: string; color: string }[] = [
+    { label: 'Pending',   color: colors.pending.border },
+    { label: 'Verifying', color: colors.verifying.border },
+    { label: 'Verified',  color: colors.verified.border },
+    { label: 'Failed',    color: colors.failed.border },
+  ];
+  if (showPastaCurves) {
+    legendItems.push({ label: 'Pallas', color: colors.pallas });
+    legendItems.push({ label: 'Vesta',  color: colors.vesta });
+  }
+  const legendTotalW = legendItems.length * 90;
+  let lx = (width - legendTotalW) / 2;
+  const legendY = height - 36;
+  for (const item of legendItems) {
+    ctx.fillStyle = hexToRgba(item.color, 0.85);
+    ctx.beginPath();
+    ctx.arc(lx + 7, legendY + 7, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.label, lx + 17, legendY + 7);
+    lx += 90;
+  }
 
   return { hovered };
 }
 
-/**
- * Renders the IVC chain in IVC mode
- */
+// ─── renderIvcChain ──────────────────────────────────────────────────────────
+
 export function renderIvcChain(
   ctx: CanvasRenderingContext2D,
   frame: FrameInfo,
@@ -234,146 +405,207 @@ export function renderIvcChain(
   mouseY: number,
   theme: 'dark' | 'light'
 ): { hovered: { type: 'step'; id: string; label: string; curve: string } | null } {
-  const colors = COLORS[theme];
-  const { width, height } = frame;
+  const colors = PAL[theme];
+  const { time, width, height } = frame;
 
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  if (theme === 'dark') {
-    gradient.addColorStop(0, '#0a0a0a');
-    gradient.addColorStop(1, '#111111');
-  } else {
-    gradient.addColorStop(0, '#fafafa');
-    gradient.addColorStop(1, '#f4f4f5');
-  }
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-
-  // Grid
-  drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(240, 231, 222, 0.05)' : 'rgba(63, 63, 70, 0.08)');
-
-  // Vignette
-  const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
-  vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(63,63,70,0.08)');
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  drawBackground(ctx, width, height, colors);
 
   if (!chain || chain.steps.length === 0) return { hovered: null };
 
-  const stepWidth = 140;
-  const stepHeight = 100;
-  const spacing = 60;
-  const startX = 100;
-  const startY = height / 2;
+  const stepCount = chain.steps.length;
+  const SW = Math.min(130, (width - 120) / stepCount - 16);
+  const SH = 90;
+  const gap = 14;
+  const totalW = stepCount * SW + (stepCount - 1) * gap;
+  const startX = (width - totalW) / 2;
+  const cy = height / 2;
 
-  let accumulatorX = startX - 80;
+  // ── Accumulator on the left ───────────────────
+  const accW = 68;
+  const accH = SH;
+  const accX = startX - accW - 32;
+  const accY = cy - accH / 2;
 
-  // Draw accumulator
-  ctx.fillStyle = hexToRgba(colors.verified, 0.2);
-  ctx.strokeStyle = hexToRgba(colors.verified, 0.6);
-  ctx.lineWidth = 2;
-  drawRoundedRect(ctx, accumulatorX - 60, startY - 40, 80, 80, 8);
+  // Current acc hash
+  const currentStep = chain.steps[chain.currentFoldIndex] ?? chain.steps[0];
+  const accHash = currentStep?.accumulatorHash ?? '—';
+
+  // Acc box
+  ctx.save();
+  ctx.shadowColor = colors.verified.glow;
+  ctx.shadowBlur = chain.currentFoldIndex >= 0 ? 14 : 4;
+  ctx.fillStyle = hexToRgba(colors.verified.border, chain.currentFoldIndex >= 0 ? 0.1 : 0.04);
+  drawRoundedRect(ctx, accX, accY, accW, accH, 10);
   ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = hexToRgba(colors.verified.border, chain.currentFoldIndex >= 0 ? 0.7 : 0.3);
+  ctx.lineWidth = 1.5;
+  drawRoundedRect(ctx, accX, accY, accW, accH, 10);
   ctx.stroke();
 
-  ctx.fillStyle = colors.text;
-  ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'center';
+  ctx.fillStyle = colors.text;
+  ctx.font = `bold 11px system-ui, sans-serif`;
   ctx.textBaseline = 'middle';
-  ctx.fillText('Acc', accumulatorX - 20, startY - 15);
+  ctx.fillText('Acc', accX + accW / 2, cy - 14);
 
-  // Draw current accumulator hash
-  const currentStep = chain.steps[chain.currentFoldIndex];
-  if (currentStep) {
-    ctx.fillStyle = colors.textSecondary;
-    ctx.font = '9px monospace';
-    const hashDisplay = currentStep.accumulatorHash.slice(0, 8) + '...';
-    ctx.fillText(hashDisplay, accumulatorX - 20, startY + 5);
-  }
+  ctx.fillStyle = colors.textMuted;
+  ctx.font = `9px monospace`;
+  ctx.fillText(accHash.slice(0, 8) + '…', accX + accW / 2, cy + 4);
 
-  // Draw each step
+  ctx.fillStyle = colors.textMuted;
+  ctx.font = `8px system-ui`;
+  const foldLabel = chain.currentFoldIndex >= 0 ? `${chain.currentFoldIndex + 1} folded` : 'empty';
+  ctx.fillText(foldLabel, accX + accW / 2, cy + 22);
+
+  // Arrow from acc to first step
+  const ax1 = accX + accW + 4;
+  const ax2 = startX - 6;
+  ctx.strokeStyle = hexToRgba(colors.verified.border, 0.3);
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.moveTo(ax1, cy);
+  ctx.lineTo(ax2, cy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Steps ─────────────────────────────────────
   let hovered: { type: 'step'; id: string; label: string; curve: string } | null = null;
 
-  chain.steps.forEach((step, index) => {
-    let x = startX + index * (stepWidth + spacing);
-    const y = startY - stepHeight / 2;
+  chain.steps.forEach((step, idx) => {
+    const sx = startX + idx * (SW + gap);
+    const sy = cy - SH / 2;
 
-    // Compress folded steps towards the accumulator
+    const curveColor = step.curve === 'pallas' ? colors.pallas : colors.vesta;
+    const borderColor = showPastaCurves ? curveColor : (step.folded ? colors.verified.border : colors.pending.border);
+    const fillAlpha = step.folded ? 0.1 : 0.04;
+
+    const isHov = mouseX >= sx && mouseX <= sx + SW && mouseY >= sy && mouseY <= sy + SH;
+    if (isHov) {
+      hovered = { type: 'step', id: step.id, label: `Step ${idx}`, curve: step.curve };
+    }
+
+    // Glow for folded steps
     if (step.folded) {
-      x -= (stepWidth + spacing) * 0.7 * (index + 1);
+      ctx.save();
+      ctx.shadowColor = colors.verified.glow;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = hexToRgba(borderColor, fillAlpha);
+      drawRoundedRect(ctx, sx, sy, SW, SH, 10);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = hexToRgba(borderColor, fillAlpha);
+      drawRoundedRect(ctx, sx, sy, SW, SH, 10);
+      ctx.fill();
     }
 
-    // Step color
-    let stepColor = colors.verified;
-    if (showPastaCurves) {
-      stepColor = step.curve === 'pallas' ? colors.pallas : colors.vesta;
-    }
-
-    // Draw step box
-    const alpha = step.folded ? 0.3 : 0.15;
-    ctx.fillStyle = hexToRgba(stepColor, alpha);
-    ctx.strokeStyle = hexToRgba(step.folded ? colors.verified : stepColor, 0.6);
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, x, y, stepWidth, stepHeight, 8);
-    ctx.fill();
+    ctx.strokeStyle = hexToRgba(borderColor, step.folded ? 0.7 : (isHov ? 0.5 : 0.3));
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, sx, sy, SW, SH, 10);
     ctx.stroke();
 
-    // Step label
-    ctx.fillStyle = colors.text;
-    ctx.font = 'bold 13px monospace';
+    // Step header
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Step ${index}`, x + stepWidth / 2, y + 10);
+    ctx.fillStyle = colors.text;
+    ctx.font = `bold 11px system-ui, sans-serif`;
+    ctx.fillText(`Step ${idx}`, sx + SW / 2, sy + 9);
 
-    // Curve type
+    // Curve badge
     if (showPastaCurves) {
-      ctx.fillStyle = colors.textSecondary;
-      ctx.font = '10px monospace';
-      ctx.fillText(step.curve, x + stepWidth / 2, y + 28);
+      ctx.fillStyle = hexToRgba(curveColor, 0.9);
+      ctx.font = `600 9px system-ui`;
+      ctx.fillText(step.curve === 'pallas' ? 'Pallas' : 'Vesta', sx + SW / 2, sy + 26);
     }
 
     // Input value
-    ctx.fillStyle = colors.text;
-    ctx.font = '11px monospace';
-    ctx.fillText(`Input: ${step.inputValue}`, x + stepWidth / 2, y + 48);
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = `10px system-ui`;
+    ctx.fillText(`in: ${step.inputValue}`, sx + SW / 2, sy + (showPastaCurves ? 42 : 30));
 
     // Hash
-    ctx.fillStyle = colors.textSecondary;
-    ctx.font = '9px monospace';
-    const hashDisplay = step.accumulatorHash.slice(0, 10) + '...';
-    ctx.fillText(hashDisplay, x + stepWidth / 2, y + 68);
+    ctx.fillStyle = hexToRgba(colors.textMuted, 0.7);
+    ctx.font = `8px monospace`;
+    ctx.fillText(step.accumulatorHash.slice(0, 10) + '…', sx + SW / 2, sy + (showPastaCurves ? 56 : 46));
 
-    // Folded indicator
+    // Folded badge
     if (step.folded) {
-      ctx.fillStyle = colors.verified;
-      ctx.font = 'bold 12px monospace';
-      ctx.fillText('✓', x + stepWidth - 15, y + 10);
+      const badgeX = sx + SW - 10;
+      const badgeY = sy + 10;
+      ctx.fillStyle = hexToRgba(colors.verified.border, 1);
+      ctx.font = `bold 10px system-ui`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText('✓', badgeX, badgeY);
     }
 
-    // Arrow to next step
-    if (index < chain.steps.length - 1) {
-      const arrowStartX = x + stepWidth + 5;
-      const arrowEndX = x + stepWidth + spacing - 5;
-      const arrowY = startY;
+    // Arrow to next step (→ dashed when pending, solid when folded)
+    if (idx < chain.steps.length - 1) {
+      const ax1 = sx + SW + 2;
+      const ax2 = sx + SW + gap - 2;
+      const arrowY = cy;
+      ctx.strokeStyle = hexToRgba(borderColor, step.folded ? 0.5 : 0.2);
+      ctx.lineWidth = 1;
+      if (!step.folded) ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(ax1, arrowY);
+      ctx.lineTo(ax2 - 5, arrowY);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-      drawArrow(ctx, arrowStartX, arrowY, arrowEndX, arrowY, hexToRgba(colors.textSecondary, 0.4), 6);
-    }
+      // Arrow head
+      ctx.fillStyle = hexToRgba(borderColor, step.folded ? 0.6 : 0.25);
+      ctx.beginPath();
+      ctx.moveTo(ax2, arrowY);
+      ctx.lineTo(ax2 - 6, arrowY - 4);
+      ctx.lineTo(ax2 - 6, arrowY + 4);
+      ctx.closePath();
+      ctx.fill();
 
-    if (
-      mouseX >= x &&
-      mouseX <= x + stepWidth &&
-      mouseY >= y &&
-      mouseY <= y + stepHeight
-    ) {
-      hovered = {
-        type: 'step',
-        id: step.id,
-        label: `Step ${index}`,
-        curve: step.curve,
-      };
+      // Flowing particle on active fold boundary
+      if (step.folded && idx === chain.currentFoldIndex) {
+        const t = (time * 1.1) % 1;
+        const px = ax1 + (ax2 - ax1) * t;
+        const pGrad = ctx.createRadialGradient(px, arrowY, 1, px, arrowY, 6);
+        pGrad.addColorStop(0, hexToRgba(colors.verified.border, 0.9));
+        pGrad.addColorStop(1, hexToRgba(colors.verified.border, 0));
+        ctx.fillStyle = pGrad;
+        ctx.beginPath();
+        ctx.arc(px, arrowY, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   });
+
+  // ── Legend bar ───────────────────────────────
+  const legendY = height - 36;
+  const items: { label: string; color: string }[] = [
+    { label: 'Pending',   color: colors.pending.border },
+    { label: 'Verifying', color: colors.verifying.border },
+    { label: 'Verified',  color: colors.verified.border },
+    { label: 'Failed',    color: colors.failed.border },
+  ];
+  if (showPastaCurves) {
+    items.push({ label: 'Pallas', color: colors.pallas });
+    items.push({ label: 'Vesta',  color: colors.vesta });
+  }
+
+  const legendTotalW = items.length * 90;
+  let lx = (width - legendTotalW) / 2;
+  for (const item of items) {
+    ctx.fillStyle = hexToRgba(item.color, 0.85);
+    ctx.beginPath();
+    ctx.arc(lx + 7, legendY + 7, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = '10px system-ui';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.label, lx + 17, legendY + 7);
+    lx += 90;
+  }
 
   return { hovered };
 }
