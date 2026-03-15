@@ -129,7 +129,7 @@ export function CanvasToolbar({ camera, className, storageKey }: CanvasToolbarPr
           </div>
         </div>
         <div className="mt-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Drag the header to move this panel. Hand mode uses left-drag with a grab cursor. Wheel or pinch zooms. <span className="font-mono">0</span> resets.
+          Drag header · Scroll to zoom · <span className="font-mono">0</span> resets
         </div>
       </div>
     </div>

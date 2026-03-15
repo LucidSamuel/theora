@@ -616,8 +616,8 @@ export function MerkleDemo() {
         <ControlGroup label="Leaves">
           <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
             {state.leaves.length === 0 && (
-              <div className="text-[11px] py-2" style={{ color: 'var(--text-muted)' }}>
-                No leaves yet. Add some above.
+              <div className="empty-state">
+                <span className="empty-state__text">No leaves yet — enter data above and press Add</span>
               </div>
             )}
             {state.leaves.map((leaf, index) => (

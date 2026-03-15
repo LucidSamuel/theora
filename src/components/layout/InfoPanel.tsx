@@ -65,14 +65,17 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
   );
 }
 
-const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = {
+const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: string; url: string }[] }> = {
   merkle: {
     concepts: [
       'Domain separation: leaf hashes use 0x00 prefix, internal nodes use 0x01, preventing second-preimage attacks.',
       'Proof size is O(log n): for n leaves, a proof requires only log2(n) sibling hashes.',
       'Merkle proofs are used in Bitcoin SPV clients, Ethereum state tries, and certificate transparency logs.',
     ],
-    resources: ['RFC 6962 - Certificate Transparency', 'Merkle Tree in Bitcoin Wiki'],
+    resources: [
+      { label: 'RFC 6962 – Certificate Transparency', url: 'https://datatracker.ietf.org/doc/html/rfc6962' },
+      { label: 'Merkle Tree – Bitcoin Wiki', url: 'https://en.bitcoin.it/wiki/Merkle_tree' },
+    ],
   },
   polynomial: {
     concepts: [
@@ -80,7 +83,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'The binding property ensures the committer cannot open to a different polynomial later.',
       'Polynomial commitments are the backbone of PlonK, Marlin, and EIP-4844 (proto-danksharding).',
     ],
-    resources: ['KZG10 paper by Kate, Zaverucha, Goldberg', 'Dankrad Feist - KZG Commitments'],
+    resources: [
+      { label: 'KZG10 – Kate, Zaverucha, Goldberg (IACR)', url: 'https://www.iacr.org/archive/asiacrypt2010/6477178/6477178.pdf' },
+      { label: 'Dankrad Feist – KZG Polynomial Commitments', url: 'https://dankradfeist.de/ethereum/2020/06/16/kate-polynomial-commitments.html' },
+    ],
   },
   accumulator: {
     concepts: [
@@ -88,7 +94,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'Non-membership proofs are also possible using Bezout coefficients from the extended GCD.',
       'Accumulators are used in anonymous credentials, stateless blockchains, and revocation systems.',
     ],
-    resources: ['Boneh et al. - RSA Accumulators', 'Ozcelik et al. - Accumulators Survey'],
+    resources: [
+      { label: 'Boneh et al. – Batching Techniques for RSA', url: 'https://crypto.stanford.edu/~dabo/papers/RSAgroup.pdf' },
+      { label: 'Ozcelik et al. – Accumulators Survey (IACR)', url: 'https://eprint.iacr.org/2019/394' },
+    ],
   },
   recursive: {
     concepts: [
@@ -96,7 +105,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'IVC (Incremental Verifiable Computation) compresses a chain of N computations into a single constant-size proof.',
       'Nova achieves folding without SNARKs for each step, only requiring a final SNARK at the end.',
     ],
-    resources: ['Nova: Recursive SNARKs without SNARKs', 'Halo: Recursive Proof Composition'],
+    resources: [
+      { label: 'Nova: Recursive SNARKs without SNARKs (IACR)', url: 'https://eprint.iacr.org/2021/370' },
+      { label: 'Halo: Recursive Proof Composition (IACR)', url: 'https://eprint.iacr.org/2019/1021' },
+    ],
   },
   elliptic: {
     concepts: [
@@ -104,7 +116,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'Scalar multiplication repeats addition with double-and-add, which is the workhorse behind commitments and signatures.',
       'Pairing-friendly and cycle-friendly curves matter because recursive proof systems need fields and curves to line up cleanly.',
     ],
-    resources: ['Guide to Elliptic Curve Cryptography', 'Electric Coin Co. - The Pasta Curves'],
+    resources: [
+      { label: 'Guide to Elliptic Curve Cryptography', url: 'https://link.springer.com/book/9780387952734' },
+      { label: 'Electric Coin Co. – The Pasta Curves', url: 'https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/' },
+    ],
   },
   'fiat-shamir': {
     concepts: [
@@ -112,7 +127,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'If a message is omitted from the transcript, the prover may be able to bias or predict the challenge.',
       'This is a transcript-binding problem, not just a hash-function problem.',
     ],
-    resources: ['Fiat-Shamir heuristic overview', 'zkSecurity - Frozen Heart style transcript bugs'],
+    resources: [
+      { label: 'Fiat & Shamir – How To Prove Yourself (CRYPTO \'86)', url: 'https://link.springer.com/chapter/10.1007/3-540-47721-7_12' },
+      { label: 'zkSecurity – Frozen Heart Transcript Bugs', url: 'https://www.zksecurity.xyz/blog/posts/frozen-heart/' },
+    ],
   },
   circuit: {
     concepts: [
@@ -120,7 +138,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'A witness can satisfy some gates while still violating the full circuit if one relation is omitted.',
       'Underconstrained signals often come from assignments that never appear in a constraint.',
     ],
-    resources: ['R1CS explained', 'Underconstrained circuit research and audit reports'],
+    resources: [
+      { label: '0xPARC – R1CS Explainer', url: 'https://learn.0xparc.org/materials/circom/learning-group-1/r1cs-explainer/' },
+      { label: '0xPARC – ZK Bug Tracker (Underconstrained)', url: 'https://github.com/0xPARC/zk-bug-tracker' },
+    ],
   },
   lookup: {
     concepts: [
@@ -128,7 +149,10 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: string[] }> = 
       'Modern constructions reduce the problem to comparing multisets after sorting or permutation-style compression.',
       'This saves many bespoke constraints for range checks, byte decompositions, and table-heavy gadgets.',
     ],
-    resources: ['Plookup paper', 'LogUp and modern lookup summaries'],
+    resources: [
+      { label: 'Plookup – Gabizon & Williamson (IACR)', url: 'https://eprint.iacr.org/2020/315' },
+      { label: 'LogUp – Modern Lookup Arguments (IACR)', url: 'https://eprint.iacr.org/2022/1530' },
+    ],
   },
 };
 
@@ -198,7 +222,7 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
 
   return (
     <aside
-      className="hidden lg:flex flex-col h-full overflow-y-auto border-l"
+      className="hidden lg:flex flex-col h-full overflow-y-auto py-5 px-5 border-l panel-surface"
       style={{
         borderColor: 'var(--border)',
         backgroundColor: 'var(--bg-primary)',
@@ -206,21 +230,12 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
         padding: '24px 20px 32px',
       }}
     >
-      {/* Demo title + description */}
-      <div style={{ paddingBottom: 20, marginBottom: 2 }}>
-        <h3
-          className="text-[10px] font-bold uppercase font-display"
-          style={{ color: demo.accent, letterSpacing: '0.1em', marginBottom: 10 }}
-        >
-          About {demo.title}
-        </h3>
-        <p
-          className="text-[12px] leading-relaxed"
-          style={{ color: 'var(--text-secondary)', lineHeight: 1.65 }}
-        >
-          {demo.description}
-        </p>
-      </div>
+      <h3 className="text-[11px] font-bold uppercase tracking-wider mb-2 font-display" style={{ color: demo.accent }}>
+        About {demo.title}
+      </h3>
+      <p className="text-xs leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>
+        {demo.description}
+      </p>
 
       {/* Collapsible sections */}
       {contextEntry && (
@@ -268,7 +283,7 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
         </ul>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Key Concepts" accent="var(--text-muted)">
+      <CollapsibleSection title="Key Concepts" accent="var(--text-muted)" defaultOpen>
         <ul style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {extra.concepts.map((c, i) => (
             <li
@@ -301,8 +316,25 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
       <CollapsibleSection title="Further Reading" accent="var(--text-muted)">
         <ul style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {extra.resources.map((r, i) => (
-            <li key={i} style={{ fontSize: 12, color: demo.accent }}>
-              {r}
+            <li key={i}>
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 12,
+                  color: demo.accent,
+                  textDecoration: 'none',
+                  borderBottom: `1px solid transparent`,
+                  paddingBottom: 1,
+                  transition: 'border-color 120ms ease',
+                  display: 'inline',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.borderBottomColor = demo.accent)}
+                onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.borderBottomColor = 'transparent')}
+              >
+                {r.label} ↗
+              </a>
             </li>
           ))}
         </ul>

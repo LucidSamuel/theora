@@ -1106,3 +1106,64 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-primary);
   outline: none;
 }
+
+/* ─── Input focus states ─── */
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--text-muted) !important;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--text-muted) !important;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* ─── Empty state ─── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  text-align: center;
+}
+
+.empty-state__text {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ─── Slider refinements ─── */
+
+input[type="range"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  border-radius: 4px;
+}
+
+/* ─── Keyboard shortcut badge ─── */
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  background: var(--button-bg);
+  line-height: 1.6;
+  letter-spacing: 0;
+}

@@ -90,7 +90,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
 
   return (
     <header
-      className="flex items-center justify-between px-6 h-12 border-b"
+      className="flex items-center justify-between px-5 h-12 border-b"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
@@ -133,20 +133,11 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
             )}
           </svg>
         </HeaderBtn>
-        <HeaderBtn onClick={onToggleInfo} label="Toggle info" active={infoOpen}>
+        <HeaderBtn onClick={onToggleInfo} label="Toggle info panel" active={infoOpen}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            {infoOpen ? (
-              <>
-                <line x1="3" y1="3" x2="11" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="3" x2="3" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </>
-            ) : (
-              <>
-                <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
-                <line x1="7" y1="6" x2="7" y2="10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                <circle cx="7" cy="4.2" r="0.7" fill="currentColor"/>
-              </>
-            )}
+            <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
+            <line x1="7" y1="6" x2="7" y2="10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <circle cx="7" cy="4.2" r="0.7" fill="currentColor"/>
           </svg>
         </HeaderBtn>
         <HeaderBtn onClick={onToggleTheme} label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>

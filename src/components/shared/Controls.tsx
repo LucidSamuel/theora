@@ -45,7 +45,7 @@ export function SliderControl({ label, value, min, max, step = 1, onChange }: Sl
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full h-1 rounded-full appearance-none cursor-pointer"
         style={{
-          background: `linear-gradient(to right, var(--text-muted) 0%, var(--text-muted) ${percent}%, var(--button-bg-strong) ${percent}%, var(--button-bg-strong) 100%)`,
+          background: `linear-gradient(to right, var(--text-secondary) 0%, var(--text-secondary) ${percent}%, var(--button-bg-strong) ${percent}%, var(--button-bg-strong) 100%)`,
         }}
       />
     </label>

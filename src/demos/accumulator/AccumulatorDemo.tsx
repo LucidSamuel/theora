@@ -732,7 +732,9 @@ export function AccumulatorDemo() {
         <ControlGroup label="Elements">
           <div className="space-y-2.5 max-h-48 overflow-y-auto">
             {state.elements.length === 0 && (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No elements yet</p>
+              <div className="empty-state">
+                <span className="empty-state__text">No elements yet — add a prime above</span>
+              </div>
             )}
             {state.elements.map((element, index) => (
               <div
@@ -913,7 +915,9 @@ export function AccumulatorDemo() {
         <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#f59e0b' }}>History</h3>
         <div className="space-y-2">
           {state.history.length === 0 && (
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No history yet</p>
+            <div className="empty-state">
+              <span className="empty-state__text">No history yet — add or remove elements to see operations</span>
+            </div>
           )}
           {state.history.map((entry, index) => (
             <div

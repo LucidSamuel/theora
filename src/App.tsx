@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
 import { Layout } from '@/components/layout/Layout';
@@ -13,6 +13,7 @@ import { EllipticDemo } from '@/demos/elliptic/EllipticDemo';
 import { FiatShamirDemo } from '@/demos/fiat-shamir/FiatShamirDemo';
 import { CircuitDemo } from '@/demos/circuit/CircuitDemo';
 import { LookupDemo } from '@/demos/lookup/LookupDemo';
+import { DEMOS } from '@/types';
 
 const DEMO_NAMES = {
   merkle: 'Merkle Tree',
@@ -34,6 +35,24 @@ export default function App() {
     document.body.classList.add('app-shell');
     return () => document.body.classList.remove('app-shell');
   }, []);
+
+  const navigateDemo = useCallback((dir: 1 | -1) => {
+    const ids = DEMOS.map((d) => d.id);
+    const idx = ids.indexOf(activeDemo);
+    const next = ids[(idx + dir + ids.length) % ids.length];
+    switchDemo(next);
+  }, [activeDemo, switchDemo]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); navigateDemo(1); }
+      if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); navigateDemo(-1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigateDemo]);
 
   const renderDemo = () => {
     switch (activeDemo) {

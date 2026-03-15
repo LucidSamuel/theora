@@ -107,6 +107,11 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
       {/* Footer credit */}
       {!collapsed && (
         <div className="mt-auto pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="kbd">↑</span>
+            <span className="kbd">↓</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)', marginLeft: 2 }}>navigate demos</span>
+          </div>
           <a
             href="https://x.com/lucidzk"
             target="_blank"
