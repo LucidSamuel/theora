@@ -92,14 +92,14 @@ export function renderPolynomial(
 
   // Background
   ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   // Vignette
   const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2, width / 2, height / 2, Math.max(width, height) * 0.7);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, isDark ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
   ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   // Draw grid
   const padding = 40;

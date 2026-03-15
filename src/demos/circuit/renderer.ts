@@ -20,7 +20,7 @@ export function renderCircuit(
     gradient.addColorStop(1, '#ecfccb');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
   drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(132,204,22,0.06)' : 'rgba(77,124,15,0.08)');
 
   const nodes = [

@@ -31,7 +31,7 @@ export function renderAccumulator(
     gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   const gridColor = theme === 'dark' ? 'rgba(228, 228, 231, 0.04)' : 'rgba(113, 113, 122, 0.08)';
   drawGrid(ctx, width, height, 40, gridColor);
@@ -41,7 +41,7 @@ export function renderAccumulator(
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(113,113,122,0.08)');
   ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   // 2. Draw orbit paths (dashed circles for each ring)
   const rings = new Set<number>();

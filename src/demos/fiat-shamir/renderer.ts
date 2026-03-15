@@ -20,7 +20,7 @@ export function renderFiatShamir(
     gradient.addColorStop(1, '#fffbeb');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
   drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(251,191,36,0.06)' : 'rgba(234,88,12,0.08)');
 
   const steps = [

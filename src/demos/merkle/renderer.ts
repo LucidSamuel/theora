@@ -29,7 +29,7 @@ export function renderMerkleTree(
     gradient.addColorStop(1, '#f4f4f5');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   // Subtle grid
   const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.06)';
@@ -40,7 +40,7 @@ export function renderMerkleTree(
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, theme === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
   ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   if (!tree) return { hoveredNode: null };
 

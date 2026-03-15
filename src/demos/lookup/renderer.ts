@@ -18,7 +18,7 @@ export function renderLookup(
     gradient.addColorStop(1, '#e0f2fe');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
   drawGrid(ctx, width, height, 40, theme === 'dark' ? 'rgba(56,189,248,0.08)' : 'rgba(14,116,144,0.08)');
 
   const colY = 96;

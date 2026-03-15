@@ -242,7 +242,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: nu
   bg.addColorStop(0, colors.bg0);
   bg.addColorStop(1, colors.bg1);
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 
   // Subtle dot grid
   const dotSpacing = 32;
@@ -262,7 +262,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: nu
   vig.addColorStop(0, 'rgba(0,0,0,0)');
   vig.addColorStop(1, colors === PAL.dark ? 'rgba(0,0,0,0.45)' : 'rgba(80,80,120,0.07)');
   ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
 }
 
 // ─── renderProofTree ─────────────────────────────────────────────────────────

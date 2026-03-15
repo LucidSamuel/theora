@@ -35,7 +35,7 @@ export function renderElliptic({
     gradient.addColorStop(1, '#eef2ff');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(-50000, -50000, 100000, 100000);
   drawGrid(ctx, width, height, 36, theme === 'dark' ? 'rgba(228,228,231,0.05)' : 'rgba(82,82,91,0.08)');
 
   const margin = 48;
