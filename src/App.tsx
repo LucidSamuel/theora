@@ -39,7 +39,7 @@ export default function App() {
   const navigateDemo = useCallback((dir: 1 | -1) => {
     const ids = DEMOS.map((d) => d.id);
     const idx = ids.indexOf(activeDemo);
-    const next = ids[(idx + dir + ids.length) % ids.length];
+    const next = ids[(idx + dir + ids.length) % ids.length]!;
     switchDemo(next);
   }, [activeDemo, switchDemo]);
 
