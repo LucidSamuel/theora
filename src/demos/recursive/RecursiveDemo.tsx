@@ -533,7 +533,7 @@ export function RecursiveDemo(): JSX.Element {
 
     const payload = decodedHash ?? decoded;
     if (!payload) return;
-    let autoplayTimeout: ReturnType<typeof setTimeout> | null = null;
+    const timers: ReturnType<typeof setTimeout>[] = [];
     if (payload.mode) dispatch({ type: 'SET_MODE', mode: payload.mode });
     if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: Math.max(2, Math.min(5, payload.depth)) });
     if (typeof payload.ivcLength === 'number') dispatch({ type: 'SET_IVC_LENGTH', length: payload.ivcLength });
@@ -543,21 +543,25 @@ export function RecursiveDemo(): JSX.Element {
     if (typeof payload.showProofSize === 'boolean' && payload.showProofSize !== initialState.showProofSize) {
       dispatch({ type: 'TOGGLE_PROOF_SIZE' });
     }
-    if (payload.badProofNode) {
-      dispatch({ type: 'INJECT_BAD_PROOF', nodeId: payload.badProofNode });
-    }
     if (payload.mode === 'ivc') {
       dispatch({ type: 'BUILD_IVC' });
     } else {
       dispatch({ type: 'BUILD_TREE' });
+
+      // Inject bad proof AFTER tree is built (next tick so reducer has processed BUILD_TREE)
+      if (payload.badProofNode) {
+        timers.push(setTimeout(() => {
+          dispatch({ type: 'INJECT_BAD_PROOF', nodeId: payload.badProofNode! });
+          dispatch({ type: 'BUILD_TREE' });
+
+          // Autoplay after injection settles
+          if (payload.autoplay) {
+            timers.push(setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 1000));
+          }
+        }, 0));
+      }
     }
-    // Autoplay: start verification after a short delay so the tree renders first
-    if (payload.badProofNode && payload.autoplay && payload.mode !== 'ivc') {
-      autoplayTimeout = setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 1000);
-    }
-    return () => {
-      if (autoplayTimeout) clearTimeout(autoplayTimeout);
-    };
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   // Sync to URL
