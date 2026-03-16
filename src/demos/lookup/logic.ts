@@ -20,12 +20,12 @@ export function parseNumberList(input: string): number[] {
 export function analyzeLookup(table: number[], wires: number[]): LookupAnalysis {
   const sortedTable = [...table].sort((a, b) => a - b);
   const sortedWires = [...wires].sort((a, b) => a - b);
-  const tableCounts = countValues(table);
+  const tableSet = new Set(table);
   const wireCounts = countValues(wires);
-  const missing = [...wireCounts.keys()].filter((value) => !tableCounts.has(value));
-  const multiplicityMismatches = [...wireCounts.entries()]
-    .filter(([value, count]) => (tableCounts.get(value) ?? 0) < count)
-    .map(([value]) => value);
+
+  // Standard lookup semantics: each wire value must exist in the table,
+  // but table values can be looked up any number of times.
+  const missing = [...wireCounts.keys()].filter((value) => !tableSet.has(value));
 
   return {
     table,
@@ -33,8 +33,8 @@ export function analyzeLookup(table: number[], wires: number[]): LookupAnalysis 
     sortedTable,
     sortedWires,
     missing,
-    multiplicityMismatches,
-    passes: missing.length === 0 && multiplicityMismatches.length === 0,
+    multiplicityMismatches: [],
+    passes: missing.length === 0,
   };
 }
 

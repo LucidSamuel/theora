@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { applyImportedState, createPublicGist, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { applyImportedState, createPublicGist, fetchTheoraImport, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
 import { getActiveDemoLocation } from '@/hooks/useActiveDemo';
 
 const originalWindow = (globalThis as { window?: unknown }).window;
@@ -134,6 +134,32 @@ describe('same-demo import regression', () => {
 });
 
 describe('gist publishing', () => {
+  it('imports valid Theora payloads from gist files without a json extension', async () => {
+    Object.defineProperty(globalThis, 'fetch', {
+      value: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: {
+            'notes.txt': {
+              filename: 'notes.txt',
+              type: 'text/plain',
+              content: '{"demo":"merkle","state":{"leaves":["alpha","beta"]}}',
+            },
+          },
+        }),
+      })),
+      configurable: true,
+    });
+
+    const result = await fetchTheoraImport('https://gist.github.com/user/abcdef123456');
+
+    expect(result).toEqual({
+      demo: 'merkle',
+      state: { leaves: ['alpha', 'beta'] },
+    });
+  });
+
   it('creates a public gist and returns its url', async () => {
     Object.defineProperty(globalThis, 'fetch', {
       value: vi.fn(async () => ({

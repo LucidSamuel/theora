@@ -113,8 +113,10 @@ function drawNode(
 
   const statusPal = colors[node.status as keyof typeof colors] as { border: string; fill: string; glow: string };
   const curveColor = node.curve === 'pallas' ? colors.pallas : colors.vesta;
-  const borderColor = showPastaCurves ? curveColor : statusPal.border;
-  const glowColor = showPastaCurves ? curveColor : statusPal.glow;
+  // Status colors (verified/failed/verifying) take priority over Pasta curve colors
+  const statusActive = node.status === 'verified' || node.status === 'failed' || node.status === 'verifying';
+  const borderColor = showPastaCurves && !statusActive ? curveColor : statusPal.border;
+  const glowColor = showPastaCurves && !statusActive ? curveColor : statusPal.glow;
 
   // ── Outer glow shadow ───
   const glowAlpha = node.status === 'pending' ? 0 : node.status === 'verifying' ? 0.5 + Math.sin(time * 6) * 0.25 : 0.35;

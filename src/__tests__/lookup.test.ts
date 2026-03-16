@@ -11,10 +11,15 @@ describe('lookup logic', () => {
     expect(analysis.passes).toBe(true);
   });
 
-  it('fails on missing or overused values', () => {
+  it('fails on missing values', () => {
     const analysis = analyzeLookup([1, 2, 3], [2, 2, 9]);
     expect(analysis.passes).toBe(false);
     expect(analysis.missing).toEqual([9]);
-    expect(analysis.multiplicityMismatches).toContain(2);
+  });
+
+  it('passes with repeated wire lookups (standard semantics)', () => {
+    // Table values can be looked up multiple times
+    const analysis = analyzeLookup([1, 2, 3], [2, 2, 2]);
+    expect(analysis.passes).toBe(true);
   });
 });

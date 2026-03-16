@@ -45,7 +45,7 @@ export function LookupDemo(): JSX.Element {
         <ControlGroup label="Wire Values">
           <TextInput value={wireInput} onChange={setWireInput} placeholder="2,5,8" />
           <ButtonControl label="Load failing example" onClick={() => setWireInput('2,5,21')} variant="secondary" />
-          <ButtonControl label="Load multiplicity clash" onClick={() => setWireInput('2,2,2,8')} variant="secondary" />
+          <ButtonControl label="Load repeated lookup (passes)" onClick={() => setWireInput('2,2,2,8')} variant="secondary" />
         </ControlGroup>
 
         <ControlGroup label="Analysis">

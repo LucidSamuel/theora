@@ -74,7 +74,7 @@ export function CircuitDemo(): JSX.Element {
         <ControlGroup label="Witness">
           <SliderControl label="x" value={x} min={0} max={8} onChange={(value) => { setX(value); }} editable />
           <SliderControl label="y" value={y} min={0} max={12} onChange={(value) => { setY(value); }} editable />
-          <SliderControl label="z (output)" value={z} min={0} max={40} onChange={(value) => { setZ(value); }} editable />
+          <SliderControl label="z (output)" value={z} min={0} max={200} onChange={(value) => { setZ(value); }} editable />
           <NumberInputControl
             label="t (intermediate wire)"
             value={tOverride ?? x * x}

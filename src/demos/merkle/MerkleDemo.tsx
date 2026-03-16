@@ -228,6 +228,7 @@ export function MerkleDemo() {
   const [hoverInfo, setHoverInfo] = useState<MerkleHoverInfo | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
+  const [batchInput, setBatchInput] = useState('');
   const hoverKeyRef = useRef<string | null>(null);
   const canvasRef = useRef<{ width: number; height: number }>({ width: 800, height: 600 });
   const buildAbortRef = useRef<AbortController | null>(null);
@@ -597,6 +598,33 @@ export function MerkleDemo() {
               label="Add"
               onClick={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
               disabled={!state.newLeafInput.trim()}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <textarea
+              value={batchInput}
+              onChange={(e) => setBatchInput(e.target.value)}
+              placeholder="Batch add (comma-separated, e.g. Eve,Frank,Grace)"
+              className="w-full h-16 px-3 py-2 text-xs rounded-lg resize-none"
+              style={{
+                backgroundColor: 'var(--button-bg)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                fontFamily: 'var(--font-mono)',
+              }}
+            />
+            <ButtonControl
+              label="Batch Add"
+              onClick={() => {
+                const items = batchInput.split(',').map(s => s.trim()).filter(Boolean);
+                if (items.length > 0) {
+                  dispatch({ type: 'SET_LEAVES', leaves: [...state.leaves, ...items] });
+                  setBatchInput('');
+                }
+              }}
+              disabled={!batchInput.trim()}
+              variant="secondary"
             />
           </div>
 

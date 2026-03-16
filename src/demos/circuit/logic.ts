@@ -43,9 +43,11 @@ export function witnessSatisfiesAll(witness: Witness, broken: boolean): boolean 
 }
 
 export function getR1CSRows(broken: boolean) {
+  // Witness vector: w = [1, x, y, t, z]
+  //   index:           0  1  2  3  4
   return [
-    { label: 'x * x = t', A: [1, 0, 0, 0], B: [1, 0, 0, 0], C: [0, 0, 1, 0] },
-    ...(broken ? [] : [{ label: '1 * (t + y) = z', A: [0, 0, 1, 1], B: [0, 0, 0, 0], C: [0, 0, 0, 1] }]),
+    { label: 'x · x = t', A: [0, 1, 0, 0, 0], B: [0, 1, 0, 0, 0], C: [0, 0, 0, 1, 0] },
+    ...(broken ? [] : [{ label: '1 · (t + y) = z', A: [0, 0, 1, 1, 0], B: [1, 0, 0, 0, 0], C: [0, 0, 0, 0, 1] }]),
   ];
 }
 

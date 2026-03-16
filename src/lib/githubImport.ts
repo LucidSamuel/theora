@@ -102,10 +102,15 @@ export async function fetchTheoraImport(sourceUrl: string): Promise<TheoraImport
     const files = Object.values(gist.files ?? {});
     const preferred = files.find((file) => file.filename === 'theora.json')
       ?? files.find((file) => file.type === 'application/json')
-      ?? files.find((file) => file.filename?.endsWith('.json'));
+      ?? files.find((file) => file.filename?.endsWith('.json'))
+      ?? files.find((file) => {
+        // Fallback: try any file whose content parses as valid Theora JSON
+        if (!file.content) return false;
+        try { const p = JSON.parse(file.content); return p && typeof p === 'object' && 'demo' in p && 'state' in p; } catch { return false; }
+      });
 
     if (!preferred?.content) {
-      throw new Error('No JSON file found in the public Gist');
+      throw new Error('No JSON file found in the public Gist. Name the file "theora.json" or use a .json extension.');
     }
 
     return parseTheoraImport(preferred.content);

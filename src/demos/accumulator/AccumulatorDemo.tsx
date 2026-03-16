@@ -448,9 +448,14 @@ export function AccumulatorDemo() {
       setErrorMsg('Please enter a valid prime number');
       return;
     }
-    dispatch({ type: 'ADD_ELEMENT', prime: BigInt(num) });
+    const bn = BigInt(num);
+    if (state.elements.some((el) => el.prime === bn)) {
+      setErrorMsg(`Prime ${num} is already in the set`);
+      return;
+    }
+    dispatch({ type: 'ADD_ELEMENT', prime: bn });
     setPrimeInput('');
-  }, [primeInput]);
+  }, [primeInput, state.elements]);
 
   const handleRandomPrime = useCallback(() => {
     const prime = randomPrime();
@@ -460,6 +465,7 @@ export function AccumulatorDemo() {
   const handleBatchAdd = useCallback(() => {
     const primeStrings = state.batchPrimes.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const primes: bigint[] = [];
+    const existingPrimes = new Set(state.elements.map((el) => el.prime));
 
     for (const str of primeStrings) {
       const num = parseInt(str, 10);
@@ -467,7 +473,16 @@ export function AccumulatorDemo() {
         setErrorMsg(`Invalid prime: ${str}`);
         return;
       }
-      primes.push(BigInt(num));
+      const bn = BigInt(num);
+      if (existingPrimes.has(bn)) {
+        setErrorMsg(`Prime ${num} is already in the set`);
+        return;
+      }
+      if (primes.includes(bn)) {
+        setErrorMsg(`Duplicate prime ${num} in batch`);
+        return;
+      }
+      primes.push(bn);
     }
 
     if (primes.length === 0) {
@@ -476,7 +491,7 @@ export function AccumulatorDemo() {
     }
 
     dispatch({ type: 'BATCH_ADD', primes });
-  }, [state.batchPrimes]);
+  }, [state.batchPrimes, state.elements]);
 
   const handleNonMemberSet = useCallback(() => {
     const num = parseInt(nonMemberInput, 10);
@@ -484,9 +499,14 @@ export function AccumulatorDemo() {
       setErrorMsg('Please enter a valid prime number');
       return;
     }
-    dispatch({ type: 'SET_NON_MEMBERSHIP_TARGET', target: BigInt(num) });
+    const bn = BigInt(num);
+    if (state.elements.some((el) => el.prime === bn)) {
+      setErrorMsg(`Prime ${num} is in the set — use membership proof instead`);
+      return;
+    }
+    dispatch({ type: 'SET_NON_MEMBERSHIP_TARGET', target: bn });
     setNonMemberInput('');
-  }, [nonMemberInput]);
+  }, [nonMemberInput, state.elements]);
 
   const handleNonMemberCompute = useCallback(() => {
     dispatch({ type: 'COMPUTE_NON_MEMBERSHIP' });
@@ -840,7 +860,7 @@ export function AccumulatorDemo() {
               <ButtonControl onClick={handleNonMemberCompute} label="Compute" variant="secondary" />
             </div>
           </div>
-          {state.nonMembership && (
+          {state.nonMembership && state.nonMembership.witness !== 0n && (
             <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
           )}
           {state.nonMembership && state.nonMembership.verified !== null && (
