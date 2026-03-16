@@ -206,6 +206,64 @@ A sandbox where you can't break anything. Add leaves, drag points, inject failur
 
 ---
 
+## MCP Server
+
+Theora ships an MCP (Model Context Protocol) server that exposes every cryptographic primitive as a callable tool for AI agents. Claude Code, Claude Desktop, Cursor, and any MCP-compatible client can call Theora's math directly — no UI needed.
+
+### Quick Start
+
+```bash
+cd mcp-server
+npm install && npm run build
+```
+
+Connect to Claude Code by adding to your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "theora": {
+      "command": "node",
+      "args": ["/path/to/theora/mcp-server/build/index.js"]
+    }
+  }
+}
+```
+
+### Available Tools
+
+| Tool Group | Tools | Description |
+|---|---|---|
+| **Merkle** | `merkle_build`, `merkle_prove`, `merkle_verify` | Build trees, generate proofs, verify inclusion |
+| **Polynomial** | `polynomial_evaluate`, `polynomial_interpolate`, `polynomial_kzg_commit`, `polynomial_kzg_open`, `polynomial_kzg_verify` | Polynomial math and KZG commitment flow |
+| **Accumulator** | `accumulator_create`, `accumulator_add`, `accumulator_membership_witness`, `accumulator_nonmembership_proof`, `accumulator_batch_add` | RSA accumulator with membership/non-membership proofs |
+| **Recursive** | `recursive_build_tree`, `recursive_verify_step`, `recursive_verify_all`, `recursive_inject_bad_proof`, `recursive_ivc_fold` | Proof composition trees and IVC chains |
+| **Elliptic** | `elliptic_enumerate`, `elliptic_add`, `elliptic_scalar_multiply` | Finite-field point arithmetic |
+| **Fiat-Shamir** | `fiat_shamir_interactive`, `fiat_shamir_noninteractive`, `fiat_shamir_forge` | Interactive/non-interactive transcript comparison |
+| **Circuit** | `circuit_evaluate`, `circuit_find_exploit` | R1CS constraint evaluation and exploit detection |
+| **Lookup** | `lookup_check` | Lookup argument table/wire validation |
+| **Pipeline** | `pipeline_run` | End-to-end proof pipeline with fault injection |
+
+### Resources & Prompts
+
+The server also exposes MCP resources (`theora://demos/list`, `theora://demos/{id}/info`) and prompt templates (`explain_primitive`, `audit_circuit`, `generate_test_vectors`) for guided agent interactions.
+
+### Example Agent Interactions
+
+```
+You: "Build a Merkle tree with 8 leaves and prove leaf 3"
+Agent: calls merkle_build → merkle_prove → returns structured proof
+
+You: "Run the proof pipeline with input 7 and inject a Frozen Heart fault"
+Agent: calls pipeline_run({secretInput: 7, fault: "weak_fiat_shamir"})
+       → returns all 7 stages with exact divergence point
+
+You: "Test if removing constraint 0 from the circuit creates an exploit"
+Agent: calls circuit_evaluate → circuit_find_exploit → explains the vulnerability
+```
+
+---
+
 ## Tech Stack
 
 No external state management libraries. No charting libraries. All visualizations are hand-rendered on `<canvas>` for full control over animation and interaction.
