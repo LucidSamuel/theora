@@ -49,7 +49,8 @@ type Action =
   | { type: 'BUILD_IVC' }
   | { type: 'FOLD_IVC' }
   | { type: 'SET_ROOT'; root: ProofNode | null }
-  | { type: 'SET_IVC_CHAIN'; chain: any };
+  | { type: 'SET_IVC_CHAIN'; chain: any }
+  | { type: 'RESTORE_VERIFICATION'; verifiedNodes: string[]; failedNodes: string[] };
 
 function recursiveReducer(state: RecursiveState, action: Action): RecursiveState {
   switch (action.type) {
@@ -187,6 +188,35 @@ function recursiveReducer(state: RecursiveState, action: Action): RecursiveState
 
     case 'SET_IVC_CHAIN':
       return { ...state, ivcChain: action.chain };
+
+    case 'RESTORE_VERIFICATION': {
+      if (!state.root) return state;
+      const verifiedSet = new Set(action.verifiedNodes);
+      const failedSet = new Set(action.failedNodes);
+
+      const stampTree = (node: ProofNode): ProofNode => {
+        const children = node.children.map(c => stampTree(c));
+        let status = node.status;
+        if (verifiedSet.has(node.id)) status = 'verified';
+        else if (failedSet.has(node.id)) status = 'failed';
+        return { ...node, children, status };
+      };
+
+      const newRoot = stampTree(state.root);
+      const allDone = [...getAllNodes(newRoot).values()].every(
+        n => n.status === 'verified' || n.status === 'failed'
+      );
+
+      return {
+        ...state,
+        root: newRoot,
+        verification: {
+          ...state.verification,
+          currentIndex: allDone ? state.verification.order.length : state.verification.currentIndex,
+          isRunning: false,
+        },
+      };
+    }
 
     default:
       return state;
@@ -518,6 +548,10 @@ export function RecursiveDemo(): JSX.Element {
       showProofSize?: boolean;
       badProofNode?: string | null;
       autoplay?: boolean;
+      verifiedNodes?: string[];
+      failedNodes?: string[];
+      verificationComplete?: boolean;
+      ivcFoldStep?: number | null;
     }>(rawHash);
 
     const raw = decodedHash ? null : getSearchParam('r');
@@ -529,6 +563,10 @@ export function RecursiveDemo(): JSX.Element {
       showProofSize?: boolean;
       badProofNode?: string | null;
       autoplay?: boolean;
+      verifiedNodes?: string[];
+      failedNodes?: string[];
+      verificationComplete?: boolean;
+      ivcFoldStep?: number | null;
     }>(raw);
 
     const payload = decodedHash ?? decoded;
@@ -545,6 +583,15 @@ export function RecursiveDemo(): JSX.Element {
     }
     if (payload.mode === 'ivc') {
       dispatch({ type: 'BUILD_IVC' });
+
+      // Restore IVC fold progress after chain is built
+      if (typeof payload.ivcFoldStep === 'number' && payload.ivcFoldStep > 0) {
+        timers.push(setTimeout(() => {
+          for (let i = 0; i < payload.ivcFoldStep!; i++) {
+            dispatch({ type: 'FOLD_IVC' });
+          }
+        }, 0));
+      }
     } else {
       dispatch({ type: 'BUILD_TREE' });
 
@@ -554,15 +601,54 @@ export function RecursiveDemo(): JSX.Element {
           dispatch({ type: 'INJECT_BAD_PROOF', nodeId: payload.badProofNode! });
           dispatch({ type: 'BUILD_TREE' });
 
-          // Autoplay after injection settles
-          if (payload.autoplay) {
+          // Restore verification state after rebuild, or autoplay
+          if (payload.verifiedNodes?.length || payload.failedNodes?.length) {
+            timers.push(setTimeout(() => {
+              dispatch({ type: 'RESTORE_VERIFICATION', verifiedNodes: payload.verifiedNodes ?? [], failedNodes: payload.failedNodes ?? [] });
+            }, 0));
+          } else if (payload.autoplay) {
             timers.push(setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 1000));
           }
+        }, 0));
+      } else if (payload.verifiedNodes?.length || payload.failedNodes?.length) {
+        // Restore verification state (no bad proof)
+        timers.push(setTimeout(() => {
+          dispatch({ type: 'RESTORE_VERIFICATION', verifiedNodes: payload.verifiedNodes ?? [], failedNodes: payload.failedNodes ?? [] });
         }, 0));
       }
     }
     return () => timers.forEach(clearTimeout);
   }, []);
+
+  // Collect runtime verification/fold state for serialization
+  const runtimeState = useMemo(() => {
+    const base = {
+      verifiedNodes: undefined as string[] | undefined,
+      failedNodes: undefined as string[] | undefined,
+      verificationComplete: undefined as boolean | undefined,
+      ivcFoldStep: undefined as number | undefined,
+    };
+
+    if (state.mode === 'tree' && state.root) {
+      const allNodes = getAllNodes(state.root);
+      const verified: string[] = [];
+      const failed: string[] = [];
+      allNodes.forEach((node) => {
+        if (node.status === 'verified') verified.push(node.id);
+        if (node.status === 'failed') failed.push(node.id);
+      });
+      if (verified.length > 0) base.verifiedNodes = verified;
+      if (failed.length > 0) base.failedNodes = failed;
+      const done = state.verification.currentIndex >= state.verification.order.length && state.verification.order.length > 0;
+      if (done) base.verificationComplete = true;
+    }
+
+    if (state.mode === 'ivc' && state.ivcChain && state.ivcChain.currentFoldIndex >= 0) {
+      base.ivcFoldStep = state.ivcChain.currentFoldIndex + 1;
+    }
+
+    return base;
+  }, [state.mode, state.root, state.ivcChain, state.verification.currentIndex, state.verification.order]);
 
   // Sync to URL
   useEffect(() => {
@@ -577,9 +663,10 @@ export function RecursiveDemo(): JSX.Element {
       showProofSize: state.showProofSize,
       badProofNode: state.badProofTarget,
       autoplay,
+      ...runtimeState,
     };
     setSearchParams({ r: encodeState(payload) });
-  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget]);
+  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget, runtimeState]);
 
   const buildShareState = () => {
     const autoplay = state.mode === 'tree' && Boolean(state.badProofTarget) ? true : undefined;
@@ -591,6 +678,7 @@ export function RecursiveDemo(): JSX.Element {
       showProofSize: state.showProofSize,
       badProofNode: state.badProofTarget,
       autoplay,
+      ...runtimeState,
     };
   };
 

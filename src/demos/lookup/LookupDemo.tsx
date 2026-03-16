@@ -8,6 +8,7 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { decodeStatePlain, getHashState } from '@/lib/urlState';
 import { analyzeLookup, parseNumberList } from './logic';
 import { renderLookup } from './renderer';
 
@@ -19,6 +20,20 @@ export function LookupDemo(): JSX.Element {
   const { setEntry } = useInfoPanel();
   const [tableInput, setTableInput] = useState('1,2,3,5,8,13');
   const [wireInput, setWireInput] = useState('2,5,8');
+
+  useEffect(() => {
+    const hashState = getHashState();
+    const rawHash = hashState?.demo === 'lookup' ? hashState.state : null;
+    const payload = decodeStatePlain<{
+      table?: string;
+      wires?: string;
+    }>(rawHash);
+
+    if (!payload) return;
+    if (typeof payload.table === 'string') setTableInput(payload.table);
+    if (typeof payload.wires === 'string') setWireInput(payload.wires);
+  }, []);
+
   const analysis = useMemo(() => analyzeLookup(parseNumberList(tableInput), parseNumberList(wireInput)), [tableInput, wireInput]);
 
   useEffect(() => {

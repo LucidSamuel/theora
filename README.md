@@ -61,14 +61,18 @@ Visualize proof composition trees and incremental verifiable computation (IVC) c
   - Each node is a proof that verifies its children
   - Pallas/Vesta curve cycle alternates at each depth level (Pasta curves)
   - Bottom-up verification: auto-run or step manually
-  - **Bad proof injection**: Name any node to mark it invalid, rebuild, and watch failure propagate upward through the tree
+  - **Follow camera**: spring-animated camera tracks each node during auto-verification, then zooms out to show the full tree on completion
+  - **Bad proof injection**: Select a leaf node from the dropdown to mark it invalid, rebuild, and watch failure propagate upward through the tree; shared URLs and embeds restore the injected fault
+  - **Node ID tooltips**: Hover any node to see its display label and internal ID (e.g. `π_2_1 (id: node_2_1)`) in the info panel
   - Adjustable verification speed (100–1000ms per step)
+  - **Replay**: press play again after completion to rebuild and re-run the verification sequence
 - **IVC mode**:
   - Build a chain of computation steps (length 3–10)
   - Fold steps one at a time, compressing the chain into an accumulator
   - Each fold updates the accumulator hash incorporating the previous step
   - Pasta curve cycle applies to each step
 - **Statistics panel**: Total nodes, verified/failed counts, current step, accumulator hash, and constant proof size (~288 bytes regardless of depth)
+- **Status legend**: bold color-coded indicators (Pending, Verifying, Verified, Failed) fixed at the bottom of the canvas, centered regardless of pan/zoom
 - **Display toggles**: Show/hide Pasta curve labels and proof size annotations
 
 ### Elliptic Curves
@@ -96,6 +100,16 @@ Visualize proof composition trees and incremental verifiable computation (IVC) c
 - **Multiset comparison**: Sort and compare table rows against queried wires
 - **Failure cases**: Detect missing values and multiplicity mismatches
 
+### Proof Pipeline
+
+End-to-end walkthrough of a complete proof system: Witness, Constraints, Polynomial, Commit, Challenge, Open, Verify.
+
+- **7-stage flow**: f(x) = x² + x + 5 with R1CS encoding, Lagrange interpolation, simulated KZG, Fiat-Shamir challenge
+- **Fault injection**: 4 attack modes (bad witness, corrupted polynomial, weak Fiat-Shamir, bad opening) — step through to see exactly where verification breaks
+- **Fault propagation visualization**: connections and flow particles downstream of a fault turn red, tracing corruption through the pipeline
+- **Linked state**: each stage links to its underlying demo (Circuit, Polynomial, Fiat-Shamir) with exact state handoff
+- **Auto-play** with speed control, stage map navigation
+
 ---
 
 ## Features
@@ -107,7 +121,7 @@ Every demo state encodes into the URL. Share a link and the recipient sees exact
 - **Share URL**: Full state in query parameters (Base64-encoded)
 - **Hash URL**: Cleaner format using URL fragment (`#merkle|{...}`)
 - **Embed iframe**: One-click copy of an `<iframe>` snippet for embedding in docs, blog posts, or Notion pages
-- **PNG export**: Screenshot the canvas to a downloadable image
+- **PNG export**: Screenshot the canvas to a downloadable image (auto-fits content to view before capture)
 - **Audit summary**: Copy a timestamped JSON payload of the entire demo state
 
 #### Embedding
@@ -123,7 +137,7 @@ Add an interactive diagram to any page:
 </iframe>
 ```
 
-Embed mode hides the sidebar and header, showing only the canvas and controls. Works for every demo, including `elliptic`, `fiat-shamir`, `circuit`, and `lookup`.
+Embed mode hides the sidebar and header, showing only the canvas with a floating toolbar (play/pause + settings). Works for every demo, including `elliptic`, `fiat-shamir`, `circuit`, and `lookup`. On the main view, the sidebar is collapsible via a floating settings icon on the canvas.
 
 ### GitHub Import
 
@@ -137,7 +151,7 @@ Available in v1:
 - **Export current supported demos** as `theora.json`
 - **Copy JSON + open Gist** helper workflow for manual public gist creation
 - **Strict schema**: `{"demo":"...","state":{...}}`
-- **Supported demos**: `merkle`, `polynomial`, `accumulator`, `recursive`
+- **Supported demos**: all 9 — `merkle`, `polynomial`, `accumulator`, `recursive`, `pipeline`, `fiat-shamir`, `circuit`, `elliptic`, `lookup`
 
 Still intentionally out of scope:
 
@@ -145,7 +159,7 @@ Still intentionally out of scope:
 - Private repo auth
 - Arbitrary codebase parsing
 - "Connect GitHub and auto-detect everything"
-- Direct authenticated Gist creation via API (next logical step, not in this first slice)
+- Direct authenticated Gist creation via API (implemented — gist-scope PAT, stored in localStorage with user-controlled lifecycle)
 
 Example import payload:
 
@@ -184,6 +198,9 @@ A toggleable right-side panel that updates based on what you're doing:
 - **HiDPI aware**: Renders at device pixel ratio for sharp output on retina displays
 - **Responsive**: `ResizeObserver` recalculates layout when the container resizes
 - **Interactive**: Mouse tracking, click-to-select, hover detection with visual feedback
+- **Canvas toolbar**: compact frosted-glass bar with pointer/pan mode, zoom in/out, and fit-to-view reset; draggable to reposition
+- **Follow camera**: spring-animated camera tracking for verification sequences (recursive demo)
+- **Collapsible sidebar**: floating settings icon toggles the control panel for full-width canvas on any demo
 
 ---
 

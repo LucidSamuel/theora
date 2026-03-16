@@ -52,7 +52,8 @@ type PolynomialAction =
   | { type: 'REMOVE_TERM' }
   | { type: 'TOGGLE_COMPARE' }
   | { type: 'SET_COMPARE_COEFFS'; coefficients: number[] }
-  | { type: 'SET_KZG_STATE'; kzg: PolynomialState['kzg'] };
+  | { type: 'SET_KZG_STATE'; kzg: PolynomialState['kzg'] }
+  | { type: 'SET_EVAL_POINTS'; points: EvalPoint[] };
 
 // Initial state
 const initialState: PolynomialState = {
@@ -136,6 +137,9 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
 
     case 'CLEAR_EVAL_POINTS':
       return { ...state, evalPoints: [] };
+
+    case 'SET_EVAL_POINTS':
+      return { ...state, evalPoints: action.points.slice(-20) };
 
     case 'KZG_COMMIT':
       return {
@@ -423,6 +427,7 @@ export function PolynomialDemo() {
     compareEnabled: state.compareEnabled,
     compareCoefficients: state.compareCoefficients,
     kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
+    evalPoints: state.evalPoints.length > 0 ? state.evalPoints : undefined,
   });
 
   const handleCopyShareUrl = () => {
@@ -481,6 +486,7 @@ export function PolynomialDemo() {
       compareEnabled?: boolean;
       compareCoefficients?: number[];
       kzg?: PolynomialState['kzg'];
+      evalPoints?: EvalPoint[];
       pipelineHash?: string;
     }>(rawHash);
 
@@ -491,6 +497,7 @@ export function PolynomialDemo() {
       compareEnabled?: boolean;
       compareCoefficients?: number[];
       kzg?: PolynomialState['kzg'];
+      evalPoints?: EvalPoint[];
       pipelineHash?: string;
     }>(raw);
 
@@ -511,6 +518,9 @@ export function PolynomialDemo() {
     if (payload.kzg) {
       dispatch({ type: 'SET_KZG_STATE', kzg: payload.kzg });
     }
+    if (payload.evalPoints && payload.evalPoints.length > 0) {
+      dispatch({ type: 'SET_EVAL_POINTS', points: payload.evalPoints });
+    }
     if (typeof payload.pipelineHash === 'string') {
       setPipelineHash(payload.pipelineHash);
     }
@@ -526,9 +536,10 @@ export function PolynomialDemo() {
       compareEnabled: state.compareEnabled,
       compareCoefficients: state.compareCoefficients,
       kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
+      evalPoints: state.evalPoints.length > 0 ? state.evalPoints : undefined,
     };
     setSearchParams({ p: encodeState(payload) });
-  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients, state.kzg]);
+  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients, state.kzg, state.evalPoints]);
 
   useEffect(() => {
     if (hoverInfo) {

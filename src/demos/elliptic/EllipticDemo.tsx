@@ -8,6 +8,7 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { decodeStatePlain, getHashState } from '@/lib/urlState';
 import type { CurveConfig } from './logic';
 import {
   DEFAULT_CURVE,
@@ -34,6 +35,30 @@ export function EllipticDemo(): JSX.Element {
   const [curveError, setCurveError] = useState<string | null>(null);
   const [pointAIndex, setPointAIndex] = useState(0);
   const [pointBIndex, setPointBIndex] = useState(1);
+
+  useEffect(() => {
+    const hashState = getHashState();
+    const rawHash = hashState?.demo === 'elliptic' ? hashState.state : null;
+    const payload = decodeStatePlain<{
+      a?: number;
+      b?: number;
+      p?: number;
+      pointAIndex?: number;
+      pointBIndex?: number;
+      scalar?: number;
+      showPasta?: boolean;
+    }>(rawHash);
+
+    if (!payload) return;
+    if (typeof payload.a === 'number' && typeof payload.b === 'number' && typeof payload.p === 'number') {
+      const next = { a: payload.a, b: payload.b, p: payload.p };
+      if (isCurveValid(next)) setCurve(next);
+    }
+    if (typeof payload.pointAIndex === 'number') setPointAIndex(payload.pointAIndex);
+    if (typeof payload.pointBIndex === 'number') setPointBIndex(payload.pointBIndex);
+    if (typeof payload.scalar === 'number') setScalar(payload.scalar);
+    if (typeof payload.showPasta === 'boolean') setShowPasta(payload.showPasta);
+  }, []);
 
   const points = useMemo(() => enumerateCurvePoints(curve), [curve]);
   const generator = points[0] ?? null;

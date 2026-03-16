@@ -149,7 +149,9 @@ export function PipelineDemo() {
     x: state.secretX,
     stage: activeStage,
     fault: state.fault,
-  }), [activeStage, state.fault, state.scenarioName, state.secretX]);
+    activeStageIdx: state.activeStageIdx,
+    completedStages: Array.from({ length: state.activeStageIdx }, (_, i) => i),
+  }), [activeStage, state.activeStageIdx, state.fault, state.scenarioName, state.secretX]);
 
   useEffect(() => {
     const hashState = getHashState();
@@ -159,6 +161,8 @@ export function PipelineDemo() {
       x?: number;
       stage?: PipelineStage;
       fault?: FaultType;
+      activeStageIdx?: number;
+      completedStages?: number[];
     }>(rawHash);
     const raw = payload ? null : getSearchParam('pl');
     const decoded = decodeState<{
@@ -166,12 +170,16 @@ export function PipelineDemo() {
       x?: number;
       stage?: PipelineStage;
       fault?: FaultType;
+      activeStageIdx?: number;
+      completedStages?: number[];
     }>(raw);
     const statePayload = payload ?? decoded;
 
     if (!statePayload) return;
 
-    const nextStageIdx = statePayload.stage ? Math.max(0, STAGES.indexOf(statePayload.stage)) : 0;
+    const nextStageIdx = typeof statePayload.activeStageIdx === 'number'
+      ? Math.max(0, Math.min(statePayload.activeStageIdx, STAGES.length - 1))
+      : statePayload.stage ? Math.max(0, STAGES.indexOf(statePayload.stage)) : 0;
     const nextX = typeof statePayload.x === 'number' ? statePayload.x : initialState.secretX;
     const nextFault = statePayload.fault ?? initialState.fault;
     const nextName = statePayload.scenarioName ?? initialState.scenarioName;

@@ -74,7 +74,7 @@ describe('parseTheoraImport', () => {
   });
 
   it('rejects unsupported demo ids', () => {
-    expect(() => parseTheoraImport('{"demo":"lookup","state":{}}')).toThrow();
+    expect(() => parseTheoraImport('{"demo":"groth16","state":{}}')).toThrow();
   });
 });
 

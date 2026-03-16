@@ -1,7 +1,7 @@
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import type { DemoId } from '@/types';
 
-export type GitHubImportDemo = 'pipeline' | 'merkle' | 'polynomial' | 'accumulator' | 'recursive';
+export type GitHubImportDemo = 'pipeline' | 'merkle' | 'polynomial' | 'accumulator' | 'recursive' | 'fiat-shamir' | 'circuit' | 'elliptic' | 'lookup';
 
 export interface TheoraImportEnvelope {
   version?: 1;
@@ -15,13 +15,17 @@ const DEMO_QUERY_KEYS: Record<GitHubImportDemo, string> = {
   polynomial: 'p',
   accumulator: 'a',
   recursive: 'r',
+  'fiat-shamir': 'fs',
+  circuit: 'c',
+  elliptic: 'e',
+  lookup: 'l',
 };
 
-const SUPPORTED_DEMOS: GitHubImportDemo[] = ['pipeline', 'merkle', 'polynomial', 'accumulator', 'recursive'];
+const SUPPORTED_DEMOS: GitHubImportDemo[] = ['pipeline', 'merkle', 'polynomial', 'accumulator', 'recursive', 'fiat-shamir', 'circuit', 'elliptic', 'lookup'];
 
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
-  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null };
+  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, fs: null, c: null, e: null, l: null };
   updates[DEMO_QUERY_KEYS[demo]] = encodeState(payload.state);
   setSearchParams(updates);
   window.location.hash = `${demo}|${encodeStatePlain(payload.state)}`;

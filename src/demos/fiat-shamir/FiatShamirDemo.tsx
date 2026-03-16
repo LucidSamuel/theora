@@ -36,10 +36,13 @@ export function FiatShamirDemo(): JSX.Element {
       verifierSeed?: number;
       trace?: ImportedTranscriptTrace;
       pipelineHash?: string;
+      forgeryComplete?: boolean;
     }>(rawHash);
 
     if (!payload) return;
     if (payload.mode) setMode(payload.mode);
+    // If forgeryComplete was serialized, restore to broken mode
+    if (payload.forgeryComplete && !payload.mode) setMode('fs-broken');
     if (typeof payload.secret === 'number') setSecret(payload.secret);
     if (typeof payload.nonce === 'number') setNonce(payload.nonce);
     if (typeof payload.verifierSeed === 'number') setVerifierSeed(payload.verifierSeed);
