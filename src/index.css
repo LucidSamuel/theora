@@ -886,7 +886,7 @@ body::before {
 }
 
 .demo-aside--narrow {
-  width: 192px;
+  width: 210px;
 }
 
 .demo-sidebar--embed,
@@ -907,28 +907,115 @@ body::before {
   right: 0;
 }
 
-.demo-embed-toggle {
+.demo-embed-toolbar {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  bottom: 12px;
+  left: 12px;
   z-index: 30;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  display: flex;
+  gap: 4px;
+  border-radius: 10px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 14px;
+}
+
+.demo-settings-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+}
+
+.demo-embed-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.8;
-  transition: opacity 150ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
-.demo-embed-toggle:hover {
+.demo-embed-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ─── Canvas toolbar ─── */
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.canvas-toolbar-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 28px;
+  cursor: grab;
+  color: var(--text-muted);
+  opacity: 0.5;
+  user-select: none;
+  touch-action: none;
+  transition: opacity 120ms ease;
+}
+
+.canvas-toolbar-handle:hover {
   opacity: 1;
+}
+
+.canvas-toolbar-group {
+  display: flex;
+  gap: 1px;
+}
+
+.canvas-toolbar-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.canvas-toolbar-btn {
+  width: 30px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.canvas-toolbar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.canvas-toolbar-btn.is-active {
+  background: var(--button-bg-strong);
+  color: var(--text-primary);
 }
 
 .demo-canvas-area {
@@ -959,8 +1046,8 @@ body::before {
 /* ─── App control sections ─── */
 
 .control-section {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 24px;
+  padding-bottom: 24px;
   border-top: 1px solid var(--border);
 }
 
@@ -981,11 +1068,11 @@ body::before {
 }
 
 .control-card {
-  padding: 12px 14px;
+  padding: 16px 18px;
 }
 
 .control-note {
-  padding: 10px 12px;
+  padding: 12px 14px;
   font-size: 12px;
   line-height: 1.55;
   color: var(--text-muted);
@@ -1005,11 +1092,18 @@ body::before {
 
 .control-button-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .control-button-row > * {
   flex: 1 1 0;
+}
+
+/* 2x2 grid for 4+ secondary buttons — prevents text truncation */
+.control-button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .control-choice-list {
@@ -1057,7 +1151,7 @@ body::before {
 
 .control-kicker {
   display: inline-block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1127,8 +1221,8 @@ body::before {
 .app-leaf-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 8px;
   background: var(--bg-secondary);
   transition: background-color 100ms ease;
@@ -1299,6 +1393,15 @@ input[type="range"]::-moz-range-thumb {
   background: var(--button-bg);
   color: var(--text-primary);
   outline: none;
+}
+
+/* ─── Input & placeholder styling ─── */
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-size: inherit;
 }
 
 /* ─── Input focus states ─── */

@@ -606,8 +606,9 @@ export function MerkleDemo() {
               value={batchInput}
               onChange={(e) => setBatchInput(e.target.value)}
               placeholder="Batch add (comma-separated, e.g. Eve,Frank,Grace)"
-              className="w-full h-16 px-3 py-2 text-xs rounded-lg resize-none"
+              className="w-full h-20 text-xs rounded-lg resize-none"
               style={{
+                padding: '10px 14px',
                 backgroundColor: 'var(--button-bg)',
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border)',
@@ -650,7 +651,7 @@ export function MerkleDemo() {
         </ControlGroup>
 
         <ControlGroup label="Leaves">
-          <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-0.5">
             {state.leaves.length === 0 && (
               <div className="empty-state">
                 <span className="empty-state__text">No leaves yet — enter data above and press Add</span>
@@ -689,7 +690,7 @@ export function MerkleDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="control-button-row mt-1.5" style={{ flexWrap: 'wrap' }}>
+          <div className="control-button-grid mt-1.5">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -699,7 +700,7 @@ export function MerkleDemo() {
 
         {state.proof && (
           <ControlGroup label="Merkle Proof">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <ControlCard>
                 <span className="control-kicker">Leaf index</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>{state.proof.leafIndex}</div>

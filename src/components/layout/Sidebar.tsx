@@ -24,7 +24,7 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
       <div
         className="flex items-center justify-between shrink-0"
         style={{
-          height: 48,
+          height: 52,
           borderBottom: '1px solid var(--border)',
           marginBottom: 16,
         }}

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import { MousePointer2, Hand, ZoomIn, ZoomOut, RotateCcw, GripHorizontal } from 'lucide-react';
 import type { CanvasCamera } from '@/hooks/useCanvasCamera';
 
 interface CanvasToolbarProps {
   camera: CanvasCamera;
   className?: string;
   storageKey?: string;
+  /** Override default reset to fit content into view */
+  onReset?: () => void;
 }
 
-export function CanvasToolbar({ camera, className, storageKey }: CanvasToolbarProps) {
+export function CanvasToolbar({ camera, className, storageKey, onReset }: CanvasToolbarProps) {
   const [offset, setOffset] = useState(() => {
     if (!storageKey || typeof window === 'undefined') {
       return { x: 0, y: 0 };
@@ -61,105 +64,96 @@ export function CanvasToolbar({ camera, className, storageKey }: CanvasToolbarPr
         top: 12,
         right: 12,
         transform: `translate(${offset.x}px, ${offset.y}px)`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
         zIndex: 2,
       }}
     >
-      <div
-        className="rounded-xl border panel-surface"
-        style={{
-          borderColor: 'var(--border)',
-          padding: 8,
-          width: 132,
-          boxShadow: '0 10px 28px rgba(10, 8, 6, 0.18)',
-        }}
-      >
-        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-          <div
-            onPointerDown={(event) => {
-              dragStateRef.current = {
-                startX: event.clientX,
-                startY: event.clientY,
-                baseX: offset.x,
-                baseY: offset.y,
-              };
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-              cursor: 'grab',
-              userSelect: 'none',
-              touchAction: 'none',
-            }}
-            aria-label="Drag view tools"
-          >
-            <span>View Tools</span>
-            <span style={{ fontSize: 11, opacity: 0.65 }}>::</span>
-          </div>
-        </div>
-        <div className="mb-2 flex gap-1.5">
-          <ToolbarButton
-            label="↖"
-            onClick={() => camera.setMode('inspect')}
-            title="Inspect mode"
-            active={camera.mode === 'inspect'}
-          />
-          <ToolbarButton
-            label="✋"
-            onClick={() => camera.setMode('pan')}
-            title="Hand pan mode"
-            active={camera.mode === 'pan'}
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          <ToolbarButton label="+" onClick={() => camera.zoomBy(1.15)} title="Zoom in" />
-          <ToolbarButton label="↑" onClick={() => camera.panBy(0, 30)} title="Pan up" />
-          <ToolbarButton label="-" onClick={() => camera.zoomBy(1 / 1.15)} title="Zoom out" />
-          <ToolbarButton label="←" onClick={() => camera.panBy(30, 0)} title="Pan left" />
-          <ToolbarButton label="↓" onClick={() => camera.panBy(0, -30)} title="Pan down" />
-          <ToolbarButton label="→" onClick={() => camera.panBy(-30, 0)} title="Pan right" />
-        </div>
-        <button
-          type="button"
-          className="app-btn-secondary rounded-lg text-xs font-medium mt-1.5"
-          onClick={() => camera.reset()}
-          title="Reset view to origin (key: 0)"
-          aria-label="Reset view"
-          style={{ width: '100%', height: 30, letterSpacing: '0.02em' }}
+      <div className="canvas-toolbar">
+        {/* Drag handle */}
+        <div
+          className="canvas-toolbar-handle"
+          onPointerDown={(event) => {
+            dragStateRef.current = {
+              startX: event.clientX,
+              startY: event.clientY,
+              baseX: offset.x,
+              baseY: offset.y,
+            };
+          }}
+          aria-label="Drag to reposition"
         >
-          Reset View
-        </button>
-        <div className="mt-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Drag header · Scroll to zoom · <span className="font-mono">0</span> resets
+          <GripHorizontal size={12} />
         </div>
+
+        {/* Mode tools */}
+        <div className="canvas-toolbar-group">
+          <ToolbarBtn
+            icon={<MousePointer2 size={14} />}
+            onClick={() => camera.setMode('inspect')}
+            title="Select"
+            active={camera.mode === 'inspect'}
+            shortcut="V"
+          />
+          <ToolbarBtn
+            icon={<Hand size={14} />}
+            onClick={() => camera.setMode('pan')}
+            title="Pan"
+            active={camera.mode === 'pan'}
+            shortcut="H"
+          />
+        </div>
+
+        <div className="canvas-toolbar-divider" />
+
+        {/* Zoom tools */}
+        <div className="canvas-toolbar-group">
+          <ToolbarBtn
+            icon={<ZoomIn size={14} />}
+            onClick={() => camera.zoomBy(1.2)}
+            title="Zoom in"
+            shortcut="+"
+          />
+          <ToolbarBtn
+            icon={<ZoomOut size={14} />}
+            onClick={() => camera.zoomBy(1 / 1.2)}
+            title="Zoom out"
+            shortcut="-"
+          />
+        </div>
+
+        <div className="canvas-toolbar-divider" />
+
+        {/* Reset */}
+        <ToolbarBtn
+          icon={<RotateCcw size={14} />}
+          onClick={() => (onReset ?? camera.reset)()}
+          title="Reset view"
+          shortcut="0"
+        />
       </div>
     </div>
   );
 }
 
-interface ToolbarButtonProps {
-  label: string;
+interface ToolbarBtnProps {
+  icon: React.ReactNode;
   onClick: () => void;
   title: string;
   active?: boolean;
+  shortcut?: string;
 }
 
-function ToolbarButton({ label, onClick, title, active = false }: ToolbarButtonProps) {
+function ToolbarBtn({ icon, onClick, title, active = false, shortcut }: ToolbarBtnProps) {
+  const fullTitle = shortcut ? `${title} (${shortcut})` : title;
   return (
     <button
       type="button"
-      className="app-btn-secondary rounded-lg h-8 text-xs font-medium"
+      className={`canvas-toolbar-btn${active ? ' is-active' : ''}`}
       onClick={onClick}
-      title={title}
-      aria-label={title}
+      title={fullTitle}
+      aria-label={fullTitle}
       aria-pressed={active}
-      style={active ? { background: 'var(--button-bg-strong)', color: 'var(--text-primary)' } : undefined}
     >
-      {label}
+      {icon}
     </button>
   );
 }

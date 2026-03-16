@@ -15,7 +15,7 @@ export function ControlGroup({ label, children, collapsible, defaultCollapsed = 
   return (
     <div className="control-section">
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest mb-4"
+        className="text-[10px] font-semibold uppercase tracking-widest mb-5"
         style={{
           color: 'var(--text-muted)',
           letterSpacing: '0.12em',
@@ -33,7 +33,7 @@ export function ControlGroup({ label, children, collapsible, defaultCollapsed = 
           <span style={{ fontSize: 9, transition: 'transform 150ms ease', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
         )}
       </div>
-      {!isCollapsed && <div className="flex flex-col gap-4">{children}</div>}
+      {!isCollapsed && <div className="flex flex-col gap-5">{children}</div>}
     </div>
   );
 }
@@ -90,7 +90,7 @@ export function SliderControl({ label, value, min, max, step = 1, onChange, edit
               const v = Number(e.target.value);
               if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
             }}
-            className="tabular-nums text-right w-16 rounded px-1 outline-none"
+            className="tabular-nums text-right w-16 rounded px-2 outline-none"
             style={{
               color: 'var(--text-primary)',
               backgroundColor: 'var(--button-bg)',
@@ -133,7 +133,7 @@ interface NumberInputControlProps {
 
 export function NumberInputControl({ label, value, min, max, step = 1, onChange }: NumberInputControlProps) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-2">
       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{label}</span>
       <input
         type="number"
@@ -148,9 +148,10 @@ export function NumberInputControl({ label, value, min, max, step = 1, onChange 
             onChange(min !== undefined ? Math.max(min, clamped) : clamped);
           }
         }}
-        className="w-full px-3 rounded-lg text-[12px] outline-none"
+        className="w-full rounded-lg text-[12px] outline-none"
         style={{
-          height: 36,
+          height: 38,
+          padding: '0 14px',
           backgroundColor: 'var(--button-bg)',
           color: 'var(--text-primary)',
           border: '1px solid var(--border)',
@@ -171,7 +172,7 @@ interface ToggleControlProps {
 
 export function ToggleControl({ label, checked, onChange }: ToggleControlProps) {
   return (
-    <div className="flex items-center justify-between py-0.5">
+    <div className="flex items-center justify-between py-1">
       <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </span>
@@ -223,7 +224,7 @@ export function ButtonControl({ label, onClick, disabled, variant = 'primary' }:
       onClick={onClick}
       disabled={disabled}
       className={`w-full rounded-lg disabled:opacity-30 disabled:cursor-not-allowed ${isPrimary ? 'app-btn-primary' : 'app-btn-secondary'}`}
-      style={{ height: 36, fontSize: 12 }}
+      style={{ height: 38, fontSize: 12 }}
     >
       {label}
     </button>
@@ -249,9 +250,10 @@ export function TextInput({ value, onChange, placeholder, onSubmit }: TextInputP
       }}
       placeholder={placeholder}
       aria-label={placeholder}
-      className="w-full px-3 rounded-lg text-[12px] outline-none"
+      className="w-full rounded-lg text-[12px] outline-none"
       style={{
-        height: 36,
+        height: 38,
+        padding: '0 14px',
         backgroundColor: 'var(--button-bg)',
         color: 'var(--text-primary)',
         border: '1px solid var(--border)',
@@ -272,16 +274,17 @@ interface SelectControlProps {
 
 export function SelectControl({ label, value, options, onChange }: SelectControlProps) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-2">
       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 rounded-lg text-[12px] outline-none cursor-pointer"
+        className="w-full rounded-lg text-[12px] outline-none cursor-pointer"
         style={{
-          height: 36,
+          height: 38,
+          padding: '0 14px',
           backgroundColor: 'var(--button-bg)',
           color: 'var(--text-primary)',
           border: '1px solid var(--border)',

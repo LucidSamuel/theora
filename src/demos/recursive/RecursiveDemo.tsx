@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback, useMemo, useState, useRef } from 'react';
+import { useReducer, useEffect, useCallback, useMemo, useState, useRef, type WheelEvent as ReactWheelEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { AnimatedCanvas } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea, DemoAside } from '@/components/shared/DemoLayout';
@@ -23,10 +23,12 @@ import {
   verifyNode,
   getAllNodes,
   computeTreeLayout,
+  computeTreeBounds,
   buildIvcChain,
   foldIvcStep,
   getConstantProofSize,
 } from './logic';
+import { useFollowCamera } from '@/hooks/useFollowCamera';
 import { renderProofTree, renderIvcChain } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
@@ -222,6 +224,33 @@ export function RecursiveDemo(): JSX.Element {
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const followCamera = useFollowCamera(camera);
+  const [followEnabled, setFollowEnabled] = useState(true);
+  const lastFollowedIndexRef = useRef(-1);
+  const verificationDoneRef = useRef(false);
+
+  // Deactivate follow camera on manual pan/zoom
+  const handleManualCameraInterrupt = useCallback(() => {
+    if (followCamera.stateRef.current.active) {
+      followCamera.setActive(false);
+    }
+  }, [followCamera]);
+
+  const canvasHandlers = useMemo(() => ({
+    ...mergedHandlers,
+    onWheel: (e: ReactWheelEvent<HTMLCanvasElement>) => {
+      handleManualCameraInterrupt();
+      mergedHandlers.onWheel(e);
+    },
+    onMouseDown: (e: ReactMouseEvent<HTMLCanvasElement>) => {
+      if (e.button === 1 || e.altKey || camera.mode === 'pan') {
+        handleManualCameraInterrupt();
+      }
+      mergedHandlers.onMouseDown(e);
+    },
+  }), [mergedHandlers, handleManualCameraInterrupt, camera.mode]);
+
+  const initialFitDoneRef = useRef(false);
 
   // Auto-build tree on mount
   useEffect(() => {
@@ -239,6 +268,15 @@ export function RecursiveDemo(): JSX.Element {
     return () => clearInterval(interval);
   }, [state.verification.isRunning, state.verification.speed, state.mode]);
 
+  // Activate follow camera when auto-verify starts
+  useEffect(() => {
+    if (state.verification.isRunning && followEnabled && state.mode === 'tree') {
+      lastFollowedIndexRef.current = -1;
+      verificationDoneRef.current = false;
+      followCamera.setActive(true);
+    }
+  }, [state.verification.isRunning, followEnabled, state.mode, followCamera]);
+
   // Compute layout for tree mode
   const positions = useMemo(() => {
     if (state.mode === 'tree' && state.root) {
@@ -247,12 +285,102 @@ export function RecursiveDemo(): JSX.Element {
     return new Map();
   }, [state.root, state.mode, canvasSize]);
 
+  // Fit tree into view — reusable for initial load + reset button
+  // Reserve 50px at bottom for the screen-space status legend
+  const fitToView = useCallback(() => {
+    if (positions.size === 0) return;
+    const bounds = computeTreeBounds(positions);
+    const treeW = bounds.maxX - bounds.minX;
+    const treeH = bounds.maxY - bounds.minY;
+    const padX = 60;
+    const padTop = 40;
+    const padBottom = 80; // extra room for legend
+    const availH = canvasSize.height - padTop - padBottom;
+    const fitZoom = Math.min(
+      canvasSize.width / (treeW + padX * 2),
+      availH / treeH,
+      1.0,
+    );
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    // Offset vertically so tree sits above the legend area
+    const offsetY = (padTop - padBottom) / 2;
+    camera.setPanZoom(
+      canvasSize.width / 2 - centerX * fitZoom,
+      (canvasSize.height / 2 + offsetY) - centerY * fitZoom,
+      fitZoom,
+    );
+  }, [positions, canvasSize, camera]);
+
+  // Fit tree to view on initial load
+  useEffect(() => {
+    if (initialFitDoneRef.current || positions.size === 0 || state.mode !== 'tree') return;
+    initialFitDoneRef.current = true;
+    fitToView();
+  }, [positions, state.mode, fitToView]);
+
+  // Update follow camera target when verification step changes
+  useEffect(() => {
+    if (!followCamera.stateRef.current.active || !followEnabled || state.mode !== 'tree') return;
+
+    const idx = state.verification.currentIndex;
+    const orderLen = state.verification.order.length;
+
+    // Verification complete — zoom out to show full tree (reserve bottom for legend)
+    if (idx >= orderLen && orderLen > 0 && !verificationDoneRef.current) {
+      verificationDoneRef.current = true;
+      if (positions.size > 0) {
+        const bounds = computeTreeBounds(positions);
+        const treeW = bounds.maxX - bounds.minX;
+        const treeH = bounds.maxY - bounds.minY;
+        const padX = 60;
+        const padTop = 40;
+        const padBottom = 80;
+        const availH = canvasSize.height - padTop - padBottom;
+        const fitZoom = Math.min(
+          canvasSize.width / (treeW + padX * 2),
+          availH / treeH,
+          1.0,
+        );
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
+        const offsetY = (padTop - padBottom) / 2;
+        followCamera.setTarget(centerX, centerY - offsetY / fitZoom, fitZoom, canvasSize.width, canvasSize.height);
+      }
+      return;
+    }
+
+    // Focus on current node
+    if (idx === lastFollowedIndexRef.current || idx >= orderLen) return;
+    lastFollowedIndexRef.current = idx;
+
+    const nodeId = state.verification.order[idx];
+    if (!nodeId) return;
+    const pos = positions.get(nodeId);
+    if (!pos) return;
+
+    const focusZoom = Math.min(1.8, canvasSize.width / 250);
+    followCamera.setTarget(pos.x, pos.y, focusZoom, canvasSize.width, canvasSize.height);
+  }, [state.verification.currentIndex, state.verification.order, state.mode, followEnabled, positions, canvasSize, followCamera]);
+
   // Draw callback
   const handleDraw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: any) => {
       // Update canvas size
       if (frame.width !== canvasSize.width || frame.height !== canvasSize.height) {
         setCanvasSize({ width: frame.width, height: frame.height });
+      }
+
+      // Step follow camera spring (writes to camera refs if active)
+      followCamera.update(frame.delta);
+
+      // Auto-deactivate follow camera when zoom-out is settled after verification
+      if (
+        followCamera.stateRef.current.active &&
+        verificationDoneRef.current &&
+        followCamera.isSettled()
+      ) {
+        followCamera.setActive(false);
       }
 
       const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
@@ -320,6 +448,7 @@ export function RecursiveDemo(): JSX.Element {
       interaction.mouseY,
       theme,
       canvasSize,
+      followCamera,
     ]
   );
 
@@ -436,12 +565,54 @@ export function RecursiveDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
+
+    // Save current camera state
+    const prevPanX = camera.panX;
+    const prevPanY = camera.panY;
+    const prevZoom = camera.zoom;
+
+    // Fit tree to view for the export
+    fitToView();
+
+    // Manually redraw one frame so the canvas reflects the fit-to-view
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      // Background
+      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      ctx.fillStyle = isDark ? '#0a0a0a' : '#f9f9f9';
+      ctx.fillRect(0, 0, w, h);
+
+      // Apply camera transform
+      ctx.translate(camera.panX, camera.panY);
+      ctx.scale(camera.zoom, camera.zoom);
+
+      const worldMouse = camera.toWorld(0, 0);
+      if (state.mode === 'tree') {
+        renderProofTree(ctx, { time: 0, delta: 0, frameCount: 0, width: w, height: h, camera: { panX: camera.panX, panY: camera.panY, zoom: camera.zoom } }, state.root, positions, state.verification, state.showPastaCurves, state.showProofSize, worldMouse.x, worldMouse.y, theme);
+      } else {
+        renderIvcChain(ctx, { time: 0, delta: 0, frameCount: 0, width: w, height: h, camera: { panX: camera.panX, panY: camera.panY, zoom: camera.zoom } }, state.ivcChain, state.showPastaCurves, worldMouse.x, worldMouse.y, theme);
+      }
+
+      ctx.restore();
+    }
+
     const data = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = data;
     a.download = 'theora-recursive.png';
     a.click();
     showDownloadToast('theora-recursive.png');
+
+    // Restore camera
+    camera.setPanZoom(prevPanX, prevPanY, prevZoom);
   };
 
   const handleCopyAuditSummary = () => {
@@ -495,7 +666,20 @@ export function RecursiveDemo(): JSX.Element {
   }, [hoverInfo, state.mode, state.ivcLength, state.badProofTarget, state.verification.isRunning, state.treeDepth, setEntry]);
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedPlay={() => {
+        const done = state.verification.currentIndex >= state.verification.order.length && state.verification.order.length > 0;
+        if (done || (!state.verification.isRunning && state.verification.currentIndex > 0)) {
+          // Replay: rebuild tree and start fresh
+          dispatch({ type: 'BUILD_TREE' });
+          // Small delay so the tree rebuilds before starting verification
+          setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 50);
+        } else {
+          dispatch({ type: 'SET_VERIFICATION', isRunning: !state.verification.isRunning });
+        }
+      }}
+      embedPlaying={state.verification.isRunning}
+    >
       <DemoSidebar width="compact">
 
         <ControlGroup label="Mode">
@@ -533,16 +717,25 @@ export function RecursiveDemo(): JSX.Element {
               <div className="control-button-row">
                 <ButtonControl
                   label={state.verification.isRunning ? '⏸ Pause' : '▶ Auto'}
-                  onClick={() =>
-                    dispatch({
-                      type: 'SET_VERIFICATION',
-                      isRunning: !state.verification.isRunning,
-                    })
-                  }
+                  onClick={() => {
+                    const done = state.verification.currentIndex >= state.verification.order.length && state.verification.order.length > 0;
+                    if (done) {
+                      dispatch({ type: 'BUILD_TREE' });
+                      setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 50);
+                    } else {
+                      dispatch({ type: 'SET_VERIFICATION', isRunning: !state.verification.isRunning });
+                    }
+                  }}
                 />
                 <ButtonControl
                   label="Step"
-                  onClick={() => dispatch({ type: 'STEP_VERIFY' })}
+                  onClick={() => {
+                    if (followEnabled && state.mode === 'tree') {
+                      followCamera.setActive(true);
+                      verificationDoneRef.current = false;
+                    }
+                    dispatch({ type: 'STEP_VERIFY' });
+                  }}
                   disabled={state.verification.isRunning}
                   variant="secondary"
                 />
@@ -554,6 +747,14 @@ export function RecursiveDemo(): JSX.Element {
                 max={1000}
                 step={100}
                 onChange={(value) => dispatch({ type: 'SET_SPEED', speed: 1100 - value })}
+              />
+              <ToggleControl
+                label="Follow Camera"
+                checked={followEnabled}
+                onChange={(v) => {
+                  setFollowEnabled(v);
+                  if (!v) followCamera.setActive(false);
+                }}
               />
             </ControlGroup>
 
@@ -616,7 +817,7 @@ export function RecursiveDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="control-button-row" style={{ flexWrap: 'wrap' }}>
+          <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -630,8 +831,8 @@ export function RecursiveDemo(): JSX.Element {
       </DemoSidebar>
 
       <DemoCanvasArea>
-        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:recursive" />
+        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...canvasHandlers} />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:recursive" onReset={fitToView} />
       </DemoCanvasArea>
 
       <DemoAside width="narrow">
@@ -640,33 +841,31 @@ export function RecursiveDemo(): JSX.Element {
         </h3>
 
         {state.mode === 'tree' && stats && (
-          <div className="space-y-3 text-sm">
+          <div className="space-y-5">
             <ControlCard>
               <div className="control-kicker">Total nodes</div>
-              <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
-                {stats.totalNodes}
-              </div>
+              <div className="control-value font-mono">{stats.totalNodes}</div>
             </ControlCard>
             <ControlCard tone="success">
               <div className="control-kicker">Verified</div>
-              <div className="font-mono" style={{ color: 'var(--status-success)' }}>{stats.verified}</div>
+              <div className="control-value font-mono" style={{ color: 'var(--status-success)' }}>{stats.verified}</div>
             </ControlCard>
             <ControlCard tone="error">
               <div className="control-kicker">Failed</div>
-              <div className="font-mono" style={{ color: 'var(--status-error)' }}>{stats.failed}</div>
+              <div className="control-value font-mono" style={{ color: 'var(--status-error)' }}>{stats.failed}</div>
             </ControlCard>
             <ControlCard>
               <div className="control-kicker">Current step</div>
-              <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
+              <div className="control-value font-mono">
                 {stats.currentStep} / {state.verification.order.length}
               </div>
             </ControlCard>
             <ControlCard>
               <div className="control-kicker">Proof size</div>
-              <div className="font-mono font-bold" style={{ color: '#3b82f6' }}>
+              <div className="control-value font-mono font-bold" style={{ color: '#3b82f6' }}>
                 {proofSize.description}
               </div>
-              <div className="control-caption">
+              <div className="control-caption" style={{ marginTop: 6 }}>
                 Constant regardless of depth
               </div>
             </ControlCard>
@@ -674,16 +873,14 @@ export function RecursiveDemo(): JSX.Element {
         )}
 
         {state.mode === 'ivc' && stats && (
-          <div className="space-y-3 text-sm">
+          <div className="space-y-5">
             <ControlCard>
               <div className="control-kicker">Total steps</div>
-              <div className="font-mono" style={{ color: 'var(--text-primary)' }}>
-                {stats.totalSteps}
-              </div>
+              <div className="control-value font-mono">{stats.totalSteps}</div>
             </ControlCard>
             <ControlCard tone="success">
               <div className="control-kicker">Folded</div>
-              <div className="font-mono" style={{ color: 'var(--status-success)' }}>{stats.folded}</div>
+              <div className="control-value font-mono" style={{ color: 'var(--status-success)' }}>{stats.folded}</div>
             </ControlCard>
             <ControlCard>
               <div className="control-kicker">Accumulator</div>
@@ -693,10 +890,10 @@ export function RecursiveDemo(): JSX.Element {
             </ControlCard>
             <ControlCard>
               <div className="control-kicker">Proof size</div>
-              <div className="font-mono font-bold" style={{ color: '#3b82f6' }}>
+              <div className="control-value font-mono font-bold" style={{ color: '#3b82f6' }}>
                 {proofSize.description}
               </div>
-              <div className="control-caption">
+              <div className="control-caption" style={{ marginTop: 6 }}>
                 Constant per fold
               </div>
             </ControlCard>

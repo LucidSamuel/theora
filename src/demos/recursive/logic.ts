@@ -283,3 +283,19 @@ export function computeTreeLayout(
   void vHeight;
   return positions;
 }
+
+/** Compute bounding box of all node positions (accounting for node dimensions). */
+export function computeTreeBounds(
+  positions: Map<string, { x: number; y: number }>
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  const NW = 118;
+  const NH = 58;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const { x, y } of positions.values()) {
+    minX = Math.min(minX, x - NW / 2);
+    minY = Math.min(minY, y - NH / 2);
+    maxX = Math.max(maxX, x + NW / 2);
+    maxY = Math.max(maxY, y + NH / 2);
+  }
+  return { minX, minY, maxX, maxY };
+}

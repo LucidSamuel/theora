@@ -137,8 +137,10 @@ export function renderPipeline(
   ctx.fillStyle = textSecondary;
   ctx.fillText('f(x) = x² + x + 5   →   prove knowledge of x without revealing it', cx, 52);
 
+  const faultIdx = faultOriginIndex(fault);
+
   // ── Connection lines ──
-  drawConnections(ctx, positions, activeStage, results, time);
+  drawConnections(ctx, positions, activeStage, results, time, faultIdx);
 
   // ── Stage nodes ──
   for (const stage of STAGES) {
@@ -148,7 +150,7 @@ export function renderPipeline(
   }
 
   // ── Flow particles ──
-  drawFlowParticles(ctx, positions, activeStage, time);
+  drawFlowParticles(ctx, positions, activeStage, time, faultIdx);
 
   // ── Detail panel ──
   drawDetailPanel(ctx, width, height, activeStage, results, fault, textPrimary, textSecondary, textMuted, isDark, time);
@@ -215,7 +217,8 @@ function drawConnections(
   positions: Map<PipelineStage, StagePos>,
   activeStage: PipelineStage,
   _results: PipelineResults,
-  time: number
+  time: number,
+  faultIdx: number
 ) {
   const activeIdx = STAGES.indexOf(activeStage);
 
@@ -225,14 +228,17 @@ function drawConnections(
     const to = positions.get(TOP_ROW[i + 1]!)!;
     const connectionIdx = i; // stages 0-2
     const lit = connectionIdx < activeIdx;
+    const tainted = lit && faultIdx >= 0 && connectionIdx >= faultIdx;
 
-    drawArrow(ctx, from.x + from.w, from.y + from.h / 2, to.x, to.y + to.h / 2, lit, time);
+    drawArrow(ctx, from.x + from.w, from.y + from.h / 2, to.x, to.y + to.h / 2, lit, time, tainted);
   }
 
   // Vertical: commit → challenge
   const commitPos = positions.get('commit')!;
   const challengePos = positions.get('challenge')!;
-  const vertLit = STAGES.indexOf('commit') < activeIdx;
+  const commitIdx = STAGES.indexOf('commit');
+  const vertLit = commitIdx < activeIdx;
+  const vertTainted = vertLit && faultIdx >= 0 && commitIdx >= faultIdx;
   drawArrow(
     ctx,
     commitPos.x + commitPos.w / 2,
@@ -240,7 +246,8 @@ function drawConnections(
     challengePos.x + challengePos.w / 2,
     challengePos.y,
     vertLit,
-    time
+    time,
+    vertTainted
   );
 
   // Bottom row connections: challenge→open→verify (right to left visually)
@@ -249,9 +256,10 @@ function drawConnections(
     const to = positions.get(BOT_ROW[i + 1]!)!;
     const connectionIdx = STAGES.indexOf(BOT_ROW[i]!);
     const lit = connectionIdx < activeIdx;
+    const tainted = lit && faultIdx >= 0 && connectionIdx >= faultIdx;
 
     // Bottom row flows left
-    drawArrow(ctx, from.x, from.y + from.h / 2, to.x + to.w, to.y + to.h / 2, lit, time);
+    drawArrow(ctx, from.x, from.y + from.h / 2, to.x + to.w, to.y + to.h / 2, lit, time, tainted);
   }
 }
 
@@ -260,9 +268,11 @@ function drawArrow(
   x1: number, y1: number,
   x2: number, y2: number,
   lit: boolean,
-  _time: number
+  _time: number,
+  tainted = false
 ) {
-  ctx.strokeStyle = lit ? hexToRgba(ACCENT, 0.6) : 'rgba(255,255,255,0.08)';
+  const color = tainted ? '#ef4444' : ACCENT;
+  ctx.strokeStyle = lit ? hexToRgba(color, 0.6) : 'rgba(255,255,255,0.08)';
   ctx.lineWidth = lit ? 2 : 1;
   ctx.setLineDash(lit ? [] : [4, 4]);
 
@@ -276,7 +286,7 @@ function drawArrow(
   if (lit) {
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const headLen = 7;
-    ctx.fillStyle = hexToRgba(ACCENT, 0.6);
+    ctx.fillStyle = hexToRgba(color, 0.6);
     ctx.beginPath();
     ctx.moveTo(x2, y2);
     ctx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
@@ -290,7 +300,8 @@ function drawFlowParticles(
   ctx: CanvasRenderingContext2D,
   positions: Map<PipelineStage, StagePos>,
   activeStage: PipelineStage,
-  time: number
+  time: number,
+  faultIdx: number
 ) {
   const activeIdx = STAGES.indexOf(activeStage);
 
@@ -299,6 +310,8 @@ function drawFlowParticles(
 
     const from = positions.get(STAGES[i]!)!;
     const to = positions.get(STAGES[i + 1]!)!;
+    const tainted = faultIdx >= 0 && i >= faultIdx;
+    const color = tainted ? '#ef4444' : ACCENT;
 
     let x1: number, y1: number, x2: number, y2: number;
 
@@ -331,7 +344,7 @@ function drawFlowParticles(
 
       ctx.beginPath();
       ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = hexToRgba(ACCENT, alpha);
+      ctx.fillStyle = hexToRgba(color, alpha);
       ctx.fill();
     }
   }
@@ -421,6 +434,17 @@ function doesFaultAffect(fault: FaultType, stage: PipelineStage): boolean {
     case 'weak-fiat-shamir': return stage === 'challenge';
     case 'bad-opening': return stage === 'open';
     default: return false;
+  }
+}
+
+/** Returns the index in STAGES where the fault originates, or -1 if no fault. */
+function faultOriginIndex(fault: FaultType): number {
+  switch (fault) {
+    case 'bad-witness': return STAGES.indexOf('witness');
+    case 'bad-polynomial': return STAGES.indexOf('polynomial');
+    case 'weak-fiat-shamir': return STAGES.indexOf('challenge');
+    case 'bad-opening': return STAGES.indexOf('open');
+    default: return -1;
   }
 }
 

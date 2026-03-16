@@ -745,8 +745,9 @@ export function AccumulatorDemo() {
                 value={state.batchPrimes}
                 onChange={(e) => dispatch({ type: 'SET_BATCH_PRIMES', primes: e.target.value })}
                 placeholder="Enter primes separated by commas (e.g., 3,5,7,11)"
-                className="w-full h-20 px-3 py-2 text-xs rounded-lg resize-none"
+                className="w-full h-20 text-xs rounded-lg resize-none"
                 style={{
+                  padding: '10px 14px',
                   backgroundColor: 'var(--button-bg)',
                   color: 'var(--text-primary)',
                   border: '1px solid var(--border)',
@@ -759,7 +760,7 @@ export function AccumulatorDemo() {
         </ControlGroup>
 
         <ControlGroup label="Elements">
-          <div className="space-y-2.5 max-h-48 overflow-y-auto">
+          <div className="space-y-3 max-h-48 overflow-y-auto">
             {state.elements.length === 0 && (
               <div className="empty-state">
                 <span className="empty-state__text">No elements yet — add a prime above</span>
@@ -823,7 +824,7 @@ export function AccumulatorDemo() {
               Add or remove an element to watch how the surviving witnesses all update.
             </ControlNote>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="control-caption">
                 {state.witnessCascade.filter((entry) => entry.changed).length} / {state.witnessCascade.length} witnesses updated
               </div>
@@ -890,7 +891,7 @@ export function AccumulatorDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <div className="control-button-row" style={{ flexWrap: 'wrap' }}>
+          <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
             <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
@@ -911,7 +912,7 @@ export function AccumulatorDemo() {
 
       <DemoAside width="compact">
         <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#f59e0b' }}>History</h3>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {state.history.length === 0 && (
             <div className="empty-state">
               <span className="empty-state__text">No history yet — add or remove elements to see operations</span>

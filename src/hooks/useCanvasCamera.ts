@@ -12,6 +12,8 @@ export interface CanvasCamera {
   reset: () => void;
   panBy: (dx: number, dy: number) => void;
   zoomBy: (factor: number) => void;
+  /** Directly set camera position and zoom (for programmatic animation) */
+  setPanZoom: (panX: number, panY: number, zoom: number) => void;
   setMode: (mode: 'inspect' | 'pan') => void;
   shouldHandleClick: () => boolean;
   handlers: {
@@ -63,6 +65,12 @@ export function useCanvasCamera(): CanvasCamera {
 
   const zoomBy = useCallback((factor: number) => {
     zoomRef.current = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomRef.current * factor));
+  }, []);
+
+  const setPanZoom = useCallback((px: number, py: number, z: number) => {
+    panXRef.current = px;
+    panYRef.current = py;
+    zoomRef.current = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
   }, []);
 
   const setMode = useCallback((mode: 'inspect' | 'pan') => {
@@ -215,6 +223,7 @@ export function useCanvasCamera(): CanvasCamera {
       reset,
       panBy,
       zoomBy,
+      setPanZoom,
       setMode,
       shouldHandleClick,
       handlers: {

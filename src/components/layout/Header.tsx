@@ -90,13 +90,14 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
 
   return (
     <header
-      className="flex items-center justify-between px-5 h-12 border-b"
+      className="flex items-center justify-between h-[52px] border-b"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
+        padding: '0 20px',
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" style={{ paddingLeft: 4 }}>
         {/* Mobile demo selector */}
         <div className="flex md:hidden gap-0.5">
           {DEMOS.map((d) => (
@@ -113,7 +114,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
             </button>
           ))}
         </div>
-        <span className="text-[13px] font-medium font-display" style={{ color: 'var(--text-primary)' }}>
+        <span className="text-[13px] leading-none font-medium font-display" style={{ color: 'var(--text-primary)' }}>
           {demo.title}
         </span>
       </div>

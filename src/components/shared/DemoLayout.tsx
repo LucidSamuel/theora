@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { getSearchParam } from '@/lib/urlState';
+import { Settings, Play, Pause, X } from 'lucide-react';
 
 type SidebarWidth = 'standard' | 'compact';
 type AsideWidth = 'compact' | 'narrow';
@@ -11,7 +12,11 @@ interface EmbedContext {
   togglePanels: () => void;
 }
 
-const EmbedCtx = createContext<EmbedContext>({ isEmbed: false, panelsVisible: true, togglePanels: () => {} });
+const EmbedCtx = createContext<EmbedContext>({
+  isEmbed: false,
+  panelsVisible: true,
+  togglePanels: () => {},
+});
 
 export function useEmbedContext() {
   return useContext(EmbedCtx);
@@ -19,6 +24,10 @@ export function useEmbedContext() {
 
 interface DemoLayoutProps {
   children: ReactNode;
+  /** Callback for the embed play/pause button. If provided, a play button appears in the embed toolbar. */
+  onEmbedPlay?: () => void;
+  /** Whether the demo is currently "playing" (controls play vs pause icon). */
+  embedPlaying?: boolean;
 }
 
 interface DemoSidebarProps {
@@ -36,23 +45,40 @@ interface DemoAsideProps {
   width?: AsideWidth;
 }
 
-export function DemoLayout({ children }: DemoLayoutProps) {
+export function DemoLayout({ children, onEmbedPlay, embedPlaying }: DemoLayoutProps) {
   const isEmbed = Boolean(getSearchParam('embed'));
   const [panelsVisible, setPanelsVisible] = useState(!isEmbed);
 
   return (
-    <EmbedCtx.Provider value={{ isEmbed, panelsVisible, togglePanels: () => setPanelsVisible((v) => !v) }}>
+    <EmbedCtx.Provider value={{
+      isEmbed,
+      panelsVisible,
+      togglePanels: () => setPanelsVisible((v) => !v),
+    }}>
       <div className="demo-layout">
         {children}
+        {/* Floating toolbar only for embed mode */}
         {isEmbed && (
-          <button
-            onClick={() => setPanelsVisible((v) => !v)}
-            className="demo-embed-toggle"
-            aria-label={panelsVisible ? 'Hide controls' : 'Show controls'}
-            title={panelsVisible ? 'Hide controls' : 'Show controls'}
-          >
-            {panelsVisible ? '✕' : '☰'}
-          </button>
+          <div className="demo-embed-toolbar">
+            {onEmbedPlay && (
+              <button
+                onClick={onEmbedPlay}
+                className="demo-embed-btn"
+                aria-label={embedPlaying ? 'Pause' : 'Play'}
+                title={embedPlaying ? 'Pause' : 'Play'}
+              >
+                {embedPlaying ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+            )}
+            <button
+              onClick={() => setPanelsVisible((v) => !v)}
+              className="demo-embed-btn"
+              aria-label={panelsVisible ? 'Hide controls' : 'Show controls'}
+              title={panelsVisible ? 'Hide controls' : 'Controls'}
+            >
+              {panelsVisible ? <X size={14} /> : <Settings size={14} />}
+            </button>
+          </div>
         )}
       </div>
     </EmbedCtx.Provider>
@@ -61,17 +87,52 @@ export function DemoLayout({ children }: DemoLayoutProps) {
 
 export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) {
   const { isEmbed, panelsVisible } = useEmbedContext();
-  if (isEmbed && !panelsVisible) return null;
 
+  // Embed: hide entirely when collapsed
+  if (isEmbed && !panelsVisible) return null;
+  if (isEmbed) {
+    return (
+      <div className={`demo-sidebar demo-sidebar--${width} demo-sidebar--embed`}>
+        {children}
+      </div>
+    );
+  }
+
+  // Main view collapsed: floating settings button over canvas
+  if (!panelsVisible) return null;
+
+  // Main view expanded
   return (
-    <div className={`demo-sidebar demo-sidebar--${width}${isEmbed ? ' demo-sidebar--embed' : ''}`}>
+    <div className={`demo-sidebar demo-sidebar--${width}`}>
       {children}
     </div>
   );
 }
 
 export function DemoCanvasArea({ children }: DemoCanvasAreaProps) {
-  return <div className="demo-canvas-area">{children}</div>;
+  const { isEmbed, panelsVisible, togglePanels } = useEmbedContext();
+
+  return (
+    <div className="demo-canvas-area">
+      {children}
+      {/* Floating settings toggle — main view only, matches canvas toolbar style */}
+      {!isEmbed && (
+        <div className="demo-settings-toggle">
+          <div className="canvas-toolbar">
+            <button
+              type="button"
+              className={`canvas-toolbar-btn${panelsVisible ? ' is-active' : ''}`}
+              onClick={togglePanels}
+              title={panelsVisible ? 'Hide controls' : 'Show controls'}
+              aria-label={panelsVisible ? 'Hide controls' : 'Show controls'}
+            >
+              {panelsVisible ? <X size={14} /> : <Settings size={14} />}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DemoAside({ children, side = 'right', width = 'compact' }: DemoAsideProps) {
