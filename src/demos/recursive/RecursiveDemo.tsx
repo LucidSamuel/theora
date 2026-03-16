@@ -568,6 +568,7 @@ export function RecursiveDemo(): JSX.Element {
   useEffect(() => {
     const hashState = getHashState();
     if (hashState?.demo === 'recursive') return;
+    const autoplay = state.mode === 'tree' && Boolean(state.badProofTarget) ? true : undefined;
     const payload = {
       mode: state.mode,
       depth: state.treeDepth,
@@ -575,18 +576,23 @@ export function RecursiveDemo(): JSX.Element {
       showPasta: state.showPastaCurves,
       showProofSize: state.showProofSize,
       badProofNode: state.badProofTarget,
+      autoplay,
     };
     setSearchParams({ r: encodeState(payload) });
   }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget]);
 
-  const buildShareState = () => ({
-    mode: state.mode,
-    depth: state.treeDepth,
-    ivcLength: state.ivcLength,
-    showPasta: state.showPastaCurves,
-    showProofSize: state.showProofSize,
-    badProofNode: state.badProofTarget,
-  });
+  const buildShareState = () => {
+    const autoplay = state.mode === 'tree' && Boolean(state.badProofTarget) ? true : undefined;
+    return {
+      mode: state.mode,
+      depth: state.treeDepth,
+      ivcLength: state.ivcLength,
+      showPasta: state.showPastaCurves,
+      showProofSize: state.showProofSize,
+      badProofNode: state.badProofTarget,
+      autoplay,
+    };
+  };
 
   const handleCopyShareUrl = () => {
     copyToClipboard(window.location.href);
