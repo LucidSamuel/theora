@@ -40,6 +40,16 @@ const NW = 118;
 const NH = 58;
 const NR = 13; // corner radius
 
+type HoveredProofNode = {
+  type: 'node';
+  id: string;
+  label: string;
+  status: string;
+  curve: string;
+  x: number;
+  y: number;
+};
+
 // ─── Bezier helpers ──────────────────────────────────────────────────────────
 
 function bezierPoint(t: number, p0: number, p1: number, p2: number, p3: number): number {
@@ -267,6 +277,78 @@ function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: nu
   ctx.fillRect(-50000, -50000, 100000, 100000);
 }
 
+function drawProofNodeTooltip(
+  ctx: CanvasRenderingContext2D,
+  frame: FrameInfo,
+  hovered: HoveredProofNode,
+  colors: typeof PAL.dark
+): void {
+  const dpr = window.devicePixelRatio || 1;
+  const screenX = hovered.x * frame.camera.zoom + frame.camera.panX;
+  const screenY = hovered.y * frame.camera.zoom + frame.camera.panY;
+  const nodeHalfWidth = (NW * frame.camera.zoom) / 2;
+  const title = `${hovered.label} (id: ${hovered.id})`;
+  const body = `Status: ${hovered.status}. Curve: ${hovered.curve}.`;
+  const paddingX = 10;
+  const paddingY = 8;
+  const titleFont = '600 12px system-ui, sans-serif';
+  const bodyFont = '11px system-ui, sans-serif';
+  const titleLineHeight = 14;
+  const bodyLineHeight = 13;
+  const bodyGap = 6;
+
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.font = titleFont;
+  const titleWidth = ctx.measureText(title).width;
+  ctx.font = bodyFont;
+  const bodyWidth = ctx.measureText(body).width;
+
+  const tooltipWidth = Math.max(titleWidth, bodyWidth) + paddingX * 2;
+  const tooltipHeight = paddingY * 2 + titleLineHeight + bodyGap + bodyLineHeight;
+
+  let tooltipX = screenX + nodeHalfWidth + 14;
+  let tooltipY = screenY - tooltipHeight / 2;
+
+  if (tooltipX + tooltipWidth > frame.width - 12) {
+    tooltipX = screenX - nodeHalfWidth - tooltipWidth - 14;
+  }
+  if (tooltipX < 12) {
+    tooltipX = 12;
+  }
+  if (tooltipY < 12) {
+    tooltipY = 12;
+  }
+  if (tooltipY + tooltipHeight > frame.height - 12) {
+    tooltipY = frame.height - tooltipHeight - 12;
+  }
+
+  ctx.shadowColor = hexToRgba(colors.bg0, 0.45);
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = hexToRgba(colors.bg1, 0.96);
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipWidth, tooltipHeight, 10);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = hexToRgba(colors.pending.border, 0.7);
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipWidth, tooltipHeight, 10);
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = colors.text;
+  ctx.font = titleFont;
+  ctx.fillText(title, tooltipX + paddingX, tooltipY + paddingY);
+
+  ctx.fillStyle = colors.textMuted;
+  ctx.font = bodyFont;
+  ctx.fillText(body, tooltipX + paddingX, tooltipY + paddingY + titleLineHeight + bodyGap);
+
+  ctx.restore();
+}
+
 // ─── renderProofTree ─────────────────────────────────────────────────────────
 
 export function renderProofTree(
@@ -280,7 +362,7 @@ export function renderProofTree(
   mouseX: number,
   mouseY: number,
   theme: 'dark' | 'light'
-): { hovered: { type: 'node'; id: string; label: string; status: string; curve: string } | null } {
+): { hovered: HoveredProofNode | null } {
   const colors = PAL[theme];
   const { time, width, height } = frame;
 
@@ -346,7 +428,7 @@ export function renderProofTree(
   drawEdges(root);
 
   // ── Draw nodes ───────────────────────────────
-  let hovered: { type: 'node'; id: string; label: string; status: string; curve: string } | null = null;
+  let hovered: HoveredProofNode | null = null;
 
   for (const node of allNodes) {
     const pos = positions.get(node.id);
@@ -360,7 +442,15 @@ export function renderProofTree(
       mouseY <= pos.y + NH / 2;
 
     if (isHovered) {
-      hovered = { type: 'node', id: node.id, label: node.label, status: node.status, curve: node.curve };
+      hovered = {
+        type: 'node',
+        id: node.id,
+        label: node.label,
+        status: node.status,
+        curve: node.curve,
+        x: pos.x,
+        y: pos.y,
+      };
     }
 
     drawNode(ctx, node, pos.x, pos.y, time, showPastaCurves, showProofSize, isRoot, isHovered, colors);
@@ -421,6 +511,10 @@ export function renderProofTree(
   }
 
   ctx.restore();
+
+  if (hovered) {
+    drawProofNodeTooltip(ctx, frame, hovered, colors);
+  }
 
   return { hovered };
 }

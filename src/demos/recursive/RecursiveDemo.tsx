@@ -7,7 +7,7 @@ import {
   SliderControl,
   ToggleControl,
   ButtonControl,
-  TextInput,
+  SelectControl,
   ControlCard,
 } from '@/components/shared/Controls';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
@@ -219,7 +219,7 @@ export function RecursiveDemo(): JSX.Element {
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const [hoverInfo, setHoverInfo] = useState<{ key: string; title: string; body: string } | null>(null);
   const hoverKeyRef = useRef<string | null>(null);
-  const [badProofInput, setBadProofInput] = useState('');
+  const [badProofInput, setBadProofInput] = useState('none');
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
@@ -402,8 +402,8 @@ export function RecursiveDemo(): JSX.Element {
         const nextHover = hovered
           ? {
               key: hovered.id,
-              title: `${hovered.label} (${hovered.curve})`,
-              body: `Status: ${hovered.status}. Hovering a proof node.`,
+              title: `${hovered.label} (id: ${hovered.id})`,
+              body: `Status: ${hovered.status}. Curve: ${hovered.curve}.`,
             }
           : null;
 
@@ -425,8 +425,8 @@ export function RecursiveDemo(): JSX.Element {
         const nextHover = hovered
           ? {
               key: hovered.id,
-              title: `${hovered.label} (${hovered.curve})`,
-              body: 'Each fold compresses one more step into the accumulator.',
+              title: `${hovered.label} (id: ${hovered.id})`,
+              body: `Curve: ${hovered.curve}. Each fold compresses one more step into the accumulator.`,
             }
           : null;
 
@@ -482,6 +482,29 @@ export function RecursiveDemo(): JSX.Element {
   }, [state.mode, state.root, state.ivcChain, state.verification.currentIndex]);
 
   const proofSize = getConstantProofSize();
+
+  // Collect leaf node IDs for bad proof injection dropdown
+  const leafNodeOptions = useMemo(() => {
+    if (!state.root) return [];
+    const allNodes = getAllNodes(state.root);
+    const leaves: { value: string; label: string }[] = [];
+    allNodes.forEach((node) => {
+      if (node.children.length === 0) {
+        leaves.push({ value: node.id, label: `${node.label} (${node.id})` });
+      }
+    });
+    return leaves;
+  }, [state.root]);
+  const hasValidBadProofSelection = useMemo(
+    () => badProofInput !== 'none' && leafNodeOptions.some((option) => option.value === badProofInput),
+    [badProofInput, leafNodeOptions]
+  );
+
+  useEffect(() => {
+    if (badProofInput !== 'none' && !leafNodeOptions.some((option) => option.value === badProofInput)) {
+      setBadProofInput('none');
+    }
+  }, [badProofInput, leafNodeOptions]);
 
   // Initialize from URL state (hash-only preferred)
   useEffect(() => {
@@ -760,18 +783,24 @@ export function RecursiveDemo(): JSX.Element {
 
             <ControlGroup label="Bad Proof Injection">
               <div className="flex flex-col gap-3">
-                <TextInput
+                <SelectControl
+                  label="Target Leaf"
                   value={badProofInput}
+                  options={[
+                    { value: 'none', label: '— select a leaf —' },
+                    ...leafNodeOptions,
+                  ]}
                   onChange={setBadProofInput}
-                  placeholder="e.g. node_2_1"
                 />
                 <ButtonControl
                   label="Inject"
                   onClick={() => {
+                    if (!hasValidBadProofSelection) return;
                     dispatch({ type: 'INJECT_BAD_PROOF', nodeId: badProofInput });
                     dispatch({ type: 'BUILD_TREE' });
-                    setBadProofInput('');
+                    setBadProofInput('none');
                   }}
+                  disabled={!hasValidBadProofSelection}
                 />
               </div>
             </ControlGroup>
