@@ -366,7 +366,68 @@ export function renderProofTree(
     drawNode(ctx, node, pos.x, pos.y, time, showPastaCurves, showProofSize, isRoot, isHovered, colors);
   }
 
-  // ── Legend bar (screen-space) ────────────────
+  // ── Status summary (screen-space, below tree) ────────────────
+  const totalNodes = allNodes.length;
+  let verifiedCount = 0;
+  let failedCount = 0;
+  for (const n of allNodes) {
+    if (n.status === 'verified') verifiedCount++;
+    if (n.status === 'failed') failedCount++;
+  }
+  const doneCount = verifiedCount + failedCount;
+  const isComplete = doneCount === totalNodes;
+  const hasFailure = failedCount > 0;
+  const isRunning = allNodes.some(n => n.status === 'verifying');
+
+  // Status text
+  let statusText: string;
+  let statusColor: string;
+  if (isComplete && hasFailure) {
+    statusText = `Verification failed — ${failedCount} node${failedCount > 1 ? 's' : ''} invalid`;
+    statusColor = colors.failed.border;
+  } else if (isComplete) {
+    statusText = `All ${totalNodes} nodes verified`;
+    statusColor = colors.verified.border;
+  } else if (isRunning) {
+    statusText = `Verifying... ${doneCount}/${totalNodes}`;
+    statusColor = colors.verifying.border;
+  } else if (doneCount > 0) {
+    statusText = `Paused — ${doneCount}/${totalNodes} checked`;
+    statusColor = colors.textMuted;
+  } else {
+    statusText = `${totalNodes} nodes · Depth ${root.depth === 0 ? Math.max(...allNodes.map(n => n.depth)) : 0 || Math.max(...allNodes.map(n => n.depth))}`;
+    statusColor = colors.textMuted;
+  }
+
+  const statusY = height - 52;
+  ctx.font = 'bold 14px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = statusColor;
+  ctx.fillText(statusText, width / 2, statusY);
+
+  // Progress bar
+  if (totalNodes > 0) {
+    const barW = Math.min(240, width * 0.4);
+    const barH = 3;
+    const barX = (width - barW) / 2;
+    const barY = statusY + 14;
+    const progress = doneCount / totalNodes;
+
+    ctx.fillStyle = hexToRgba(colors.textMuted, 0.15);
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barW, barH, barH / 2);
+    ctx.fill();
+
+    if (progress > 0) {
+      ctx.fillStyle = hexToRgba(hasFailure ? colors.failed.border : colors.verified.border, 0.7);
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW * progress, barH, barH / 2);
+      ctx.fill();
+    }
+  }
+
+  // Legend dots (compact, below status)
   const legendItems: { label: string; color: string }[] = [
     { label: 'Pending',   color: colors.pending.border },
     { label: 'Verifying', color: colors.verifying.border },
@@ -377,20 +438,20 @@ export function renderProofTree(
     legendItems.push({ label: 'Pallas', color: colors.pallas });
     legendItems.push({ label: 'Vesta',  color: colors.vesta });
   }
-  const legendTotalW = legendItems.length * 90;
+  const legendTotalW = legendItems.length * 80;
   let lx = (width - legendTotalW) / 2;
-  const legendY = height - 36;
+  const legendY = height - 22;
   for (const item of legendItems) {
-    ctx.fillStyle = hexToRgba(item.color, 0.85);
+    ctx.fillStyle = hexToRgba(item.color, 0.7);
     ctx.beginPath();
-    ctx.arc(lx + 7, legendY + 7, 5, 0, Math.PI * 2);
+    ctx.arc(lx + 5, legendY, 3.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = colors.textMuted;
-    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillStyle = hexToRgba(colors.textMuted, 0.6);
+    ctx.font = '9px system-ui, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(item.label, lx + 17, legendY + 7);
-    lx += 90;
+    ctx.fillText(item.label, lx + 13, legendY);
+    lx += 80;
   }
 
   return { hovered };
