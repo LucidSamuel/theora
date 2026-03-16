@@ -516,6 +516,8 @@ export function RecursiveDemo(): JSX.Element {
       ivcLength?: number;
       showPasta?: boolean;
       showProofSize?: boolean;
+      badProofNode?: string | null;
+      autoplay?: boolean;
     }>(rawHash);
 
     const raw = decodedHash ? null : getSearchParam('r');
@@ -525,10 +527,13 @@ export function RecursiveDemo(): JSX.Element {
       ivcLength?: number;
       showPasta?: boolean;
       showProofSize?: boolean;
+      badProofNode?: string | null;
+      autoplay?: boolean;
     }>(raw);
 
     const payload = decodedHash ?? decoded;
     if (!payload) return;
+    let autoplayTimeout: ReturnType<typeof setTimeout> | null = null;
     if (payload.mode) dispatch({ type: 'SET_MODE', mode: payload.mode });
     if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: Math.max(2, Math.min(5, payload.depth)) });
     if (typeof payload.ivcLength === 'number') dispatch({ type: 'SET_IVC_LENGTH', length: payload.ivcLength });
@@ -538,8 +543,21 @@ export function RecursiveDemo(): JSX.Element {
     if (typeof payload.showProofSize === 'boolean' && payload.showProofSize !== initialState.showProofSize) {
       dispatch({ type: 'TOGGLE_PROOF_SIZE' });
     }
-    if (payload.mode === 'tree') dispatch({ type: 'BUILD_TREE' });
-    if (payload.mode === 'ivc') dispatch({ type: 'BUILD_IVC' });
+    if (payload.badProofNode) {
+      dispatch({ type: 'INJECT_BAD_PROOF', nodeId: payload.badProofNode });
+    }
+    if (payload.mode === 'ivc') {
+      dispatch({ type: 'BUILD_IVC' });
+    } else {
+      dispatch({ type: 'BUILD_TREE' });
+    }
+    // Autoplay: start verification after a short delay so the tree renders first
+    if (payload.badProofNode && payload.autoplay && payload.mode !== 'ivc') {
+      autoplayTimeout = setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 1000);
+    }
+    return () => {
+      if (autoplayTimeout) clearTimeout(autoplayTimeout);
+    };
   }, []);
 
   // Sync to URL
@@ -552,9 +570,10 @@ export function RecursiveDemo(): JSX.Element {
       ivcLength: state.ivcLength,
       showPasta: state.showPastaCurves,
       showProofSize: state.showProofSize,
+      badProofNode: state.badProofTarget,
     };
     setSearchParams({ r: encodeState(payload) });
-  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize]);
+  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget]);
 
   const buildShareState = () => ({
     mode: state.mode,
@@ -562,6 +581,7 @@ export function RecursiveDemo(): JSX.Element {
     ivcLength: state.ivcLength,
     showPasta: state.showPastaCurves,
     showProofSize: state.showProofSize,
+    badProofNode: state.badProofTarget,
   });
 
   const handleCopyShareUrl = () => {
