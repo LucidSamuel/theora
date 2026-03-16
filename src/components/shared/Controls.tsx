@@ -1,19 +1,39 @@
+import { useState } from 'react';
+
 interface ControlGroupProps {
   label: string;
   children: React.ReactNode;
   accent?: string;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }
 
-export function ControlGroup({ label, children }: ControlGroupProps) {
+export function ControlGroup({ label, children, collapsible, defaultCollapsed = false }: ControlGroupProps) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const isCollapsed = collapsible && collapsed;
+
   return (
     <div className="control-section">
       <div
         className="text-[10px] font-semibold uppercase tracking-widest mb-4"
-        style={{ color: 'var(--text-muted)', letterSpacing: '0.12em' }}
+        style={{
+          color: 'var(--text-muted)',
+          letterSpacing: '0.12em',
+          ...(collapsible ? { cursor: 'pointer', userSelect: 'none' as const, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } : {}),
+          ...(isCollapsed ? { marginBottom: 0 } : {}),
+        }}
+        onClick={collapsible ? () => setCollapsed((v) => !v) : undefined}
+        role={collapsible ? 'button' : undefined}
+        aria-expanded={collapsible ? !collapsed : undefined}
+        tabIndex={collapsible ? 0 : undefined}
+        onKeyDown={collapsible ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed((v) => !v); } } : undefined}
       >
-        {label}
+        <span>{label}</span>
+        {collapsible && (
+          <span style={{ fontSize: 9, transition: 'transform 150ms ease', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+        )}
       </div>
-      <div className="flex flex-col gap-4">{children}</div>
+      {!isCollapsed && <div className="flex flex-col gap-4">{children}</div>}
     </div>
   );
 }
