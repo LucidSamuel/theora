@@ -160,6 +160,14 @@ export function FiatShamirDemo(): JSX.Element {
 
   return (
     <DemoLayout
+      onEmbedPlay={() => {
+        if (importedTrace) {
+          setImportedTrace(null);
+          return;
+        }
+        setMode((prev) => (prev === 'fs-broken' ? 'fs-correct' : 'fs-broken'));
+      }}
+      embedPlaying={!importedTrace && mode === 'fs-broken'}
       onEmbedReset={() => { setMode('fs-correct'); setSecret(9); setNonce(12); setVerifierSeed(17); setImportedTrace(null); }}
       onEmbedFitToView={() => camera.reset()}
     >

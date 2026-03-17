@@ -583,8 +583,23 @@ export function MerkleDemo() {
     showToast('Audit JSON copied', 'Proof, leaves, root hash & verification status');
   };
 
+  const handleEmbedPlay = () => {
+    if (!state.tree) return;
+    if (!state.proof) {
+      const leafIndex = state.selectedLeafIndex ?? 0;
+      dispatch({ type: 'GENERATE_PROOF', leafIndex });
+      return;
+    }
+    if (state.proofStep < state.proof.siblings.length) {
+      dispatch({ type: 'STEP_FORWARD' });
+      return;
+    }
+    dispatch({ type: 'SET_PROOF_STEP', step: 0 });
+  };
+
   return (
     <DemoLayout
+      onEmbedPlay={handleEmbedPlay}
       onEmbedReset={() => dispatch({ type: 'SET_LEAVES', leaves: ['Alice', 'Bob', 'Charlie', 'David'] })}
       onEmbedFitToView={() => camera.reset()}
     >

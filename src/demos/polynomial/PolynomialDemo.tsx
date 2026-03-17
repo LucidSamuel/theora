@@ -421,6 +421,26 @@ export function PolynomialDemo() {
     dispatch({ type: 'SET_VIEW_RANGE', viewRange: newRange });
   }, [state.coefficients, state.viewRange.xMin, state.viewRange.xMax]);
 
+  const handleEmbedPlay = useCallback(async () => {
+    if (state.kzg.currentStep === 0) {
+      await handleKzgCommit();
+      return;
+    }
+    if (state.kzg.currentStep === 1) {
+      handleKzgChallenge();
+      return;
+    }
+    if (state.kzg.currentStep === 2) {
+      await handleKzgReveal();
+      return;
+    }
+    if (state.kzg.currentStep === 3) {
+      await handleKzgVerify();
+      return;
+    }
+    dispatch({ type: 'KZG_RESET' });
+  }, [handleKzgChallenge, handleKzgCommit, handleKzgReveal, handleKzgVerify, state.kzg.currentStep]);
+
   const buildShareState = () => ({
     mode: state.mode,
     coefficients: state.coefficients,
@@ -584,6 +604,7 @@ export function PolynomialDemo() {
 
   return (
     <DemoLayout
+      onEmbedPlay={handleEmbedPlay}
       onEmbedReset={() => dispatch({ type: 'KZG_RESET' })}
       onEmbedFitToView={() => camera.reset()}
     >

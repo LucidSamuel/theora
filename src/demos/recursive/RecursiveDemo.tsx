@@ -809,6 +809,19 @@ export function RecursiveDemo(): JSX.Element {
   return (
     <DemoLayout
       onEmbedPlay={() => {
+        if (state.mode === 'ivc') {
+          if (!state.ivcChain) {
+            dispatch({ type: 'BUILD_IVC' });
+            return;
+          }
+          const done = state.ivcChain.currentFoldIndex >= state.ivcChain.steps.length - 1;
+          if (done) {
+            dispatch({ type: 'BUILD_IVC' });
+            return;
+          }
+          dispatch({ type: 'FOLD_IVC' });
+          return;
+        }
         const done = state.verification.currentIndex >= state.verification.order.length && state.verification.order.length > 0;
         if (done || (!state.verification.isRunning && state.verification.currentIndex > 0)) {
           // Replay: rebuild tree and start fresh
@@ -819,8 +832,8 @@ export function RecursiveDemo(): JSX.Element {
           dispatch({ type: 'SET_VERIFICATION', isRunning: !state.verification.isRunning });
         }
       }}
-      embedPlaying={state.verification.isRunning}
-      onEmbedReset={() => dispatch({ type: 'BUILD_TREE' })}
+      embedPlaying={state.mode === 'tree' ? state.verification.isRunning : false}
+      onEmbedReset={() => dispatch({ type: state.mode === 'tree' ? 'BUILD_TREE' : 'BUILD_IVC' })}
       onEmbedFitToView={fitToView}
     >
       <DemoSidebar width="compact">
