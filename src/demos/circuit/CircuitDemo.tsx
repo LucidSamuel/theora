@@ -146,7 +146,10 @@ export function CircuitDemo(): JSX.Element {
   };
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => { setX(3); setY(4); setZ(13); setTOverride(null); setBroken(false); }}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar>
         <ControlGroup label="Witness">
           <SliderControl label="x" value={x} min={0} max={8} onChange={(value) => { setX(value); }} editable />

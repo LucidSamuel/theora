@@ -350,10 +350,14 @@ export function renderPolynomial(
     drawText(ctx, `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`, pos.cx + 12, pos.cy - 12, { color: '#71717a', size: 12 });
   }
 
-  // Draw commitment badge at top
+  // Draw KZG overlays in screen-space (fixed position regardless of camera pan/zoom)
+  const dpr = window.devicePixelRatio || 1;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   if (kzg.commitment) {
     const badgeX = width / 2;
-    const badgeY = padding + 30;
+    const badgeY = 70;
 
     drawRoundedRect(ctx, badgeX - 150, badgeY - 20, 300, 40, 8);
     ctx.fillStyle = hexToRgba('#71717a', 0.2);
@@ -365,10 +369,9 @@ export function renderPolynomial(
     drawText(ctx, `Commitment: ${kzg.commitment.slice(0, 16)}...`, badgeX, badgeY, { color: '#71717a', size: 14 });
   }
 
-  // Draw verification status
   if (kzg.verified !== null) {
-    const statusX = width - padding - 100;
-    const statusY = padding + 30;
+    const statusX = width - 100;
+    const statusY = 70;
 
     const statusColor = kzg.verified ? '#10b981' : '#ef4444';
     const statusText = kzg.verified ? '✓ Verified' : '✗ Failed';
@@ -382,6 +385,8 @@ export function renderPolynomial(
 
     drawText(ctx, statusText, statusX, statusY, { color: statusColor, size: 16 });
   }
+
+  ctx.restore();
 
   // Hover detection (evaluation points > lagrange points > challenge line)
   let hovered:

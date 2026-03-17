@@ -583,7 +583,10 @@ export function PolynomialDemo() {
   }, [hoverInfo, state.mode, state.lagrangePoints.length, state.kzg.currentStep, state.kzg.verified, setEntry]);
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => dispatch({ type: 'KZG_RESET' })}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar width="compact">
         <ControlGroup label="Polynomial Mode">
           <ToggleControl

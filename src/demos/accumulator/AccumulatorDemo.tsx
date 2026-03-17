@@ -707,7 +707,10 @@ export function AccumulatorDemo() {
   };
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => dispatch({ type: 'CLEAR' })}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar width="compact">
         {errorMsg && (
           <div className="mb-3">

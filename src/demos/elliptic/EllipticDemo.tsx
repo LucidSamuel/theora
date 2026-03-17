@@ -217,7 +217,10 @@ export function EllipticDemo(): JSX.Element {
   }, [pointA, pointB, scalar, scalarResult.result, setEntry, sum, curve, points.length]);
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => { setCurve(DEFAULT_CURVE); setCurveError(null); setPointAIndex(0); setPointBIndex(1); setScalar(5); setShowPasta(true); }}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar>
         <ControlGroup label="Curve Parameters">
           <SelectControl

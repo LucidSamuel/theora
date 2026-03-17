@@ -120,7 +120,10 @@ export function LookupDemo(): JSX.Element {
   };
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => { setTableInput('1,2,3,5,8,13'); setWireInput('2,5,8'); }}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar>
         <ControlGroup label="Lookup Table">
           <TextInput value={tableInput} onChange={setTableInput} placeholder="1,2,3,5,8,13" />

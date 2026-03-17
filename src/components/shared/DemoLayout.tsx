@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { getSearchParam } from '@/lib/urlState';
-import { Settings, Play, Pause, X } from 'lucide-react';
+import { Settings, Play, Pause, X, RotateCcw, Maximize2 } from 'lucide-react';
 
 type SidebarWidth = 'standard' | 'compact';
 type AsideWidth = 'compact' | 'narrow';
@@ -28,6 +28,10 @@ interface DemoLayoutProps {
   onEmbedPlay?: () => void;
   /** Whether the demo is currently "playing" (controls play vs pause icon). */
   embedPlaying?: boolean;
+  /** Callback for the embed reset button. If provided, a reset button appears in the embed toolbar. */
+  onEmbedReset?: () => void;
+  /** Callback for the embed fit-to-view button. If provided, a fit-to-view button appears in the embed toolbar. */
+  onEmbedFitToView?: () => void;
 }
 
 interface DemoSidebarProps {
@@ -45,7 +49,7 @@ interface DemoAsideProps {
   width?: AsideWidth;
 }
 
-export function DemoLayout({ children, onEmbedPlay, embedPlaying }: DemoLayoutProps) {
+export function DemoLayout({ children, onEmbedPlay, embedPlaying, onEmbedReset, onEmbedFitToView }: DemoLayoutProps) {
   const isEmbed = Boolean(getSearchParam('embed'));
   const [panelsVisible, setPanelsVisible] = useState(!isEmbed);
 
@@ -68,6 +72,26 @@ export function DemoLayout({ children, onEmbedPlay, embedPlaying }: DemoLayoutPr
                 title={embedPlaying ? 'Pause' : 'Play'}
               >
                 {embedPlaying ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+            )}
+            {onEmbedReset && (
+              <button
+                onClick={onEmbedReset}
+                className="demo-embed-btn"
+                aria-label="Reset"
+                title="Reset"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
+            {onEmbedFitToView && (
+              <button
+                onClick={onEmbedFitToView}
+                className="demo-embed-btn"
+                aria-label="Fit to view"
+                title="Fit to view"
+              >
+                <Maximize2 size={14} />
               </button>
             )}
             <button

@@ -159,7 +159,10 @@ export function FiatShamirDemo(): JSX.Element {
   }, [forged, importedTrace, mode, proof, theme]);
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => { setMode('fs-correct'); setSecret(9); setNonce(12); setVerifierSeed(17); setImportedTrace(null); }}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar>
         {importedTrace ? (
           <>

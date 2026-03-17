@@ -910,7 +910,8 @@ body::before {
 .demo-embed-toolbar {
   position: absolute;
   bottom: 12px;
-  left: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 30;
   display: flex;
   gap: 4px;

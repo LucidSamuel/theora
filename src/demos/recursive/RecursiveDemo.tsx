@@ -820,6 +820,8 @@ export function RecursiveDemo(): JSX.Element {
         }
       }}
       embedPlaying={state.verification.isRunning}
+      onEmbedReset={() => dispatch({ type: 'BUILD_TREE' })}
+      onEmbedFitToView={fitToView}
     >
       <DemoSidebar width="compact">
 

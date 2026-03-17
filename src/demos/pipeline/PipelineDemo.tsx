@@ -54,7 +54,8 @@ type Action =
   | { type: 'JUMP_TO'; stageIdx: number }
   | { type: 'SET_AUTO'; autoPlaying: boolean }
   | { type: 'SET_SPEED'; speed: number }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'RESTORE_STATE'; scenarioName: string; x: number; fault: FaultType; stageIdx: number };
 
 function recompute(x: number, stageIdx: number, fault: FaultType): PipelineResults {
   const stage = STAGES[stageIdx]!;
@@ -127,6 +128,18 @@ function reducer(state: PipelineState, action: Action): PipelineState {
       return { ...state, speed: action.speed };
     case 'RESET':
       return initialState;
+    case 'RESTORE_STATE': {
+      const idx = Math.max(0, Math.min(action.stageIdx, STAGES.length - 1));
+      return {
+        ...state,
+        scenarioName: action.scenarioName,
+        secretX: action.x,
+        fault: action.fault,
+        activeStageIdx: idx,
+        results: recompute(action.x, idx, action.fault),
+        autoPlaying: false,
+      };
+    }
   }
 }
 
@@ -187,12 +200,7 @@ export function PipelineDemo() {
     const nextFault = statePayload.fault ?? initialState.fault;
     const nextName = statePayload.scenarioName ?? initialState.scenarioName;
 
-    dispatch({ type: 'SET_SCENARIO_NAME', name: nextName });
-    dispatch({ type: 'SET_X', x: nextX });
-    dispatch({ type: 'SET_FAULT', fault: nextFault });
-    if (nextStageIdx > 0) {
-      dispatch({ type: 'JUMP_TO', stageIdx: nextStageIdx });
-    }
+    dispatch({ type: 'RESTORE_STATE', scenarioName: nextName, x: nextX, fault: nextFault, stageIdx: nextStageIdx });
   }, []);
 
   useEffect(() => {
@@ -289,7 +297,12 @@ export function PipelineDemo() {
   }, [activeStage, state.fault, state.results, state.secretX]);
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedPlay={() => dispatch({ type: 'SET_AUTO', autoPlaying: !state.autoPlaying })}
+      embedPlaying={state.autoPlaying}
+      onEmbedReset={() => dispatch({ type: 'RESET' })}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar>
 
         <ControlGroup label="Computation">

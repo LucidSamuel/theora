@@ -584,7 +584,10 @@ export function MerkleDemo() {
   };
 
   return (
-    <DemoLayout>
+    <DemoLayout
+      onEmbedReset={() => dispatch({ type: 'SET_LEAVES', leaves: ['Alice', 'Bob', 'Charlie', 'David'] })}
+      onEmbedFitToView={() => camera.reset()}
+    >
       <DemoSidebar width="compact">
         <ControlGroup label="Merkle Tree">
           <div className="flex flex-col gap-3">
