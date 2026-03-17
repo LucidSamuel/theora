@@ -22,6 +22,7 @@ import { isPrime } from '@/lib/math';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import type { AccumulatorState, AccElement, HistoryEntry } from '@/types/accumulator';
 import { renderAccumulator } from './renderer';
 import {
@@ -706,10 +707,48 @@ export function AccumulatorDemo() {
     showToast('Audit JSON copied', 'Accumulator value, witnesses & membership proofs');
   };
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 600;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const elementRadius = 25;
+    const maxOrbit = state.elements.reduce((max, element) => Math.max(max, element.orbitRadius), 120);
+
+    let minX = centerX - maxOrbit - elementRadius - 40;
+    let minY = centerY - maxOrbit - elementRadius - 40;
+    let maxX = centerX + maxOrbit + elementRadius + 40;
+    let maxY = centerY + maxOrbit + elementRadius + 40;
+
+    if (state.selectedIndex !== null) {
+      const selected = state.elements[state.selectedIndex];
+      if (selected) {
+        const x = selected.spring.x.value;
+        const y = selected.spring.y.value;
+        minX = Math.min(minX, x - 110);
+        minY = Math.min(minY, y - elementRadius - 90);
+        maxX = Math.max(maxX, x + 110);
+        maxY = Math.max(maxY, y + elementRadius + 28);
+      }
+    }
+
+    if (state.nonMembership && state.nonMembership.witness !== 0n) {
+      minX = Math.min(minX, centerX - 150);
+      maxX = Math.max(maxX, centerX + 150);
+      maxY = Math.max(maxY, centerY + 90 + 64);
+    }
+
+    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY });
+  }, [camera, state.elements, state.nonMembership, state.selectedIndex]);
+
   return (
     <DemoLayout
       onEmbedReset={() => dispatch({ type: 'CLEAR' })}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
         {errorMsg && (
@@ -910,7 +949,7 @@ export function AccumulatorDemo() {
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
         />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:accumulator" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:accumulator" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <DemoAside width="compact">

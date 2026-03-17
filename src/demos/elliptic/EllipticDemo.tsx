@@ -12,6 +12,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import type { CurveConfig } from './logic';
 import {
   DEFAULT_CURVE,
@@ -208,6 +209,20 @@ export function EllipticDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Curve parameters, points & arithmetic results');
   };
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 600;
+    fitCameraToBounds(camera, canvas, {
+      minX: 48,
+      minY: 24,
+      maxX: width - 24,
+      maxY: height - 24,
+    });
+  }, [camera]);
+
   useEffect(() => {
     setEntry('elliptic', {
       title: 'Finite-field curve arithmetic',
@@ -219,7 +234,7 @@ export function EllipticDemo(): JSX.Element {
   return (
     <DemoLayout
       onEmbedReset={() => { setCurve(DEFAULT_CURVE); setCurveError(null); setPointAIndex(0); setPointBIndex(1); setScalar(5); setShowPasta(true); }}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
         <ControlGroup label="Curve Parameters">
@@ -287,7 +302,7 @@ export function EllipticDemo(): JSX.Element {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:elliptic" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:elliptic" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Elliptic Curves" />

@@ -32,6 +32,7 @@ import { renderPolynomial, canvasToMath } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 
 // Action types
 type PolynomialAction =
@@ -421,6 +422,20 @@ export function PolynomialDemo() {
     dispatch({ type: 'SET_VIEW_RANGE', viewRange: newRange });
   }, [state.coefficients, state.viewRange.xMin, state.viewRange.xMax]);
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || canvasSizeRef.current.width || 800;
+    const height = rect.height || canvasSizeRef.current.height || 600;
+    fitCameraToBounds(camera, canvas, {
+      minX: 24,
+      minY: 24,
+      maxX: width - 24,
+      maxY: height - 24,
+    });
+  }, [camera]);
+
   const handleEmbedPlay = useCallback(async () => {
     if (state.kzg.currentStep === 0) {
       await handleKzgCommit();
@@ -606,7 +621,7 @@ export function PolynomialDemo() {
     <DemoLayout
       onEmbedPlay={handleEmbedPlay}
       onEmbedReset={() => dispatch({ type: 'KZG_RESET' })}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
         <ControlGroup label="Polynomial Mode">
@@ -893,7 +908,7 @@ export function PolynomialDemo() {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:polynomial" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:polynomial" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal

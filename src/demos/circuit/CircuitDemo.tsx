@@ -12,6 +12,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import { buildWitness, evaluateCircuit, getExploitWitness, getR1CSRows, witnessSatisfiesAll } from './logic';
 import { renderCircuit } from './renderer';
 
@@ -145,10 +146,24 @@ export function CircuitDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Witness values, constraint status & circuit mode');
   };
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 600;
+    fitCameraToBounds(camera, canvas, {
+      minX: 40,
+      minY: 32,
+      maxX: width - 40,
+      maxY: height - 32,
+    });
+  }, [camera]);
+
   return (
     <DemoLayout
       onEmbedReset={() => { setX(3); setY(4); setZ(13); setTOverride(null); setBroken(false); }}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
         <ControlGroup label="Witness">
@@ -211,7 +226,7 @@ export function CircuitDemo(): JSX.Element {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:circuit" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:circuit" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="R1CS Circuit" />

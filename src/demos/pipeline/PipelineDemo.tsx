@@ -20,6 +20,7 @@ import { EmbedModal } from '@/components/shared/EmbedModal';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import {
   STAGES,
   STAGE_LABELS,
@@ -296,12 +297,25 @@ export function PipelineDemo() {
     showToast('Deep link copied', `Open ${target.label} with the current pipeline state`);
   }, [activeStage, state.fault, state.results, state.secretX]);
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    fitCameraToBounds(camera, canvas, {
+      minX: 40,
+      minY: 24,
+      maxX: width - 40,
+      maxY: 520,
+    });
+  }, [camera]);
+
   return (
     <DemoLayout
       onEmbedPlay={() => dispatch({ type: 'SET_AUTO', autoPlaying: !state.autoPlaying })}
       embedPlaying={state.autoPlaying}
       onEmbedReset={() => dispatch({ type: 'RESET' })}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
 
@@ -531,7 +545,7 @@ export function PipelineDemo() {
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
         />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:pipeline" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:pipeline" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Proof Pipeline" />

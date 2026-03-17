@@ -32,6 +32,7 @@ import { renderMerkleTree } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 
 interface MerkleState {
   leaves: string[];
@@ -597,11 +598,34 @@ export function MerkleDemo() {
     dispatch({ type: 'SET_PROOF_STEP', step: 0 });
   };
 
+  const handleFitToView = () => {
+    const canvas = canvasElRef.current;
+    if (!canvas || positions.size === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || canvasRef.current.width || 800;
+    const nodeRadius = Math.max(12, Math.min(30, width / (Math.max(state.leaves.length, 1) * 3)));
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    positions.forEach(({ x, y }) => {
+      minX = Math.min(minX, x - nodeRadius);
+      minY = Math.min(minY, y - nodeRadius);
+      maxX = Math.max(maxX, x + nodeRadius);
+      maxY = Math.max(maxY, y + nodeRadius);
+    });
+
+    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY });
+  };
+
   return (
     <DemoLayout
       onEmbedPlay={handleEmbedPlay}
       onEmbedReset={() => dispatch({ type: 'SET_LEAVES', leaves: ['Alice', 'Bob', 'Charlie', 'David'] })}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
         <ControlGroup label="Merkle Tree">
@@ -792,7 +816,7 @@ export function MerkleDemo() {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:merkle" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:merkle" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal

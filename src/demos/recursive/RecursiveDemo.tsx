@@ -318,6 +318,39 @@ export function RecursiveDemo(): JSX.Element {
   // Fit tree into view — reusable for initial load + reset button
   // Reserve 50px at bottom for the screen-space status legend
   const fitToView = useCallback(() => {
+    if (state.mode === 'ivc') {
+      const chain = state.ivcChain;
+      if (!chain || chain.steps.length === 0) return;
+      const stepCount = chain.steps.length;
+      const sw = Math.min(130, (canvasSize.width - 120) / stepCount - 16);
+      const sh = 90;
+      const gap = 14;
+      const totalW = stepCount * sw + (stepCount - 1) * gap;
+      const startX = (canvasSize.width - totalW) / 2;
+      const cy = canvasSize.height / 2;
+      const accW = 68;
+      const accX = startX - accW - 32;
+      const minX = accX;
+      const maxX = startX + totalW;
+      const minY = cy - sh / 2;
+      const maxY = cy + sh / 2;
+      const padX = 40;
+      const padY = 50;
+      const fitZoom = Math.min(
+        canvasSize.width / ((maxX - minX) + padX * 2),
+        canvasSize.height / ((maxY - minY) + padY * 2),
+        1.0
+      );
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      camera.setPanZoom(
+        canvasSize.width / 2 - centerX * fitZoom,
+        canvasSize.height / 2 - centerY * fitZoom,
+        fitZoom
+      );
+      return;
+    }
+
     if (positions.size === 0) return;
     const bounds = computeTreeBounds(positions);
     const treeW = bounds.maxX - bounds.minX;
@@ -340,7 +373,7 @@ export function RecursiveDemo(): JSX.Element {
       (canvasSize.height / 2 + offsetY) - centerY * fitZoom,
       fitZoom,
     );
-  }, [positions, canvasSize, camera]);
+  }, [positions, canvasSize, camera, state.mode, state.ivcChain]);
 
   // Fit tree to view on initial load
   useEffect(() => {

@@ -12,6 +12,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import { analyzeLookup, parseNumberList } from './logic';
 import { renderLookup } from './renderer';
 
@@ -119,10 +120,27 @@ export function LookupDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Lookup table, wire values & analysis results');
   };
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    const columnHeight = Math.max(120, Math.max(analysis.sortedTable.length, analysis.sortedWires.length) * 34 + 16);
+    const rightX = width / 2 + 24;
+    const badgeRight = rightX + 180 + 24 + 120;
+
+    fitCameraToBounds(camera, canvas, {
+      minX: 72,
+      minY: 40,
+      maxX: badgeRight,
+      maxY: 96 + columnHeight + 16,
+    });
+  }, [analysis.sortedTable.length, analysis.sortedWires.length, camera]);
+
   return (
     <DemoLayout
       onEmbedReset={() => { setTableInput('1,2,3,5,8,13'); setWireInput('2,5,8'); }}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
         <ControlGroup label="Lookup Table">
@@ -166,7 +184,7 @@ export function LookupDemo(): JSX.Element {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:lookup" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:lookup" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Lookup Arguments" />

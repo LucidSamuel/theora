@@ -12,6 +12,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import { derivePublicKey, forgePredictableProof, simulateProof, simulateStatement, type FiatShamirMode, type ImportedTranscriptTrace } from './logic';
 import { renderFiatShamir } from './renderer';
 
@@ -158,6 +159,20 @@ export function FiatShamirDemo(): JSX.Element {
     renderFiatShamir(ctx, frame, proof, forged, mode, theme, importedTrace);
   }, [forged, importedTrace, mode, proof, theme]);
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 600;
+    fitCameraToBounds(camera, canvas, {
+      minX: 40,
+      minY: 40,
+      maxX: width - 40,
+      maxY: height - 36,
+    });
+  }, [camera]);
+
   return (
     <DemoLayout
       onEmbedPlay={() => {
@@ -169,7 +184,7 @@ export function FiatShamirDemo(): JSX.Element {
       }}
       embedPlaying={!importedTrace && mode === 'fs-broken'}
       onEmbedReset={() => { setMode('fs-correct'); setSecret(9); setNonce(12); setVerifierSeed(17); setImportedTrace(null); }}
-      onEmbedFitToView={() => camera.reset()}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
         {importedTrace ? (
@@ -262,7 +277,7 @@ export function FiatShamirDemo(): JSX.Element {
 
       <DemoCanvasArea>
         <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:fiat-shamir" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:fiat-shamir" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Fiat-Shamir" />
