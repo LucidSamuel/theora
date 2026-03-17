@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, SelectControl, SliderControl, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
-import { decodeStatePlain, getHashState } from '@/lib/urlState';
+import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { derivePublicKey, forgePredictableProof, simulateProof, simulateStatement, type FiatShamirMode, type ImportedTranscriptTrace } from './logic';
 import { renderFiatShamir } from './renderer';
 
@@ -24,12 +27,15 @@ export function FiatShamirDemo(): JSX.Element {
   const [mode, setMode] = useState<FiatShamirMode>('fs-correct');
   const [importedTrace, setImportedTrace] = useState<ImportedTranscriptTrace | null>(null);
   const [pipelineHash, setPipelineHash] = useState<string | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
+  const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const statement = simulateStatement(secret);
 
   useEffect(() => {
     const hashState = getHashState();
     const rawHash = hashState?.demo === 'fiat-shamir' ? hashState.state : null;
-    const payload = decodeStatePlain<{
+    const decodedHash = decodeStatePlain<{
       mode?: FiatShamirMode;
       secret?: number;
       nonce?: number;
@@ -38,6 +44,17 @@ export function FiatShamirDemo(): JSX.Element {
       pipelineHash?: string;
       forgeryComplete?: boolean;
     }>(rawHash);
+    const raw = decodedHash ? null : getSearchParam('fs');
+    const decoded = decodeState<{
+      mode?: FiatShamirMode;
+      secret?: number;
+      nonce?: number;
+      verifierSeed?: number;
+      trace?: ImportedTranscriptTrace;
+      pipelineHash?: string;
+      forgeryComplete?: boolean;
+    }>(raw);
+    const payload = decodedHash ?? decoded;
 
     if (!payload) return;
     if (payload.mode) setMode(payload.mode);
@@ -55,6 +72,73 @@ export function FiatShamirDemo(): JSX.Element {
     [mode, nonce, secret, statement, verifierSeed]
   );
   const forged = useMemo(() => forgePredictableProof(statement, derivePublicKey(secret), mode), [mode, secret, statement]);
+
+  const buildShareState = useCallback(() => ({
+    mode,
+    secret,
+    nonce,
+    verifierSeed,
+    trace: importedTrace ?? undefined,
+    pipelineHash: pipelineHash ?? undefined,
+    forgeryComplete: mode === 'fs-broken' ? true : undefined,
+  }), [importedTrace, mode, nonce, pipelineHash, secret, verifierSeed]);
+
+  // URL sync effect
+  useEffect(() => {
+    const hashState = getHashState();
+    if (hashState?.demo === 'fiat-shamir') return;
+    setSearchParams({ fs: encodeState(buildShareState()) });
+  }, [buildShareState]);
+
+  const handleCopyShareUrl = () => {
+    copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
+  };
+
+  const handleCopyHashUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('fs');
+    url.hash = `fiat-shamir|${encodeStatePlain(buildShareState())}`;
+    copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
+  };
+
+  const handleCopyEmbed = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('embed', 'fiat-shamir');
+    url.searchParams.set('fs', encodeState(buildShareState()));
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
+  };
+
+  const handleExportPng = () => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const data = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = 'theora-fiat-shamir.png';
+    a.click();
+    showDownloadToast('theora-fiat-shamir.png');
+  };
+
+  const handleCopyAuditSummary = () => {
+    const payload = {
+      demo: 'fiat-shamir',
+      timestamp: new Date().toISOString(),
+      mode,
+      secret,
+      nonce,
+      verifierSeed,
+      statement,
+      publicKey: derivePublicKey(secret),
+      importedTrace,
+      proof: { commitment: proof.commitment, challenge: proof.challenge, response: proof.response, valid: proof.valid },
+      forgedTranscript: forged ? { commitment: forged.commitment, challenge: forged.challenge, response: forged.response, valid: forged.valid } : null,
+    };
+    copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Protocol state, proof transcript & forgery data');
+  };
 
   useEffect(() => {
     setEntry('fiat-shamir', {
@@ -99,6 +183,16 @@ export function FiatShamirDemo(): JSX.Element {
               )}
               <ButtonControl label="Exit linked trace" onClick={() => setImportedTrace(null)} variant="secondary" />
             </ControlGroup>
+
+            <ControlGroup label="Share">
+              <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+              <div className="control-button-grid">
+                <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+                <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
+                <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
+                <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
+              </div>
+            </ControlGroup>
           </>
         ) : (
           <>
@@ -141,14 +235,26 @@ export function FiatShamirDemo(): JSX.Element {
                 </ControlCard>
               )}
             </ControlGroup>
+
+            <ControlGroup label="Share">
+              <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+              <div className="control-button-grid">
+                <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+                <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
+                <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
+                <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
+              </div>
+            </ControlGroup>
           </>
         )}
       </DemoSidebar>
 
       <DemoCanvasArea>
-        <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
+        <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:fiat-shamir" />
       </DemoCanvasArea>
+
+      <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Fiat-Shamir" />
     </DemoLayout>
   );
 }

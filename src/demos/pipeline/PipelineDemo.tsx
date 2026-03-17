@@ -16,9 +16,10 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 import { copyToClipboard } from '@/lib/clipboard';
-import { showToast } from '@/lib/toast';
-import { decodeState, decodeStatePlain, encodeState, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import {
   STAGES,
   STAGE_LABELS,
@@ -29,7 +30,7 @@ import {
   type FaultType,
   type PipelineResults,
 } from './logic';
-import { buildLinkedDemoTarget, buildPipelineHash, getIssueLabel, getLinkedDemoDescriptor, getPrimaryPipelineIssue, getStageDiagnostic } from './linkedState';
+import { buildLinkedDemoTarget, getIssueLabel, getLinkedDemoDescriptor, getPrimaryPipelineIssue, getStageDiagnostic } from './linkedState';
 import { renderPipeline } from './renderer';
 
 // ── State ──────────────────────────────────────────────────────────
@@ -140,6 +141,8 @@ export function PipelineDemo() {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const { setEntry } = useInfoPanel();
   const [linkBusy, setLinkBusy] = useState(false);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
 
   const activeStage = STAGES[state.activeStageIdx]!;
   const linkedDescriptor = useMemo(() => getLinkedDemoDescriptor(activeStage), [activeStage]);
@@ -451,18 +454,60 @@ export function PipelineDemo() {
           )}
         </ControlGroup>
 
-        <ControlGroup label="Actions">
-            <ButtonControl
-              label="Copy Pipeline Hash"
-              onClick={() => {
-                const url = new URL(window.location.href);
-                url.hash = buildPipelineHash(buildShareState());
-                copyToClipboard(url.toString());
-                showToast('Pipeline link copied', 'Restore this exact pipeline stage and fault state');
-              }}
-            variant="secondary"
-          />
-          <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} />
+        <ControlGroup label="Share">
+          <ButtonControl label="Copy Share URL" onClick={() => {
+            copyToClipboard(window.location.href);
+            showToast('Link copied', 'Share this URL to restore the exact current state');
+          }} />
+          <div className="control-button-grid">
+            <ButtonControl label="Hash URL" onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('pl');
+              url.hash = `pipeline|${encodeStatePlain(buildShareState())}`;
+              copyToClipboard(url.toString());
+              showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
+            }} variant="secondary" />
+            <ButtonControl label="Embed" onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.set('embed', 'pipeline');
+              url.searchParams.set('pl', encodeState(buildShareState()));
+              setEmbedUrl(url.toString());
+              setEmbedOpen(true);
+            }} variant="secondary" />
+            <ButtonControl label="Export PNG" onClick={() => {
+              const canvas = canvasElRef.current;
+              if (!canvas) return;
+              const data = canvas.toDataURL('image/png');
+              const a = document.createElement('a');
+              a.href = data;
+              a.download = 'theora-pipeline.png';
+              a.click();
+              showDownloadToast('theora-pipeline.png');
+            }} variant="secondary" />
+              <ButtonControl label="Audit JSON" onClick={() => {
+              const payload = {
+                demo: 'pipeline',
+                timestamp: new Date().toISOString(),
+                scenarioName: state.scenarioName,
+                secretX: state.secretX,
+                activeStage: activeStage,
+                activeStageIdx: state.activeStageIdx,
+                fault: state.fault,
+                results: {
+                  witness: state.results.witness,
+                  constraints: state.results.constraints,
+                  polynomial: state.results.polynomial,
+                  commit: state.results.commit,
+                  challenge: state.results.challenge,
+                  open: state.results.open,
+                  verify: state.results.verify,
+                },
+              };
+              copyToClipboard(JSON.stringify(payload, null, 2));
+              showToast('Audit JSON copied', 'Pipeline stage, fault, witness & verification data');
+            }} variant="secondary" />
+          </div>
+          <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} variant="secondary" />
         </ControlGroup>
       </DemoSidebar>
 
@@ -475,6 +520,8 @@ export function PipelineDemo() {
         />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:pipeline" />
       </DemoCanvasArea>
+
+      <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Proof Pipeline" />
     </DemoLayout>
   );
 }

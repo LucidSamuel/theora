@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, TextInput, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
+import { EmbedModal } from '@/components/shared/EmbedModal';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
-import { decodeStatePlain, getHashState } from '@/lib/urlState';
+import { copyToClipboard } from '@/lib/clipboard';
+import { showToast, showDownloadToast } from '@/lib/toast';
+import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { analyzeLookup, parseNumberList } from './logic';
 import { renderLookup } from './renderer';
 
@@ -20,14 +23,23 @@ export function LookupDemo(): JSX.Element {
   const { setEntry } = useInfoPanel();
   const [tableInput, setTableInput] = useState('1,2,3,5,8,13');
   const [wireInput, setWireInput] = useState('2,5,8');
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
+  const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const hashState = getHashState();
     const rawHash = hashState?.demo === 'lookup' ? hashState.state : null;
-    const payload = decodeStatePlain<{
+    const decodedHash = decodeStatePlain<{
       table?: string;
       wires?: string;
     }>(rawHash);
+    const raw = decodedHash ? null : getSearchParam('l');
+    const decoded = decodeState<{
+      table?: string;
+      wires?: string;
+    }>(raw);
+    const payload = decodedHash ?? decoded;
 
     if (!payload) return;
     if (typeof payload.table === 'string') setTableInput(payload.table);
@@ -49,6 +61,63 @@ export function LookupDemo(): JSX.Element {
   const draw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
     renderLookup(ctx, frame, analysis, theme);
   }, [analysis, theme]);
+
+  const buildShareState = useCallback(() => ({
+    table: tableInput,
+    wires: wireInput,
+  }), [tableInput, wireInput]);
+
+  useEffect(() => {
+    const hashState = getHashState();
+    if (hashState?.demo === 'lookup') return;
+    setSearchParams({ l: encodeState(buildShareState()) });
+  }, [buildShareState]);
+
+  const handleCopyShareUrl = () => {
+    copyToClipboard(window.location.href);
+    showToast('Link copied', 'Share this URL to restore the exact current state');
+  };
+
+  const handleCopyHashUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('l');
+    url.hash = `lookup|${encodeStatePlain(buildShareState())}`;
+    copyToClipboard(url.toString());
+    showToast('Hash URL copied', 'State is encoded in the fragment — no server needed');
+  };
+
+  const handleCopyEmbed = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('embed', 'lookup');
+    url.searchParams.set('l', encodeState(buildShareState()));
+    setEmbedUrl(url.toString());
+    setEmbedOpen(true);
+  };
+
+  const handleExportPng = () => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const data = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = 'theora-lookup.png';
+    a.click();
+    showDownloadToast('theora-lookup.png');
+  };
+
+  const handleCopyAuditSummary = () => {
+    const payload = {
+      demo: 'lookup',
+      timestamp: new Date().toISOString(),
+      table: analysis.table,
+      wires: analysis.wires,
+      passes: analysis.passes,
+      missing: analysis.missing,
+      multiplicityMismatches: analysis.multiplicityMismatches,
+    };
+    copyToClipboard(JSON.stringify(payload, null, 2));
+    showToast('Audit JSON copied', 'Lookup table, wire values & analysis results');
+  };
 
   return (
     <DemoLayout>
@@ -80,12 +149,24 @@ export function LookupDemo(): JSX.Element {
             </div>
           </ControlCard>
         </ControlGroup>
+
+        <ControlGroup label="Share">
+          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <div className="control-button-grid">
+            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
+            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
+            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
+            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
+          </div>
+        </ControlGroup>
       </DemoSidebar>
 
       <DemoCanvasArea>
-        <AnimatedCanvas draw={draw} camera={camera} {...mergedHandlers} />
+        <AnimatedCanvas draw={draw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:lookup" />
       </DemoCanvasArea>
+
+      <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Lookup Arguments" />
     </DemoLayout>
   );
 }
