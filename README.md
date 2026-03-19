@@ -159,7 +159,6 @@ Still intentionally out of scope:
 - Private repo auth
 - Arbitrary codebase parsing
 - "Connect GitHub and auto-detect everything"
-- Direct authenticated Gist creation via API (implemented — gist-scope PAT, stored in localStorage with user-controlled lifecycle)
 
 Example import payload:
 

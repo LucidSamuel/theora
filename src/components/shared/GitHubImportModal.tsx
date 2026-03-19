@@ -275,7 +275,7 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
             </>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              Export is available for pipeline, merkle, polynomial, accumulator, and recursive demos.
+              Export becomes available once this demo has shareable state. All 9 demos support import/export.
             </div>
           )}
         </div>

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DemoId } from '@/types';
+import { isDemoId } from '@/types';
 import { getSearchParam, getHashState } from '@/lib/urlState';
-
-const VALID_DEMOS: DemoId[] = ['pipeline', 'merkle', 'polynomial', 'accumulator', 'recursive', 'elliptic', 'fiat-shamir', 'circuit', 'lookup'];
 
 export interface ActiveDemoLocation {
   activeDemo: DemoId;
@@ -11,18 +10,18 @@ export interface ActiveDemoLocation {
 
 export function getActiveDemoLocation(): ActiveDemoLocation {
   const hashState = getHashState();
-  if (hashState && VALID_DEMOS.includes(hashState.demo as DemoId)) {
+  if (hashState && isDemoId(hashState.demo)) {
     return {
-      activeDemo: hashState.demo as DemoId,
+      activeDemo: hashState.demo,
       locationKey: `${hashState.demo}|${hashState.state}`,
     };
   }
 
   const hash = window.location.hash.replace('#', '');
   const base = hash.split('|')[0] ?? '';
-  if (VALID_DEMOS.includes(base as DemoId)) {
+  if (isDemoId(base)) {
     return {
-      activeDemo: base as DemoId,
+      activeDemo: base,
       locationKey: base,
     };
   }
@@ -36,9 +35,9 @@ export function getActiveDemoLocation(): ActiveDemoLocation {
 export function useActiveDemo() {
   const [location, setLocation] = useState<ActiveDemoLocation>(() => {
     const embed = getSearchParam('embed') ?? '';
-    if (VALID_DEMOS.includes(embed as DemoId)) {
+    if (isDemoId(embed)) {
       return {
-        activeDemo: embed as DemoId,
+        activeDemo: embed,
         locationKey: `embed:${embed}`,
       };
     }

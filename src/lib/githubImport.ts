@@ -1,15 +1,14 @@
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import type { DemoId } from '@/types';
-
-export type GitHubImportDemo = 'pipeline' | 'merkle' | 'polynomial' | 'accumulator' | 'recursive' | 'fiat-shamir' | 'circuit' | 'elliptic' | 'lookup';
+import { isDemoId } from '@/types';
 
 export interface TheoraImportEnvelope {
   version?: 1;
-  demo: GitHubImportDemo;
+  demo: DemoId;
   state: unknown;
 }
 
-const DEMO_QUERY_KEYS: Record<GitHubImportDemo, string> = {
+const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   pipeline: 'pl',
   merkle: 'm',
   polynomial: 'p',
@@ -21,8 +20,6 @@ const DEMO_QUERY_KEYS: Record<GitHubImportDemo, string> = {
   lookup: 'l',
 };
 
-const SUPPORTED_DEMOS: GitHubImportDemo[] = ['pipeline', 'merkle', 'polynomial', 'accumulator', 'recursive', 'fiat-shamir', 'circuit', 'elliptic', 'lookup'];
-
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
   const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, fs: null, c: null, e: null, l: null };
@@ -32,11 +29,7 @@ export function applyImportedState(payload: TheoraImportEnvelope): void {
 }
 
 export function getCurrentExportEnvelope(activeDemo: DemoId): TheoraImportEnvelope | null {
-  if (!SUPPORTED_DEMOS.includes(activeDemo as GitHubImportDemo)) {
-    return null;
-  }
-
-  const demo = activeDemo as GitHubImportDemo;
+  const demo = activeDemo;
   const hashState = getHashState();
   const hashPayload = hashState?.demo === demo ? decodeStatePlain<unknown>(hashState.state) : null;
   const searchPayload = hashPayload ? null : decodeState<unknown>(getSearchParam(DEMO_QUERY_KEYS[demo]));
@@ -181,7 +174,7 @@ export function resolveGitHubImportSource(sourceUrl: string): { kind: 'direct'; 
 function isImportEnvelope(value: unknown): value is TheoraImportEnvelope {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
-  return SUPPORTED_DEMOS.includes(candidate.demo as GitHubImportDemo) && 'state' in candidate;
+  return typeof candidate.demo === 'string' && isDemoId(candidate.demo) && 'state' in candidate;
 }
 
 function buildGistDescription(payload: TheoraImportEnvelope): string {

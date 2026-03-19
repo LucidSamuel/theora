@@ -1,13 +1,20 @@
-export type DemoId =
-  | 'pipeline'
-  | 'merkle'
-  | 'accumulator'
-  | 'polynomial'
-  | 'recursive'
-  | 'elliptic'
-  | 'fiat-shamir'
-  | 'circuit'
-  | 'lookup';
+export const DEMO_IDS = [
+  'pipeline',
+  'merkle',
+  'accumulator',
+  'polynomial',
+  'recursive',
+  'elliptic',
+  'fiat-shamir',
+  'circuit',
+  'lookup',
+] as const;
+
+export type DemoId = typeof DEMO_IDS[number];
+
+export function isDemoId(value: string): value is DemoId {
+  return (DEMO_IDS as readonly string[]).includes(value);
+}
 
 export interface DemoMeta {
   id: DemoId;

@@ -89,7 +89,7 @@ describe('export envelope helpers', () => {
     });
   });
 
-  it('returns null for unsupported demos', () => {
+  it('returns null when the current demo has no shareable state in the URL', () => {
     expect(getCurrentExportEnvelope('lookup')).toBeNull();
   });
 
