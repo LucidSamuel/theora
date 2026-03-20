@@ -217,6 +217,15 @@ export function Groth16Demo(): JSX.Element {
     setEmbedOpen(true);
   }, [buildShareState]);
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width || 800;
+    const h = rect.height || 600;
+    fitCameraToBounds(camera, canvas, { minX: 0, minY: 0, maxX: w, maxY: h });
+  }, [camera]);
+
   const handleExportPng = useCallback(() => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
@@ -263,15 +272,6 @@ export function Groth16Demo(): JSX.Element {
     copyToClipboard(JSON.stringify(payload, null, 2));
     showToast('Audit JSON copied', 'R1CS witness, proof elements & verification result');
   }, [corrupt, phase, phaseData, secretX]);
-
-  const handleFitToView = useCallback(() => {
-    const canvas = canvasElRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const w = rect.width || 800;
-    const h = rect.height || 600;
-    fitCameraToBounds(camera, canvas, { minX: 0, minY: 0, maxX: w, maxY: h });
-  }, [camera]);
 
   // ── Draw ───────────────────────────────────────────────────────────────────
   const draw = useCallback(
