@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { getSearchParam } from '@/lib/urlState';
-import { Settings, Play, Pause, X, RotateCcw, Maximize2 } from 'lucide-react';
+import { Settings, Play, Pause, X, RotateCcw, Maximize2, SlidersHorizontal } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MobileControlsSheet } from './MobileControlsSheet';
 
 type SidebarWidth = 'standard' | 'compact';
 type AsideWidth = 'compact' | 'narrow';
@@ -10,12 +12,18 @@ interface EmbedContext {
   isEmbed: boolean;
   panelsVisible: boolean;
   togglePanels: () => void;
+  isMobile: boolean;
+  mobileSheetOpen: boolean;
+  setMobileSheetOpen: (open: boolean) => void;
 }
 
 const EmbedCtx = createContext<EmbedContext>({
   isEmbed: false,
   panelsVisible: true,
   togglePanels: () => {},
+  isMobile: false,
+  mobileSheetOpen: false,
+  setMobileSheetOpen: () => {},
 });
 
 export function useEmbedContext() {
@@ -52,12 +60,17 @@ interface DemoAsideProps {
 export function DemoLayout({ children, onEmbedPlay, embedPlaying, onEmbedReset, onEmbedFitToView }: DemoLayoutProps) {
   const isEmbed = Boolean(getSearchParam('embed'));
   const [panelsVisible, setPanelsVisible] = useState(!isEmbed);
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   return (
     <EmbedCtx.Provider value={{
       isEmbed,
       panelsVisible,
       togglePanels: () => setPanelsVisible((v) => !v),
+      isMobile,
+      mobileSheetOpen,
+      setMobileSheetOpen,
     }}>
       <div className="demo-layout">
         {children}
@@ -110,7 +123,7 @@ export function DemoLayout({ children, onEmbedPlay, embedPlaying, onEmbedReset, 
 }
 
 export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) {
-  const { isEmbed, panelsVisible } = useEmbedContext();
+  const { isEmbed, panelsVisible, isMobile, mobileSheetOpen, setMobileSheetOpen } = useEmbedContext();
 
   // Embed: hide entirely when collapsed
   if (isEmbed && !panelsVisible) return null;
@@ -119,6 +132,19 @@ export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) 
       <div className={`demo-sidebar demo-sidebar--${width} demo-sidebar--embed`}>
         {children}
       </div>
+    );
+  }
+
+  // Mobile: render inside a bottom sheet
+  if (isMobile) {
+    return (
+      <MobileControlsSheet
+        isOpen={mobileSheetOpen}
+        onClose={() => setMobileSheetOpen(false)}
+        title="Controls"
+      >
+        {children}
+      </MobileControlsSheet>
     );
   }
 
@@ -134,13 +160,13 @@ export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) 
 }
 
 export function DemoCanvasArea({ children }: DemoCanvasAreaProps) {
-  const { isEmbed, panelsVisible, togglePanels } = useEmbedContext();
+  const { isEmbed, panelsVisible, togglePanels, isMobile, setMobileSheetOpen } = useEmbedContext();
 
   return (
     <div className="demo-canvas-area">
       {children}
       {/* Floating settings toggle — main view only, matches canvas toolbar style */}
-      {!isEmbed && (
+      {!isEmbed && !isMobile && (
         <div className="demo-settings-toggle">
           <div className="canvas-toolbar">
             <button
@@ -155,13 +181,29 @@ export function DemoCanvasArea({ children }: DemoCanvasAreaProps) {
           </div>
         </div>
       )}
+      {/* Mobile floating controls button */}
+      {!isEmbed && isMobile && (
+        <div className="demo-mobile-controls-trigger">
+          <button
+            type="button"
+            className="demo-mobile-controls-btn"
+            onClick={() => setMobileSheetOpen(true)}
+            aria-label="Open controls"
+          >
+            <SlidersHorizontal size={16} />
+            <span>Controls</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 export function DemoAside({ children, side = 'right', width = 'compact' }: DemoAsideProps) {
-  const { isEmbed, panelsVisible } = useEmbedContext();
+  const { isEmbed, panelsVisible, isMobile } = useEmbedContext();
   if (isEmbed && !panelsVisible) return null;
+  // Hide aside on mobile — content is secondary
+  if (isMobile) return null;
 
   return (
     <div className={`demo-aside demo-aside--${side} demo-aside--${width}${isEmbed ? ' demo-aside--embed' : ''}`}>
