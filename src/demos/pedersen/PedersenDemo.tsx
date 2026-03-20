@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
+import { fitCameraToBounds } from '@/lib/cameraFit';
 import {
   decodeState,
   decodeStatePlain,
@@ -166,15 +167,42 @@ export function PedersenDemo(): JSX.Element {
     setEmbedOpen(true);
   };
 
+  const handleFitToView = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const isHomo = homomorphic !== null;
+    fitCameraToBounds(camera, canvas, {
+      minX: isHomo ? 20 : 40,
+      minY: 30,
+      maxX: isHomo ? 780 : 600,
+      maxY: isHomo ? 700 : 520,
+    });
+  }, [camera, homomorphic]);
+
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-pedersen.png';
-    a.click();
-    showDownloadToast('theora-pedersen.png');
+
+    // Save current camera state
+    const prevPanX = camera.panX;
+    const prevPanY = camera.panY;
+    const prevZoom = camera.zoom;
+
+    handleFitToView();
+
+    requestAnimationFrame(() => {
+      const data = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = data;
+      a.download = 'theora-pedersen.png';
+      a.click();
+      showDownloadToast('theora-pedersen.png');
+
+      // Restore camera
+      camera.panX = prevPanX;
+      camera.panY = prevPanY;
+      camera.zoom = prevZoom;
+    });
   };
 
   const handleCopyAuditSummary = () => {
@@ -215,6 +243,7 @@ export function PedersenDemo(): JSX.Element {
         setCommitment(null);
         setHomomorphic(null);
       }}
+      onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
         <ControlGroup label="Commitment Inputs">
@@ -313,7 +342,7 @@ export function PedersenDemo(): JSX.Element {
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
         />
-        <CanvasToolbar camera={camera} storageKey="theora:toolbar:pedersen" />
+        <CanvasToolbar camera={camera} storageKey="theora:toolbar:pedersen" onReset={handleFitToView} />
       </DemoCanvasArea>
 
       <EmbedModal

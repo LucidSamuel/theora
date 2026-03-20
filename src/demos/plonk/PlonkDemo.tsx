@@ -185,7 +185,14 @@ export function PlonkDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
+
+    // Save current camera state
+    const prevPanX = camera.panX;
+    const prevPanY = camera.panY;
+    const prevZoom = camera.zoom;
+
     handleFitToView();
+
     requestAnimationFrame(() => {
       const data = canvas.toDataURL('image/png');
       const a = document.createElement('a');
@@ -193,6 +200,11 @@ export function PlonkDemo(): JSX.Element {
       a.download = 'theora-plonk.png';
       a.click();
       showDownloadToast('theora-plonk.png');
+
+      // Restore camera
+      camera.panX = prevPanX;
+      camera.panY = prevPanY;
+      camera.zoom = prevZoom;
     });
   };
 

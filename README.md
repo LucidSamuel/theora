@@ -1,6 +1,6 @@
 # Theora
 
-Interactive cryptographic visualizer. Merkle trees, polynomial commitments, RSA accumulators, recursive proofs, elliptic curves, Fiat-Shamir transcripts, R1CS circuits, and lookup arguments — animated, shareable, and embeddable.
+Interactive cryptographic visualizer. Merkle trees, polynomial commitments, RSA accumulators, recursive proofs, elliptic curves, Fiat-Shamir transcripts, R1CS circuits, lookup arguments, Pedersen commitments, Groth16 zkSNARKs, and PLONK arithmetization — animated, shareable, and embeddable.
 
 \---
 
@@ -100,6 +100,38 @@ Visualize proof composition trees and incremental verifiable computation (IVC) c
 - **Multiset comparison**: Sort and compare table rows against queried wires
 - **Failure cases**: Detect missing values and multiplicity mismatches
 
+### Pedersen Commitments
+
+Compute and verify Pedersen commitments `C = g^v · h^r mod p` with homomorphic addition.
+
+- **Small prime field**: p = 97, g = 5, h = 47 — large enough to be meaningful, small enough to inspect every value
+- **Single commitment flow**: Set a value and randomness, commit, and see the intermediate `g^v` and `h^r` steps
+- **Blinding factor toggle**: Show or hide the randomness `r` — commitment is perfectly hiding without it
+- **Homomorphic addition**: Commit two values independently, then verify that `C₁ · C₂ mod p = commit(v₁+v₂, r₁+r₂)`
+- **Canvas visualization**: Flow-diagram layout with labeled boxes, elbow connectors, merge operators, and status badge
+
+### Groth16 zkSNARK
+
+Walk through the full Groth16 pipeline: R1CS encoding, QAP conversion, trusted setup, proof generation, and pairing-based verification.
+
+- **Circuit**: `f(x) = x² + x + 5` over GF(101) with adjustable secret input `x`
+- **5-phase pipeline**: Step through R1CS → QAP → Setup → Prove → Verify, or auto-run all phases
+- **Trusted setup**: α, β, γ, δ generation with a "Show toxic waste" toggle and security warning
+- **Fault injection**: Corrupt the A, B, or C proof element and watch the pairing check fail
+- **Pairing verification**: `e(A, B) = e(α, β) · e(pub, γ) · e(C, δ)` — see exact LHS/RHS values
+- **Canvas visualization**: horizontal pipeline with phase boxes, detail panels, and status coloring
+
+### PLONK Arithmetization
+
+Explore PLONK gate equations and copy constraints with a 3-gate arithmetic circuit.
+
+- **Gate equation**: `qL·a + qR·b + qO·c + qM·a·b + qC = 0` with per-gate selector display
+- **Default circuit**: 3 gates (Add, Mul, PubOut) with preset wire values satisfying all constraints
+- **Wire editing**: Select a gate, adjust `a`/`b`/`c` values, and see gate satisfaction update in real time
+- **Copy constraints**: Bezier arrows between gates showing wire equality (e.g., gate 0 output = gate 1 input)
+- **One-click break**: "Break a copy constraint" button corrupts a wire to demonstrate constraint violation
+- **Canvas visualization**: stacked gate boxes with selector rows, wire values, equation display, dashed copy-constraint arrows, and validity badge
+
 ### Proof Pipeline
 
 End-to-end walkthrough of a complete proof system: Witness, Constraints, Polynomial, Commit, Challenge, Open, Verify.
@@ -151,7 +183,7 @@ Available in v1:
 - **Export current supported demos** as `theora.json`
 - **Copy JSON + open Gist** helper workflow for manual public gist creation
 - **Strict schema**: `{"demo":"...","state":{...}}`
-- **Supported demos**: all 9 — `merkle`, `polynomial`, `accumulator`, `recursive`, `pipeline`, `fiat-shamir`, `circuit`, `elliptic`, `lookup`
+- **Supported demos**: all 12 — `merkle`, `polynomial`, `accumulator`, `recursive`, `pipeline`, `fiat-shamir`, `circuit`, `elliptic`, `lookup`, `pedersen`, `groth16`, `plonk`
 
 Still intentionally out of scope:
 

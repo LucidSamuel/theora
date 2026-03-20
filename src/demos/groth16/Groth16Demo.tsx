@@ -220,13 +220,28 @@ export function Groth16Demo(): JSX.Element {
   const handleExportPng = useCallback(() => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-groth16.png';
-    a.click();
-    showDownloadToast('theora-groth16.png');
-  }, []);
+
+    // Save current camera state
+    const prevPanX = camera.panX;
+    const prevPanY = camera.panY;
+    const prevZoom = camera.zoom;
+
+    handleFitToView();
+
+    requestAnimationFrame(() => {
+      const data = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = data;
+      a.download = 'theora-groth16.png';
+      a.click();
+      showDownloadToast('theora-groth16.png');
+
+      // Restore camera
+      camera.panX = prevPanX;
+      camera.panY = prevPanY;
+      camera.zoom = prevZoom;
+    });
+  }, [camera, handleFitToView]);
 
   const handleCopyAuditSummary = useCallback(() => {
     const payload = {
