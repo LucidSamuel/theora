@@ -17,13 +17,18 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
   const [gistToken, setGistToken] = useState('');
   const [gistUrl, setGistUrl] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [rememberToken, setRememberToken] = useState(false);
   const exportEnvelope = useMemo(() => getCurrentExportEnvelope(activeDemo), [activeDemo]);
   const exportJson = exportEnvelope ? serializeTheoraImport(exportEnvelope) : '';
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Restore persisted token only if one was explicitly saved
   useEffect(() => {
     const saved = window.localStorage.getItem('theora:gist-token');
-    if (saved) setGistToken(saved);
+    if (saved) {
+      setGistToken(saved);
+      setRememberToken(true);
+    }
   }, []);
 
   // Close on Escape
@@ -107,10 +112,17 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
     setError(null);
     setIsPublishing(true);
     try {
-      window.localStorage.setItem('theora:gist-token', gistToken.trim());
-      const result = await createPublicGist(exportEnvelope, gistToken.trim());
+      const token = gistToken.trim();
+      const result = await createPublicGist(exportEnvelope, token);
       setGistUrl(result.url);
       copyToClipboard(result.url);
+      // Persist or clear based on user preference
+      if (rememberToken) {
+        window.localStorage.setItem('theora:gist-token', token);
+      } else {
+        window.localStorage.removeItem('theora:gist-token');
+        setGistToken('');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gist publish failed');
     } finally {
@@ -274,12 +286,39 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
                   Optional: paste a GitHub token with <code className="font-mono" style={{ fontSize: 10 }}>gist</code> scope to publish a public Gist directly from Theora.
                 </div>
                 <input
+                  type="password"
                   className="github-import-modal__input"
                   value={gistToken}
                   onChange={(e) => setGistToken(e.target.value)}
-                  placeholder="GitHub token with gist scope"
+                  placeholder="ghp_... (gist scope)"
+                  autoComplete="off"
                   style={{ marginTop: 0, marginBottom: 8 }}
                 />
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: 10,
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={rememberToken}
+                    onChange={(e) => {
+                      setRememberToken(e.target.checked);
+                      if (!e.target.checked) {
+                        window.localStorage.removeItem('theora:gist-token');
+                      }
+                    }}
+                    style={{ accentColor: 'var(--text-muted)' }}
+                  />
+                  Remember token on this device
+                </label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     className="app-btn-primary rounded-lg"
@@ -294,6 +333,7 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
                     onClick={() => {
                       window.localStorage.removeItem('theora:gist-token');
                       setGistToken('');
+                      setRememberToken(false);
                     }}
                     style={{ height: 34, padding: '0 14px', fontSize: 12, flex: '1 1 auto' }}
                   >
@@ -301,7 +341,9 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
                   </button>
                 </div>
                 <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  The token is stored only in this browser&apos;s local storage until you clear it.
+                  {rememberToken
+                    ? 'Token will be saved in this browser\u2019s local storage.'
+                    : 'Token is used for this session only and cleared after publishing.'}
                 </div>
                 {gistUrl && (
                   <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--status-success-bg)', color: 'var(--status-success)', fontSize: 12 }}>
