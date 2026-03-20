@@ -13,6 +13,9 @@ import { EllipticDemo } from '@/demos/elliptic/EllipticDemo';
 import { FiatShamirDemo } from '@/demos/fiat-shamir/FiatShamirDemo';
 import { CircuitDemo } from '@/demos/circuit/CircuitDemo';
 import { LookupDemo } from '@/demos/lookup/LookupDemo';
+import { PedersenDemo } from '@/demos/pedersen/PedersenDemo';
+import { PlonkDemo } from '@/demos/plonk/PlonkDemo';
+import { Groth16Demo } from '@/demos/groth16/Groth16Demo';
 import { PipelineDemo } from '@/demos/pipeline/PipelineDemo';
 import { DEMOS } from '@/types';
 
@@ -26,6 +29,9 @@ const DEMO_NAMES = {
   'fiat-shamir': 'Fiat-Shamir',
   circuit: 'R1CS Circuits',
   lookup: 'Lookup Arguments',
+  pedersen: 'Pedersen Commitments',
+  plonk: 'PLONK Arithmetization',
+  groth16: 'Groth16 zkSNARK',
 } as const;
 
 export default function App() {
@@ -76,6 +82,12 @@ export default function App() {
         return <CircuitDemo />;
       case 'lookup':
         return <LookupDemo />;
+      case 'pedersen':
+        return <PedersenDemo />;
+      case 'plonk':
+        return <PlonkDemo />;
+      case 'groth16':
+        return <Groth16Demo />;
     }
   };
 

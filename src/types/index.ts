@@ -8,6 +8,9 @@ export const DEMO_IDS = [
   'fiat-shamir',
   'circuit',
   'lookup',
+  'pedersen',
+  'plonk',
+  'groth16',
 ] as const;
 
 export type DemoId = typeof DEMO_IDS[number];
@@ -96,5 +99,29 @@ export const DEMOS: DemoMeta[] = [
     description:
       'Lookup arguments let circuits prove that wire values belong to an allowed table without expanding many constraints by hand. This demo compares a table and queried wires, then visualizes the permutation-style check that modern lookup schemes rely on.',
     accent: '#38bdf8',
+  },
+  {
+    id: 'pedersen',
+    title: 'Pedersen Commitments',
+    subtitle: 'Commit to a value with a blinding factor and verify homomorphic addition.',
+    description:
+      'A Pedersen commitment is a perfectly hiding and computationally binding commitment scheme. Given generators g and h of a cyclic group, C = g^v · h^r binds the prover to value v while r keeps v secret. The scheme is additively homomorphic: committing to two values and multiplying the commitments yields a valid commitment to their sum.',
+    accent: '#a3e635',
+  },
+  {
+    id: 'plonk',
+    title: 'PLONK Arithmetization',
+    subtitle: 'Inspect gate equations, selector polynomials, and copy constraints.',
+    description:
+      'PLONK arithmetizes circuits into a uniform gate structure: each gate uses selector values (qL, qR, qO, qM, qC) to express addition, multiplication, or constant constraints via a single equation qL·a + qR·b + qO·c + qM·a·b + qC = 0. Copy constraints link shared wire values across gates via a permutation argument, forming the basis of PlonKish proof systems.',
+    accent: '#c084fc',
+  },
+  {
+    id: 'groth16',
+    title: 'Groth16 zkSNARK',
+    subtitle: 'Step through R1CS, QAP, trusted setup, proof, and pairing verification.',
+    description:
+      'Groth16 is the most efficient zkSNARK in practice. A computation is encoded as an R1CS, transformed to a QAP, and a trusted setup generates a common reference string. The prover computes three elliptic-curve elements (A, B, C) from the witness and trapdoor evaluations; the verifier checks a single pairing equation without learning the private witness.',
+    accent: '#fb923c',
   },
 ];

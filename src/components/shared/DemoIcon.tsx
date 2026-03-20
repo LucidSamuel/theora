@@ -1,5 +1,5 @@
 import type { DemoId } from '@/types';
-import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties, Workflow } from 'lucide-react';
+import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties, Workflow, Lock, LayoutGrid, Fingerprint } from 'lucide-react';
 
 const ICONS = {
   pipeline: Workflow,
@@ -11,6 +11,9 @@ const ICONS = {
   'fiat-shamir': ShieldCheck,
   circuit: CircuitBoard,
   lookup: TableProperties,
+  pedersen: Lock,
+  plonk: LayoutGrid,
+  groth16: Fingerprint,
 } as const;
 
 interface DemoIconProps {

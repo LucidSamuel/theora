@@ -18,11 +18,14 @@ const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   circuit: 'c',
   elliptic: 'e',
   lookup: 'l',
+  pedersen: 'ped',
+  plonk: 'plk',
+  groth16: 'g16',
 };
 
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
-  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, fs: null, c: null, e: null, l: null };
+  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, fs: null, c: null, e: null, l: null, ped: null, plk: null, g16: null };
   updates[DEMO_QUERY_KEYS[demo]] = encodeState(payload.state);
   setSearchParams(updates);
   window.location.hash = `${demo}|${encodeStatePlain(payload.state)}`;

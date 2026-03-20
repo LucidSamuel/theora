@@ -165,6 +165,39 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: strin
       { label: 'LogUp – Modern Lookup Arguments (IACR)', url: 'https://eprint.iacr.org/2022/1530' },
     ],
   },
+  pedersen: {
+    concepts: [
+      'A Pedersen commitment C = g^v · h^r mod p is perfectly hiding: given only C, every value v is equally likely regardless of the adversary\'s computing power.',
+      'Binding relies on the discrete logarithm assumption: the committer cannot find two pairs (v, r) and (v\u2019, r\u2019) with the same commitment without computing log_g(h).',
+      'The additive homomorphic property — C(v₁, r₁) · C(v₂, r₂) = C(v₁+v₂, r₁+r₂) — underlies many zero-knowledge proofs and confidential transaction schemes.',
+    ],
+    resources: [
+      { label: 'Pedersen – Non-Interactive and Information-Theoretic Secure VSS (CRYPTO \'91)', url: 'https://link.springer.com/chapter/10.1007/3-540-46766-1_9' },
+      { label: 'Boneh & Shoup – A Graduate Course in Applied Cryptography (Ch. 11)', url: 'https://toc.cryptobook.us/' },
+    ],
+  },
+  plonk: {
+    concepts: [
+      'PLONK gates use five selector polynomials (qL, qR, qO, qM, qC) so every gate — add, multiply, constant — is a specialisation of one equation.',
+      'Copy constraints are enforced via a permutation argument: the prover shows that wire values at different gate positions are equal by embedding them in a grand-product check.',
+      'PlonKish systems (UltraPLONK, Halo2) extend the basic gate with custom gates and lookup arguments for efficient specialised operations.',
+    ],
+    resources: [
+      { label: 'PLONK: Permutations over Lagrange-bases (IACR)', url: 'https://eprint.iacr.org/2019/953' },
+      { label: 'Vitalik – Understanding PLONK', url: 'https://vitalik.eth.limo/general/2019/09/22/plonk.html' },
+    ],
+  },
+  groth16: {
+    concepts: [
+      'Groth16 achieves O(1) proof size and verifier time: the proof is exactly three elliptic-curve group elements (A, B, C), regardless of circuit size.',
+      'The trusted setup produces a circuit-specific CRS; the toxic waste must be destroyed — any leakage allows forging proofs for that circuit.',
+      'The pairing equation e(A, B) = e(α, β) · e(Σ, γ) · e(C, δ) ties the wire assignments to the QAP and prevents malicious proofs.',
+    ],
+    resources: [
+      { label: 'Groth – On the Size of Pairing-based Non-interactive Arguments (IACR)', url: 'https://eprint.iacr.org/2016/260' },
+      { label: 'Nitpick – Groth16 Explained', url: 'https://www.zeroknowledgeblog.com/index.php/groth16' },
+    ],
+  },
 };
 
 const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
@@ -213,6 +246,21 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
     { term: 'Wire value', definition: 'Witness entry that must match the table.' },
     { term: 'Multiset check', definition: 'Comparison proving both collections match with multiplicity.' },
   ],
+  pedersen: [
+    { term: 'Hiding', definition: 'The commitment reveals nothing about the committed value.' },
+    { term: 'Binding', definition: 'The committer cannot open to a different value later.' },
+    { term: 'Homomorphic', definition: 'Commitments compose: C(a)·C(b) = C(a+b).' },
+  ],
+  plonk: [
+    { term: 'Selector', definition: 'A polynomial that activates or silences a term in the gate equation.' },
+    { term: 'Copy constraint', definition: 'An equality requirement between wire values at different gate positions.' },
+    { term: 'Permutation', definition: 'The grand-product argument that enforces all copy constraints together.' },
+  ],
+  groth16: [
+    { term: 'QAP', definition: 'Quadratic arithmetic program encoding the circuit as polynomial equations.' },
+    { term: 'CRS', definition: 'Common reference string produced by a circuit-specific trusted setup.' },
+    { term: 'Pairing', definition: 'Bilinear map used to check the proof equation without revealing inputs.' },
+  ],
 };
 
 const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
@@ -225,6 +273,9 @@ const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   'fiat-shamir': ['Compare interactive mode', 'Switch to a broken transcript', 'Attempt the forged proof'],
   circuit: ['Adjust witness values', 'Toggle the broken circuit', 'Inspect which constraints fail'],
   lookup: ['Edit the lookup table', 'Add wire values', 'Check the multiset permutation result'],
+  pedersen: ['Set a value and commit', 'Toggle the blinding factor reveal', 'Try homomorphic addition'],
+  plonk: ['Inspect gate selectors', 'Trace the copy constraints', 'Add a custom gate'],
+  groth16: ['Step through the QAP encoding', 'Inspect the trusted setup output', 'Verify the pairing equation'],
 };
 
 export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
