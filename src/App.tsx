@@ -48,7 +48,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'CANVAS') return;
       if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); navigateDemo(1); }
       if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); navigateDemo(-1); }
     };

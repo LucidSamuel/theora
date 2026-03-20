@@ -170,41 +170,63 @@ export function useCanvasCamera(): CanvasCamera {
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.key === '+' || e.key === '=') {
+    const key = e.key.toLowerCase();
+    if (key === '+' || key === '=') {
       e.preventDefault();
+      e.stopPropagation();
       zoomBy(1.1);
       return;
     }
-    if (e.key === '-' || e.key === '_') {
+    if (key === '-' || key === '_') {
       e.preventDefault();
+      e.stopPropagation();
       zoomBy(0.9);
       return;
     }
-    if (e.key === '0') {
+    if (key === '0') {
       e.preventDefault();
+      e.stopPropagation();
       reset();
       return;
     }
+    // Mode shortcuts — V for inspect (select), H for pan (hand)
+    if (key === 'v') {
+      e.preventDefault();
+      e.stopPropagation();
+      setMode('inspect');
+      return;
+    }
+    if (key === 'h') {
+      e.preventDefault();
+      e.stopPropagation();
+      setMode('pan');
+      return;
+    }
+    // Arrow keys for panning — stopPropagation to prevent demo navigation
     if (e.key === 'ArrowUp') {
       e.preventDefault();
+      e.stopPropagation();
       panBy(0, 24);
       return;
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      e.stopPropagation();
       panBy(0, -24);
       return;
     }
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
+      e.stopPropagation();
       panBy(24, 0);
       return;
     }
     if (e.key === 'ArrowRight') {
       e.preventDefault();
+      e.stopPropagation();
       panBy(-24, 0);
     }
-  }, [panBy, reset, zoomBy]);
+  }, [panBy, reset, setMode, zoomBy]);
 
   const cameraRef = useRef<CanvasCamera | null>(null);
   if (!cameraRef.current) {

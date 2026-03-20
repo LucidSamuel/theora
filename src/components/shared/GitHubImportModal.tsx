@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
 import type { DemoId } from '@/types';
 import { applyImportedState, createPublicGist, fetchTheoraImport, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
@@ -19,10 +19,45 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
   const [isPublishing, setIsPublishing] = useState(false);
   const exportEnvelope = useMemo(() => getCurrentExportEnvelope(activeDemo), [activeDemo]);
   const exportJson = exportEnvelope ? serializeTheoraImport(exportEnvelope) : '';
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem('theora:gist-token');
     if (saved) setGistToken(saved);
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
+  // Focus trap
+  const handleKeyDownTrap = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const modal = modalRef.current;
+    if (!modal) return;
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }, []);
 
   if (!isOpen) return null;
@@ -86,11 +121,13 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
   return (
     <div className="github-import-modal-backdrop" onClick={onClose}>
       <div
+        ref={modalRef}
         className="github-import-modal"
         role="dialog"
         aria-modal="true"
         aria-label="Import / Export"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDownTrap}
         style={{ display: 'flex', flexDirection: 'column', gap: 0 }}
       >
         {/* Header */}
