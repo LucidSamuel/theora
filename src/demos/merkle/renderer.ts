@@ -5,6 +5,19 @@ import { spring2DStep, spring2DSetTarget, lerp } from '@/lib/animation';
 
 const MERKLE_PURPLE = '#d4d4d8';
 
+/** Check if a point is within the visible viewport (with margin) */
+function isInViewport(
+  x: number, y: number,
+  camera: { panX: number; panY: number; zoom: number },
+  width: number, height: number,
+  margin: number
+): boolean {
+  // Convert world coords to screen coords
+  const sx = x * camera.zoom + camera.panX;
+  const sy = y * camera.zoom + camera.panY;
+  return sx >= -margin && sx <= width + margin && sy >= -margin && sy <= height + margin;
+}
+
 export function renderMerkleTree(
   ctx: CanvasRenderingContext2D,
   frame: FrameInfo,
@@ -17,7 +30,7 @@ export function renderMerkleTree(
   mouseY: number,
   theme: 'dark' | 'light'
 ): { hoveredNode: MerkleNode | null } {
-  const { width, height, delta } = frame;
+  const { width, height, delta, camera } = frame;
 
   // Background
   const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -169,19 +182,23 @@ export function renderMerkleTree(
   }
   drawEdges(tree.root);
 
-  // Draw nodes
+  // Draw nodes — with viewport culling for large trees
+  const cullMargin = nodeRadius + 60; // extra margin for glow + tooltip
   let hoveredNode: MerkleNode | null = null;
   for (const node of allNodes) {
     const x = node.spring.x.value;
     const y = node.spring.y.value;
 
-    // Check hover
+    // Check hover (even if culled, for correct state)
     const dx = mouseX - x;
     const dy = mouseY - y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < nodeRadius + 5) {
       hoveredNode = node;
     }
+
+    // Skip drawing if outside viewport
+    if (!isInViewport(x, y, camera, width, height, cullMargin)) continue;
 
     // Draw node circle
     const isHighlighted = node.highlightIntensity > 0.01;

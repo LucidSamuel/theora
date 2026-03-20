@@ -6,23 +6,19 @@ import type { MerkleNode, MerkleTree, MerkleProof } from '@/types/merkle';
 export async function buildMerkleTree(leaves: string[], mode: HashFunction): Promise<MerkleTree | null> {
   if (leaves.length === 0) return null;
 
-  // Hash all leaves
-  let nodes: MerkleNode[] = [];
-  for (let i = 0; i < leaves.length; i++) {
-    const leafData = leaves[i];
-    if (!leafData) continue;
-    const hash = await hashLeaf(leafData, mode);
-    nodes.push({
-      id: `leaf-${i}`,
-      hash,
-      data: leafData,
-      depth: 0, // will be recalculated
-      index: i,
-      spring: createSpring2D(0, 0),
-      highlightIntensity: 0,
-      isProofPath: false,
-    });
-  }
+  // Hash all leaves in parallel
+  const validLeaves = leaves.map((data, i) => ({ data, i })).filter(({ data }) => data !== undefined && data !== '');
+  const hashes = await Promise.all(validLeaves.map(({ data }) => hashLeaf(data, mode)));
+  let nodes: MerkleNode[] = validLeaves.map(({ data, i }, idx) => ({
+    id: `leaf-${i}`,
+    hash: hashes[idx]!,
+    data,
+    depth: 0, // will be recalculated
+    index: i,
+    spring: createSpring2D(0, 0),
+    highlightIntensity: 0,
+    isProofPath: false,
+  }));
 
   // Duplicate last if odd
   if (nodes.length > 1 && nodes.length % 2 !== 0) {

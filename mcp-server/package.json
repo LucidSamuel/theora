@@ -10,7 +10,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node build/index.js",
-    "test": "npm run build && node --test test/**/*.test.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
     "verify": "npm test"
   },
   "dependencies": {
