@@ -368,17 +368,11 @@ export function AccumulatorDemo() {
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const [nonMemberInput, setNonMemberInput] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   const hoveredIndexRef = useRef<number | null>(null);
   const springsRef = useRef<{ spring: ReturnType<typeof createSpring2D>; opacity: number }[]>([]);
 
-  useEffect(() => {
-    if (!errorMsg) return;
-    const t = setTimeout(() => setErrorMsg(null), 3000);
-    return () => clearTimeout(t);
-  }, [errorMsg]);
 
   const handleCanvasClick = useCallback((_x: number, _y: number) => {
     if (hoveredIndexRef.current !== null) {
@@ -444,14 +438,18 @@ export function AccumulatorDemo() {
   );
 
   const handleAddPrime = useCallback(() => {
+    if (!primeInput.trim()) {
+      showToast('Enter a prime number', 'error');
+      return;
+    }
     const num = parseInt(primeInput, 10);
     if (isNaN(num) || !isPrime(num)) {
-      setErrorMsg('Please enter a valid prime number');
+      showToast(`${primeInput.trim()} is not prime`, 'error');
       return;
     }
     const bn = BigInt(num);
     if (state.elements.some((el) => el.prime === bn)) {
-      setErrorMsg(`Prime ${num} is already in the set`);
+      showToast(`${num} is already in the set`, 'error');
       return;
     }
     dispatch({ type: 'ADD_ELEMENT', prime: bn });
@@ -471,23 +469,23 @@ export function AccumulatorDemo() {
     for (const str of primeStrings) {
       const num = parseInt(str, 10);
       if (isNaN(num) || !isPrime(num)) {
-        setErrorMsg(`Invalid prime: ${str}`);
+        showToast(`Invalid prime: ${str}`, 'error');
         return;
       }
       const bn = BigInt(num);
       if (existingPrimes.has(bn)) {
-        setErrorMsg(`Prime ${num} is already in the set`);
+        showToast(`${num} is already in the set`, 'error');
         return;
       }
       if (primes.includes(bn)) {
-        setErrorMsg(`Duplicate prime ${num} in batch`);
+        showToast(`Duplicate prime ${num} in batch`, 'error');
         return;
       }
       primes.push(bn);
     }
 
     if (primes.length === 0) {
-      setErrorMsg('Please enter at least one prime');
+      showToast('Enter at least one prime', 'error');
       return;
     }
 
@@ -497,12 +495,12 @@ export function AccumulatorDemo() {
   const handleNonMemberSet = useCallback(() => {
     const num = parseInt(nonMemberInput, 10);
     if (isNaN(num) || !isPrime(num)) {
-      setErrorMsg('Please enter a valid prime number');
+      showToast('Enter a valid prime number', 'error');
       return;
     }
     const bn = BigInt(num);
     if (state.elements.some((el) => el.prime === bn)) {
-      setErrorMsg(`Prime ${num} is in the set — use membership proof instead`);
+      showToast(`${num} is in the set — use membership proof instead`, 'error');
       return;
     }
     dispatch({ type: 'SET_NON_MEMBERSHIP_TARGET', target: bn });
@@ -751,13 +749,6 @@ export function AccumulatorDemo() {
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
-        {errorMsg && (
-          <div className="mb-3">
-          <ControlNote tone="error">
-            {errorMsg}
-          </ControlNote>
-          </div>
-        )}
 
         <ControlGroup label="Add Element">
           <div className="flex flex-col gap-3">

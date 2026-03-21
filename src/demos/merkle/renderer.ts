@@ -233,11 +233,15 @@ export function renderMerkleTree(
 
     // Draw leaf data if available
     if (node.data) {
+      const isDup = node.id.endsWith('-dup');
+      const label = isDup ? `${node.data.slice(0, 8)} (dup)` : node.data.slice(0, 8);
       ctx.save();
-      ctx.fillStyle = theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)';
-      ctx.font = '9px sans-serif';
+      ctx.fillStyle = isDup
+        ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)')
+        : (theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)');
+      ctx.font = isDup ? 'italic 9px sans-serif' : '9px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(node.data.slice(0, 8), x, y + nodeRadius + 12);
+      ctx.fillText(label, x, y + nodeRadius + 12);
       ctx.restore();
     }
   }

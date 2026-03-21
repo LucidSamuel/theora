@@ -99,6 +99,7 @@ export function EllipticDemo(): JSX.Element {
   }));
 
   const updateCurveParam = useCallback((key: keyof CurveConfig, value: number) => {
+    setCurveError(null);
     const next = { ...curve, [key]: value };
     if (key === 'p') {
       if (!isPrime(value)) {
@@ -114,7 +115,6 @@ export function EllipticDemo(): JSX.Element {
       setCurveError('Singular curve (4a³ + 27b² ≡ 0 mod p)');
       return;
     }
-    setCurveError(null);
     setCurve(next);
     setPointAIndex(0);
     setPointBIndex(1);

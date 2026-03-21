@@ -1496,6 +1496,16 @@ input[type="range"]:focus-visible {
   pointer-events: none;
 }
 
+.theora-toast--success {
+  border-color: color-mix(in srgb, var(--status-success) 35%, var(--border));
+  background: color-mix(in srgb, var(--status-success-bg) 70%, var(--bg-secondary));
+}
+
+.theora-toast--error {
+  border-color: color-mix(in srgb, var(--status-error) 35%, var(--border));
+  background: color-mix(in srgb, var(--status-error-bg) 78%, var(--bg-secondary));
+}
+
 .theora-toast--visible {
   opacity: 1;
   transform: translateY(0);
@@ -1507,6 +1517,14 @@ input[type="range"]:focus-visible {
   margin-top: 1px;
   flex-shrink: 0;
   color: var(--text-primary);
+}
+
+.theora-toast--success .theora-toast__icon {
+  color: var(--status-success);
+}
+
+.theora-toast--error .theora-toast__icon {
+  color: var(--status-error);
 }
 
 .theora-toast__body {

@@ -633,7 +633,10 @@ export function MerkleDemo() {
             <TextInput
               value={state.newLeafInput}
               onChange={(value) => dispatch({ type: 'SET_NEW_LEAF_INPUT', text: value })}
-              onSubmit={() => dispatch({ type: 'ADD_LEAF', text: state.newLeafInput })}
+              onSubmit={() => {
+                if (!state.newLeafInput.trim()) { showToast('Enter leaf data', 'error'); return; }
+                dispatch({ type: 'ADD_LEAF', text: state.newLeafInput });
+              }}
               placeholder="Enter data..."
             />
             <ButtonControl
