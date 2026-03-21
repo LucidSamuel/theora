@@ -206,6 +206,17 @@ Example import payload:
 
 The goal is reproducibility, collaboration, and easy sharing of canonical examples for teaching, audits, and research.
 
+#### Example Gists
+
+Try the import workflow with these canonical examples — open the Import/Export modal and paste any URL:
+
+| Example | Gist |
+|---|---|
+| Merkle tree with 4 leaves + proof for leaf 2 | [merkle-4-leaves.json](https://gist.github.com/LucidSamuel/28fa7049c4e26f1aaa29c092ffb8359a) |
+| Groth16 pipeline with corrupted proof element B | [groth16-corrupt-B.json](https://gist.github.com/LucidSamuel/8ab1b9cd24c56e37b3a1f6952c58f3fc) |
+| Proof Pipeline with Frozen Heart (weak Fiat-Shamir) fault | [pipeline-frozen-heart.json](https://gist.github.com/LucidSamuel/05bbfdffdb08d0ada622720731fd2ef3) |
+| PLONK circuit with broken copy constraint | [plonk-broken-copy.json](https://gist.github.com/LucidSamuel/6b5f0bee02e2faad4b1337f88256fe5a) |
+
 ### Dark/Light Theme
 
 - Toggle between dark and light mode from the header
@@ -232,6 +243,10 @@ A toggleable right-side panel that updates based on what you're doing:
 - **Canvas toolbar**: compact frosted-glass bar with pointer/pan mode, zoom in/out, and fit-to-view reset; draggable to reposition
 - **Follow camera**: spring-animated camera tracking for verification sequences (recursive demo)
 - **Collapsible sidebar**: floating settings icon toggles the control panel for full-width canvas on any demo
+
+### Mobile Support
+
+Theora works on mobile devices — controls render as a slide-up bottom sheet, and canvas interactions support touch (pinch-to-zoom, drag-to-pan). Desktop is recommended for the best experience, especially for demos with dense visualizations like Recursive Proofs and Groth16.
 
 ---
 
@@ -318,4 +333,4 @@ No external state management libraries. No charting libraries. All visualization
 
 ## License
 
-MIT
+[PolyForm Noncommercial 1.0.0](LICENSE) — free to use, fork, and modify for any noncommercial purpose. Commercial use requires separate permission.
