@@ -1,4 +1,4 @@
-// Groth16 SNARK — Educational simulator
+// Groth16 SNARK 
 // All arithmetic is over GF(101) for clarity. Real Groth16 uses 254-bit prime fields
 // and elliptic curve pairings; the structure here mirrors the real protocol exactly
 // while keeping numbers human-readable.
@@ -103,6 +103,14 @@ export interface PhaseData {
   proof: Groth16Proof | null;
   verifyResult: VerificationResult | null;
 }
+
+// ── Wire classification ──────────────────────────────────────────────────────
+//
+// Witness vector: w = [1, x, t, y]   indices: [0, 1, 2, 3]
+// Public wires:  0 (constant 1) and 3 (output y) — known to verifier
+// Private wires: 1 (secret x) and 2 (intermediate t = x²)
+const PUBLIC_WIRES = [0, 3];
+const PRIVATE_WIRES = [1, 2];
 
 // ── Circuit definition ────────────────────────────────────────────────────────
 //
@@ -338,15 +346,14 @@ export function trustedSetup(): TrustedSetup {
 export function prove(qap: QAP, r1cs: R1CSResult, setup: TrustedSetup): Groth16Proof {
   const { witness } = r1cs;
   const { a_polys, b_polys, c_polys, h_poly, domain } = qap;
-  const { alpha, beta, gamma: _gamma, delta } = setup;
+  const { alpha, beta, delta } = setup;
 
   // Trapdoor evaluation point τ — derived from setup params for determinism
   const tau = mod(alpha * beta + delta + 3);
 
-  // Evaluate Σ a_i(τ)·w_i  etc.
+  // Evaluate Σ_all a_i(τ)·w_i — used in A and B (which include all wires)
   const A_inner = mod(sumPolyAtPoint(a_polys, witness, tau));
   const B_inner = mod(sumPolyAtPoint(b_polys, witness, tau));
-  const C_inner = mod(sumPolyAtPoint(c_polys, witness, tau));
 
   // Vanishing poly at tau
   let t_at_tau = 1;
@@ -362,14 +369,24 @@ export function prove(qap: QAP, r1cs: R1CSResult, setup: TrustedSetup): Groth16P
   const A = mod(alpha + A_inner + mod(r * delta));
   const B = mod(beta  + B_inner + mod(s * delta));
 
-  // C combines private inputs and the quotient h·t
-  const C_priv = mod(
-    mod(mod(beta * A_inner) + mod(alpha * B_inner) + C_inner) * modInv(delta)
-    + mod(h_at_tau * t_at_tau) * modInv(delta)
+  // C combines PRIVATE wire inputs only + the quotient h·t
+  // Public wires go into the verification key's L polynomial instead
+  let priv_combined = 0;
+  for (const i of PRIVATE_WIRES) {
+    const ai = polyEvalMod(a_polys[i]!, tau);
+    const bi = polyEvalMod(b_polys[i]!, tau);
+    const ci = polyEvalMod(c_polys[i]!, tau);
+    const w = witness[i]!;
+    priv_combined = mod(priv_combined + mod(w * mod(mod(beta * ai) + mod(alpha * bi) + ci)));
+  }
+
+  const C_val = mod(
+    mod(priv_combined * modInv(delta))
+    + mod(mod(h_at_tau * t_at_tau) * modInv(delta))
     + mod(A * s) + mod(B * r) - mod(r * mod(s * delta))
   );
 
-  return { A: mod(A), B: mod(B), C: mod(C_priv) };
+  return { A: mod(A), B: mod(B), C: mod(C_val) };
 }
 
 function sumPolyAtPoint(polys: number[][], weights: number[], tau: number): number {
@@ -382,17 +399,24 @@ function sumPolyAtPoint(polys: number[][], weights: number[], tau: number): numb
 
 // ── Verify ────────────────────────────────────────────────────────────────────
 //
-// Real Groth16 check: e(A, B) = e(α, β) · e(Σ pub_i·l_i(τ)/γ, γ) · e(C, δ)
+// Real Groth16 check: e(A, B) = e(α, β) · e(Σ pub_i·L_i, γ) · e(C, δ)
+//   where L_i = (β·a_i(τ) + α·b_i(τ) + c_i(τ)) / γ  (precomputed in VK)
 //
-// We simulate pairings as modular multiplications on numbers.
+// We simulate pairings as e(x, y) = x * y mod P, target group op = addition.
 
 export function verify(
   proof: Groth16Proof,
   setup: TrustedSetup,
-  publicInput: number,    // y (the public output of the circuit)
+  qap: QAP,
+  witness: number[],      // full witness — verifier only reads public wire entries
 ): VerificationResult {
-  const { alpha, beta, gamma, delta } = setup;
+  const { alpha, beta, gamma: _gamma, delta } = setup;
+  void _gamma; // γ cancels in e(pub/γ, γ) — kept in setup for display
   const { A, B, C } = proof;
+  const { a_polys, b_polys, c_polys } = qap;
+
+  // Trapdoor evaluation point (same derivation as prover)
+  const tau = mod(alpha * beta + delta + 3);
 
   // Simulated pairing: e(x, y) = x * y mod P
   const lhsPairing = mod(A * B);
@@ -400,15 +424,22 @@ export function verify(
   // e(α, β)
   const e_alpha_beta = mod(alpha * beta);
 
-  // Public input contribution: Σ pub_i · l_i(τ) / γ
-  // For our circuit, public inputs are [1, y] (constant and output)
-  // Simplified: compress to mod(publicInput + 1) * modInv(gamma)
-  const tau = mod(alpha * beta + delta + 3);
-  const pub_contrib = mod(mod(publicInput + tau) * modInv(gamma));
+  // Public input contribution: Σ_{pub wires} w_i · (β·a_i(τ) + α·b_i(τ) + c_i(τ))
+  // In real Groth16 this is precomputed as L_i in the verification key and
+  // divided by γ; the pairing with γ cancels: e(Σ w_i·L_i, γ) = Σ w_i·L_i·γ/γ
+  let pub_sum = 0;
+  for (const i of PUBLIC_WIRES) {
+    const ai = polyEvalMod(a_polys[i]!, tau);
+    const bi = polyEvalMod(b_polys[i]!, tau);
+    const ci = polyEvalMod(c_polys[i]!, tau);
+    const w = witness[i]!;
+    pub_sum = mod(pub_sum + mod(w * mod(mod(beta * ai) + mod(alpha * bi) + ci)));
+  }
+  // e(pub/γ, γ) = pub_sum  (γ cancels in the simulated pairing)
+  const e_pub_gamma = pub_sum;
 
-  // e(pub_contrib, γ) and e(C, δ)
-  const e_pub_gamma = mod(pub_contrib * gamma);
-  const e_C_delta   = mod(C * delta);
+  // e(C, δ)
+  const e_C_delta = mod(C * delta);
 
   const rhsPairing = mod(e_alpha_beta + e_pub_gamma + e_C_delta);
 
@@ -485,9 +516,8 @@ export function buildPhaseData(
     if (corrupt !== 'none') p = corruptProof(p, corrupt);
     result.proof = p;
   }
-  if (order >= 5 && result.proof && result.setup) {
-    const y = result.r1cs ? result.r1cs.witness[3] ?? 0 : computePublicOutput(secretX);
-    result.verifyResult = verify(result.proof, result.setup, y);
+  if (order >= 5 && result.proof && result.setup && result.qap && result.r1cs) {
+    result.verifyResult = verify(result.proof, result.setup, result.qap, result.r1cs.witness);
   }
 
   return result;
