@@ -97,7 +97,23 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
                 color={isActive ? 'var(--text-primary)' : 'var(--text-muted)'}
               />
               {!collapsed && (
-                <span className="text-[12px] font-medium truncate">{demo.title}</span>
+                <>
+                  <span className="text-[12px] font-medium truncate">{demo.title}</span>
+                  {demo.id === 'merkle' && !isActive && (
+                    <span
+                      className="text-[9px] font-medium shrink-0 rounded-full"
+                      style={{
+                        padding: '1px 6px',
+                        backgroundColor: 'var(--surface-element)',
+                        color: 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      Start here
+                    </span>
+                  )}
+                </>
               )}
             </button>
           );

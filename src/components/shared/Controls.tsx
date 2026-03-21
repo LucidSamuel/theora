@@ -129,9 +129,11 @@ interface NumberInputControlProps {
   max?: number;
   step?: number;
   onChange: (v: number) => void;
+  readOnly?: boolean;
+  onFocus?: () => void;
 }
 
-export function NumberInputControl({ label, value, min, max, step = 1, onChange }: NumberInputControlProps) {
+export function NumberInputControl({ label, value, min, max, step = 1, onChange, readOnly, onFocus }: NumberInputControlProps) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{label}</span>
@@ -141,7 +143,10 @@ export function NumberInputControl({ label, value, min, max, step = 1, onChange 
         min={min}
         max={max}
         step={step}
+        readOnly={readOnly}
+        onFocus={onFocus}
         onChange={(e) => {
+          if (readOnly) return;
           const v = Number(e.target.value);
           if (!isNaN(v)) {
             const clamped = max !== undefined ? Math.min(max, v) : v;
@@ -152,10 +157,12 @@ export function NumberInputControl({ label, value, min, max, step = 1, onChange 
         style={{
           height: 38,
           padding: '0 14px',
-          backgroundColor: 'var(--button-bg)',
+          backgroundColor: readOnly ? 'var(--surface-element)' : 'var(--button-bg)',
           color: 'var(--text-primary)',
           border: '1px solid var(--border)',
           fontFamily: 'var(--font-mono)',
+          opacity: readOnly ? 0.6 : 1,
+          cursor: readOnly ? 'default' : undefined,
         }}
         aria-label={label}
       />

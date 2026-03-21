@@ -154,6 +154,9 @@ function ToolbarBtn({ icon, onClick, title, active = false, shortcut }: ToolbarB
       aria-pressed={active}
     >
       {icon}
+      {shortcut && (
+        <span className="canvas-toolbar-shortcut">{shortcut}</span>
+      )}
     </button>
   );
 }

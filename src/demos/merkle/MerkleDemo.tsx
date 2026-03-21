@@ -70,10 +70,27 @@ type MerkleAction =
   | { type: 'SET_TREE'; tree: MerkleTree | null }
   | { type: 'SET_BUILDING'; building: boolean }
   | { type: 'SET_NEW_LEAF_INPUT'; text: string }
-  | { type: 'SET_PROOF_PROGRESS_HASH'; hash: string | null };
+  | { type: 'SET_PROOF_PROGRESS_HASH'; hash: string | null }
+  | { type: 'RESET' };
+
+const DEFAULT_LEAVES = ['Alice', 'Bob', 'Charlie', 'David'];
 
 function merkleReducer(state: MerkleState, action: MerkleAction): MerkleState {
   switch (action.type) {
+    case 'RESET':
+      return {
+        ...state,
+        leaves: DEFAULT_LEAVES,
+        tree: null,
+        proof: null,
+        proofVerified: null,
+        proofStep: 0,
+        selectedLeafIndex: null,
+        newLeafInput: '',
+        hashMode: 'fnv1a',
+        proofProgressHash: null,
+      };
+
     case 'ADD_LEAF':
       if (!action.text.trim()) return state;
       return {
@@ -621,10 +638,15 @@ export function MerkleDemo() {
     fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY });
   };
 
+  const handleReset = () => {
+    setBatchInput('');
+    dispatch({ type: 'RESET' });
+  };
+
   return (
     <DemoLayout
       onEmbedPlay={handleEmbedPlay}
-      onEmbedReset={() => dispatch({ type: 'SET_LEAVES', leaves: ['Alice', 'Bob', 'Charlie', 'David'] })}
+      onEmbedReset={handleReset}
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
@@ -732,6 +754,8 @@ export function MerkleDemo() {
             ))}
           </div>
         </ControlGroup>
+
+        <ButtonControl label="Reset to Defaults" onClick={() => { handleReset(); showToast('Reset to defaults'); }} variant="secondary" />
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />

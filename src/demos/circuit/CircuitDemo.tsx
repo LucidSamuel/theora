@@ -171,11 +171,17 @@ export function CircuitDemo(): JSX.Element {
           <SliderControl label="y" value={y} min={0} max={12} onChange={(value) => { setY(value); }} editable />
           <SliderControl label="z (output)" value={z} min={0} max={200} onChange={(value) => { setZ(value); }} editable />
           <NumberInputControl
-            label="t (intermediate wire)"
+            label={tOverride === null ? 't (auto-computed from x)' : 't (intermediate wire)'}
             value={tOverride ?? x * x}
             min={0}
             max={999}
             onChange={(value) => { setTOverride(value); }}
+            readOnly={tOverride === null}
+            onFocus={() => {
+              if (tOverride === null) {
+                setTOverride(x * x);
+              }
+            }}
           />
           {tOverride !== null && (
             <ControlNote tone="default">
@@ -212,6 +218,11 @@ export function CircuitDemo(): JSX.Element {
             ))}
           </div>
         </ControlGroup>
+
+        <ButtonControl label="Reset to Defaults" onClick={() => {
+          setX(3); setY(4); setZ(13); setTOverride(null); setBroken(false);
+          showToast('Reset to defaults');
+        }} variant="secondary" />
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />

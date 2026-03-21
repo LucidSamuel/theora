@@ -54,7 +54,8 @@ type PolynomialAction =
   | { type: 'TOGGLE_COMPARE' }
   | { type: 'SET_COMPARE_COEFFS'; coefficients: number[] }
   | { type: 'SET_KZG_STATE'; kzg: PolynomialState['kzg'] }
-  | { type: 'SET_EVAL_POINTS'; points: EvalPoint[] };
+  | { type: 'SET_EVAL_POINTS'; points: EvalPoint[] }
+  | { type: 'RESET' };
 
 // Initial state
 const initialState: PolynomialState = {
@@ -243,6 +244,9 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
         ...state,
         kzg: action.kzg,
       };
+
+    case 'RESET':
+      return { ...initialState };
 
     default:
       return state;
@@ -613,14 +617,24 @@ export function PolynomialDemo() {
               ? ['Reveal & Prove the opening']
               : state.kzg.currentStep === 3
                 ? ['Verify the proof']
-                : ['Reset to try another polynomial'],
+        : ['Reset to try another polynomial'],
     });
   }, [hoverInfo, state.mode, state.lagrangePoints.length, state.kzg.currentStep, state.kzg.verified, setEntry]);
+
+  const handleResetToDefaults = useCallback((showFeedback = false) => {
+    dispatch({ type: 'RESET' });
+    setEvalInput('');
+    setLagrangeInput('');
+    setChallengeInput('');
+    if (showFeedback) {
+      showToast('Reset to defaults');
+    }
+  }, []);
 
   return (
     <DemoLayout
       onEmbedPlay={handleEmbedPlay}
-      onEmbedReset={() => dispatch({ type: 'KZG_RESET' })}
+      onEmbedReset={() => handleResetToDefaults()}
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
@@ -718,7 +732,7 @@ export function PolynomialDemo() {
                 <span className="control-kicker">Points ({state.lagrangePoints.length})</span>
                 <ul className="mt-1 list-inside list-disc" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
                   {state.lagrangePoints.map((pt, i) => (
-                    <li key={i}>({pt.x}, {pt.y})</li>
+                    <li key={i}>({pt.x.toFixed(2)}, {pt.y.toFixed(2)})</li>
                   ))}
                 </ul>
               </ControlCard>
@@ -899,11 +913,13 @@ export function PolynomialDemo() {
               </ControlNote>
             )}
 
-            <ButtonControl label="Reset" onClick={() => dispatch({ type: 'KZG_RESET' })} />
+            <ButtonControl label="Reset KZG" onClick={() => dispatch({ type: 'KZG_RESET' })} variant="secondary" />
             <ControlNote>
               Schwartz-Zippel intuition: two distinct degree‑d polynomials can agree on at most d points.
             </ControlNote>
         </ControlGroup>
+
+        <ButtonControl label="Reset to Defaults" onClick={() => handleResetToDefaults(true)} variant="secondary" />
       </DemoSidebar>
 
       <DemoCanvasArea>

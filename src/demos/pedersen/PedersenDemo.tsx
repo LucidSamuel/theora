@@ -324,6 +324,12 @@ export function PedersenDemo(): JSX.Element {
           </ControlGroup>
         )}
 
+        <ButtonControl label="Reset to Defaults" onClick={() => {
+          setValue(7); setRandomness(23); setValue2(5); setRandomness2(11);
+          setShowBlinding(false); setCommitment(null); setHomomorphic(null);
+          showToast('Reset to defaults');
+        }} variant="secondary" />
+
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
           <div className="control-button-grid">

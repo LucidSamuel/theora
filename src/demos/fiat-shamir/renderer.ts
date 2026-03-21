@@ -105,36 +105,76 @@ export function renderFiatShamir(
   );
 
   // ── Forgery panel ─────────────────────────────────────────────────────────
-  if (importedTrace) {
-    ctx.fillStyle = hexToRgba(importedTrace.predictable ? '#ef4444' : '#22c55e', isDark ? 0.08 : 0.05);
-    ctx.fillRect(56, height - 132, width - 112, 88);
-    ctx.strokeStyle = hexToRgba(importedTrace.predictable ? '#ef4444' : '#22c55e', isDark ? 0.5 : 0.4);
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(56, height - 132, width - 112, 88);
-    ctx.fillStyle = importedTrace.predictable ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#86efac' : '#166534');
+  if (importedTrace || forged) {
+    const bannerMaxW = width - 112;
+    const textMaxW = bannerMaxW - 32;
+    const isImported = !!importedTrace;
+    const accentColor = isImported
+      ? (importedTrace!.predictable ? '#ef4444' : '#22c55e')
+      : '#ef4444';
+
+    // Compute wrapped lines to size the banner
     ctx.font = 'bold 12px monospace';
-    ctx.fillText(importedTrace.predictable ? 'Challenge is predictable before the opening proof is formed.' : 'Challenge stays bound to the committed transcript.', 72, height - 102);
+    const headline = isImported
+      ? (importedTrace!.predictable
+          ? 'Challenge is predictable before the opening proof is formed.'
+          : 'Challenge stays bound to the committed transcript.')
+      : 'Forgery succeeds — challenge is predictable without the commitment.';
+    const headLines = wrapText(ctx, headline, textMaxW);
+
+    ctx.font = '11px monospace';
+    const detail = isImported
+      ? importedTrace!.detail
+      : `forged t=${forged!.commitment}, c=${forged!.challenge}, z=${forged!.response}, valid=${String(forged!.valid)}`;
+    const detailLines = wrapText(ctx, detail, textMaxW);
+
+    const lineH = 16;
+    const bannerH = 24 + headLines.length * lineH + 8 + detailLines.length * lineH;
+    const bannerY = height - bannerH - 16;
+
+    ctx.fillStyle = hexToRgba(accentColor, isDark ? 0.08 : 0.05);
+    ctx.fillRect(56, bannerY, bannerMaxW, bannerH);
+    ctx.strokeStyle = hexToRgba(accentColor, isDark ? 0.5 : 0.4);
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(56, bannerY, bannerMaxW, bannerH);
+
+    let ty = bannerY + 20;
+    const headColor = isImported
+      ? (importedTrace!.predictable ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#86efac' : '#166534'))
+      : (isDark ? '#fca5a5' : '#b91c1c');
+    ctx.fillStyle = headColor;
+    ctx.font = 'bold 12px monospace';
+    for (const line of headLines) {
+      ctx.fillText(line, 72, ty);
+      ty += lineH;
+    }
+    ty += 8;
     ctx.font = '11px monospace';
     ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
-    ctx.fillText(importedTrace.detail, 72, height - 76);
-  } else if (forged) {
-    ctx.fillStyle = hexToRgba('#ef4444', isDark ? 0.08 : 0.05);
-    ctx.fillRect(56, height - 132, width - 112, 88);
-    ctx.strokeStyle = hexToRgba('#ef4444', isDark ? 0.5 : 0.4);
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(56, height - 132, width - 112, 88);
-    ctx.fillStyle = isDark ? '#fca5a5' : '#b91c1c';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText('Forgery succeeds — challenge is predictable before commitment.', 72, height - 102);
-    ctx.font = '11px monospace';
-    ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
-    ctx.fillText(
-      `forged t=${forged.commitment}, c=${forged.challenge}, z=${forged.response}, valid=${String(forged.valid)}`,
-      72, height - 76
-    );
+    for (const line of detailLines) {
+      ctx.fillText(line, 72, ty);
+      ty += lineH;
+    }
   }
 }
 
 function truncate(value: string, limit: number): string {
   return value.length <= limit ? value : `${value.slice(0, limit)}…`;
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }

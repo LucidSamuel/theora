@@ -171,6 +171,11 @@ export function LookupDemo(): JSX.Element {
           </ControlCard>
         </ControlGroup>
 
+        <ButtonControl label="Reset to Defaults" onClick={() => {
+          setTableInput('1,2,3,5,8,13'); setWireInput('2,5,8');
+          showToast('Reset to defaults');
+        }} variant="secondary" />
+
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
           <div className="control-button-grid">

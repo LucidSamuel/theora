@@ -289,6 +289,11 @@ export function EllipticDemo(): JSX.Element {
           )}
         </ControlGroup>
 
+        <ButtonControl label="Reset to Defaults" onClick={() => {
+          setCurve(DEFAULT_CURVE); setCurveError(null); setPointAIndex(0); setPointBIndex(1); setScalar(5); setShowPasta(true);
+          showToast('Reset to defaults');
+        }} variant="secondary" />
+
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
           <div className="control-button-grid">

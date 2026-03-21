@@ -146,6 +146,7 @@ export function PlonkDemo(): JSX.Element {
   const handleReset = useCallback(() => {
     setCircuit(buildDefaultCircuit());
     setSelectedGate('0');
+    showToast('Reset to defaults');
   }, []);
 
   const handleBreakCopyConstraint = useCallback(() => {
@@ -337,7 +338,7 @@ export function PlonkDemo(): JSX.Element {
         </ControlGroup>
 
         <ControlGroup label="Actions">
-          <ButtonControl label="Reset to default" onClick={handleReset} />
+          <ButtonControl label="Reset to Defaults" onClick={handleReset} variant="secondary" />
           <ButtonControl
             label="Break a copy constraint"
             onClick={handleBreakCopyConstraint}

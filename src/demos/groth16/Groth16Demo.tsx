@@ -187,6 +187,9 @@ export function Groth16Demo(): JSX.Element {
     stopAuto();
     setPhase('idle');
     setCorrupt('none');
+    setSecretX(3);
+    setShowToxic(false);
+    showToast('Reset to defaults');
   }, [stopAuto]);
 
   const handleSecretChange = useCallback((v: number) => {
@@ -322,10 +325,9 @@ export function Groth16Demo(): JSX.Element {
             variant="secondary"
           />
           <ButtonControl
-            label="Reset"
+            label="Reset to Defaults"
             onClick={handleReset}
             variant="secondary"
-            disabled={phase === 'idle' && !autoRunning}
           />
 
           {phase !== 'idle' && (

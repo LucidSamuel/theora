@@ -996,6 +996,7 @@ body::before {
 }
 
 .canvas-toolbar-btn {
+  position: relative;
   width: 30px;
   height: 28px;
   border-radius: 7px;
@@ -1017,6 +1018,25 @@ body::before {
 .canvas-toolbar-btn.is-active {
   background: var(--button-bg-strong);
   color: var(--text-primary);
+}
+
+.canvas-toolbar-shortcut {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  line-height: 1;
+  color: var(--text-muted);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Hide shortcut badges on touch devices */
+@media (pointer: coarse) {
+  .canvas-toolbar-shortcut {
+    display: none;
+  }
 }
 
 .demo-canvas-area {

@@ -262,6 +262,11 @@ export function FiatShamirDemo(): JSX.Element {
               )}
             </ControlGroup>
 
+            <ButtonControl label="Reset to Defaults" onClick={() => {
+              setMode('fs-correct'); setSecret(9); setNonce(12); setVerifierSeed(17); setImportedTrace(null);
+              showToast('Reset to defaults');
+            }} variant="secondary" />
+
             <ControlGroup label="Share">
               <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
               <div className="control-button-grid">

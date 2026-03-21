@@ -1,16 +1,16 @@
 export const DEMO_IDS = [
-  'pipeline',
   'merkle',
   'accumulator',
   'polynomial',
-  'recursive',
-  'elliptic',
-  'fiat-shamir',
   'circuit',
   'lookup',
+  'elliptic',
+  'fiat-shamir',
+  'recursive',
   'pedersen',
   'plonk',
   'groth16',
+  'pipeline',
 ] as const;
 
 export type DemoId = typeof DEMO_IDS[number];
@@ -29,28 +29,12 @@ export interface DemoMeta {
 
 export const DEMOS: DemoMeta[] = [
   {
-    id: 'pipeline',
-    title: 'Proof Pipeline',
-    subtitle: 'See how primitives compose into a complete proof system.',
-    description:
-      'A proof system is not one primitive — it is a pipeline. A computation becomes constraints, constraints become a polynomial, the polynomial is committed to, a Fiat-Shamir challenge is derived, the polynomial is opened, and the verifier checks everything. This demo shows the full flow end-to-end, with fault injection to see exactly where and why verification breaks.',
-    accent: '#a78bfa',
-  },
-  {
     id: 'merkle',
     title: 'Merkle Tree',
     subtitle: 'Build hash trees and generate compact membership proofs.',
     description:
       'A Merkle tree is a binary hash tree where each leaf contains a hash of a data block, and each internal node contains the hash of its two children. This allows efficient and secure verification of data integrity. Any change to a leaf propagates up to the root, enabling compact proofs that a piece of data belongs to the tree.',
     accent: 'var(--merkle)',
-  },
-  {
-    id: 'polynomial',
-    title: 'Polynomial Commitments',
-    subtitle: 'Explore KZG commitments with interactive coefficient manipulation.',
-    description:
-      'Polynomial commitment schemes let a prover commit to a polynomial and later prove evaluations at specific points without revealing the full polynomial. The KZG scheme uses elliptic curve pairings to achieve this with constant-size proofs. This is foundational to modern zk-SNARKs and data availability sampling.',
-    accent: 'var(--polynomial)',
   },
   {
     id: 'accumulator',
@@ -61,12 +45,28 @@ export const DEMOS: DemoMeta[] = [
     accent: 'var(--accumulator)',
   },
   {
-    id: 'recursive',
-    title: 'Recursive Proofs',
-    subtitle: 'Watch proofs verify other proofs using IVC and Pasta curves.',
+    id: 'polynomial',
+    title: 'Polynomial Commitments',
+    subtitle: 'Explore KZG commitments with interactive coefficient manipulation.',
     description:
-      'Recursive proof composition allows a proof to verify another proof inside itself, enabling incremental verifiable computation (IVC). The Pasta curves (Pallas and Vesta) form a cycle that makes this efficient: a proof on one curve can verify a proof from the other. This powers systems like Nova, Halo2, and Mina.',
-    accent: 'var(--recursive)',
+      'Polynomial commitment schemes let a prover commit to a polynomial and later prove evaluations at specific points without revealing the full polynomial. The KZG scheme uses elliptic curve pairings to achieve this with constant-size proofs. This is foundational to modern zk-SNARKs and data availability sampling.',
+    accent: 'var(--polynomial)',
+  },
+  {
+    id: 'circuit',
+    title: 'R1CS Circuits',
+    subtitle: 'Trace arithmetic circuits, witness assignments, and underconstrained failures.',
+    description:
+      'Arithmetic circuits compile computations into Rank-1 Constraint Systems. This demo maps gates to constraints, shows witness assignments, and highlights what happens when a signal is assigned but never properly constrained.',
+    accent: '#84cc16',
+  },
+  {
+    id: 'lookup',
+    title: 'Lookup Arguments',
+    subtitle: 'Show wires proving membership in a table via multiset-style checks.',
+    description:
+      'Lookup arguments let circuits prove that wire values belong to an allowed table without expanding many constraints by hand. This demo compares a table and queried wires, then visualizes the permutation-style check that modern lookup schemes rely on.',
+    accent: '#38bdf8',
   },
   {
     id: 'elliptic',
@@ -85,20 +85,12 @@ export const DEMOS: DemoMeta[] = [
     accent: '#f97316',
   },
   {
-    id: 'circuit',
-    title: 'R1CS Circuits',
-    subtitle: 'Trace arithmetic circuits, witness assignments, and underconstrained failures.',
+    id: 'recursive',
+    title: 'Recursive Proofs',
+    subtitle: 'Watch proofs verify other proofs using IVC and Pasta curves.',
     description:
-      'Arithmetic circuits compile computations into Rank-1 Constraint Systems. This demo maps gates to constraints, shows witness assignments, and highlights what happens when a signal is assigned but never properly constrained.',
-    accent: '#84cc16',
-  },
-  {
-    id: 'lookup',
-    title: 'Lookup Arguments',
-    subtitle: 'Show wires proving membership in a table via multiset-style checks.',
-    description:
-      'Lookup arguments let circuits prove that wire values belong to an allowed table without expanding many constraints by hand. This demo compares a table and queried wires, then visualizes the permutation-style check that modern lookup schemes rely on.',
-    accent: '#38bdf8',
+      'Recursive proof composition allows a proof to verify another proof inside itself, enabling incremental verifiable computation (IVC). The Pasta curves (Pallas and Vesta) form a cycle that makes this efficient: a proof on one curve can verify a proof from the other. This powers systems like Nova, Halo2, and Mina.',
+    accent: 'var(--recursive)',
   },
   {
     id: 'pedersen',
@@ -123,5 +115,13 @@ export const DEMOS: DemoMeta[] = [
     description:
       'Groth16 is the most efficient zkSNARK in practice. A computation is encoded as an R1CS, transformed to a QAP, and a trusted setup generates a common reference string. The prover computes three elliptic-curve elements (A, B, C) from the witness and trapdoor evaluations; the verifier checks a single pairing equation without learning the private witness.',
     accent: '#fb923c',
+  },
+  {
+    id: 'pipeline',
+    title: 'Proof Pipeline',
+    subtitle: 'See how primitives compose into a complete proof system.',
+    description:
+      'A proof system is not one primitive — it is a pipeline. A computation becomes constraints, constraints become a polynomial, the polynomial is committed to, a Fiat-Shamir challenge is derived, the polynomial is opened, and the verifier checks everything. This demo shows the full flow end-to-end, with fault injection to see exactly where and why verification breaks.',
+    accent: '#a78bfa',
   },
 ];

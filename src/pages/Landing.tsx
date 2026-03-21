@@ -108,11 +108,66 @@ const DEMO_DATA = [
       'Multiplicity clash detection',
     ],
   },
+  {
+    id: 'pedersen',
+    num: '09',
+    title: 'Pedersen Commitments',
+    tag: 'HIDING · BINDING · HOMOMORPHIC ADDITION',
+    body: 'Compute C = g^v · h^r mod p over a small prime field. Toggle the blinding factor, then verify that the product of two commitments equals a direct commitment to their sum.',
+    features: [
+      'Single commitment with blinding toggle',
+      'Homomorphic addition verification',
+      'Flow-diagram canvas visualization',
+      'Small field (p=97) for full inspection',
+    ],
+  },
+  {
+    id: 'groth16',
+    num: '10',
+    title: 'Groth16 zkSNARK',
+    tag: 'R1CS · QAP · PAIRING VERIFICATION',
+    body: 'Walk through the full Groth16 pipeline: R1CS encoding, QAP conversion, trusted setup, proof generation, and pairing-based verification for f(x) = x² + x + 5 over GF(101).',
+    features: [
+      '5-phase pipeline with auto-run',
+      'Trusted setup with toxic waste toggle',
+      'Fault injection on A, B, or C proof elements',
+      'Simulated pairing check with LHS/RHS display',
+    ],
+  },
+  {
+    id: 'plonk',
+    num: '11',
+    title: 'PLONK Arithmetization',
+    tag: 'GATE EQUATIONS · COPY CONSTRAINTS · SELECTORS',
+    body: 'Explore PLONK gate equations and copy constraints with a 3-gate arithmetic circuit. Edit wire values, break a copy constraint, and see exactly which equations fail.',
+    features: [
+      'Per-gate selector and wire display',
+      'Copy constraint bezier arrows',
+      'One-click constraint breaking',
+      'Gate satisfaction status per equation',
+    ],
+  },
+  {
+    id: 'pipeline',
+    num: '12',
+    title: 'Proof Pipeline',
+    tag: 'END-TO-END · FAULT INJECTION · LINKED STATE',
+    body: 'End-to-end walkthrough from witness to verification: R1CS encoding, Lagrange interpolation, simulated KZG, Fiat-Shamir challenge. Inject faults and watch corruption propagate through the pipeline.',
+    features: [
+      '7-stage proof system flow',
+      '4 attack modes with fault propagation',
+      'Cross-demo linked state handoff',
+      'Auto-play with speed control',
+    ],
+  },
 ];
+
+const DEMO_COUNT_LABEL = String(DEMO_DATA.length).padStart(2, '0');
 
 const TICKER_ITEMS = [
   'MERKLE TREES', 'KZG COMMITMENTS', 'RSA ACCUMULATORS', 'RECURSIVE PROOFS',
   'ELLIPTIC CURVES', 'FIAT-SHAMIR', 'R1CS', 'LOOKUP ARGUMENTS',
+  'PEDERSEN COMMITMENTS', 'GROTH16', 'PLONK', 'PROOF PIPELINE',
   'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
   'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
 ];
@@ -242,7 +297,7 @@ export function Landing() {
           {/* Stats row */}
           <div className="lp-stats-row mt-8">
             {[
-              ['08', 'Interactive Demos'],
+              [DEMO_COUNT_LABEL, 'Interactive Demos'],
               ['∞', 'Shareable States'],
               ['0', 'Dependencies'],
               ['60', 'FPS Canvas'],
@@ -292,7 +347,7 @@ export function Landing() {
       >
         <div className="lp-container">
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
-            <p className="lp-section-num">§ 01 – 08 · DEMO SUITE</p>
+            <p className="lp-section-num">{`§ 01 – ${DEMO_COUNT_LABEL} · DEMO SUITE`}</p>
           </div>
 
           {DEMO_DATA.map((demo, i) => (
