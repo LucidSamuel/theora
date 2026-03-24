@@ -1,17 +1,35 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGitHub } from '@/hooks/useGitHub';
 import { useModalA11y } from '@/hooks/useModalA11y';
 
 export function GitHubConnectModal() {
-  const { status, user, error, oauthAvailable, startOAuth, disconnect, connectOpen, setConnectOpen } = useGitHub();
+  const { status, user, error, oauthAvailable, startOAuth, disconnect, refreshSession, connectOpen, setConnectOpen } = useGitHub();
   const modalRef = useRef<HTMLDivElement>(null);
+  const [isRefreshingAvailability, setIsRefreshingAvailability] = useState(false);
   const close = useCallback(() => setConnectOpen(false), [setConnectOpen]);
   const { handleKeyDownTrap } = useModalA11y(modalRef, connectOpen, close);
+
+  useEffect(() => {
+    if (!connectOpen) return;
+    let active = true;
+    setIsRefreshingAvailability(true);
+    void refreshSession({ preserveError: true })
+      .catch(() => {})
+      .finally(() => {
+        if (active) {
+          setIsRefreshingAvailability(false);
+        }
+      });
+    return () => {
+      active = false;
+      setIsRefreshingAvailability(false);
+    };
+  }, [connectOpen, refreshSession]);
 
   if (!connectOpen) return null;
 
   const isConnected = status === 'connected' && user !== null;
-  const isLoading = status === 'connecting';
+  const isLoading = status === 'connecting' || isRefreshingAvailability;
 
   return (
     <div className="github-import-modal-backdrop" onClick={() => setConnectOpen(false)}>
@@ -33,7 +51,7 @@ export function GitHubConnectModal() {
             <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
               {isConnected
                 ? 'Your saves use unlisted GitHub Gists managed through a server-side session.'
-                : 'Save and load demo states without exposing your GitHub token to the browser.'}
+                : 'Save and load demo states.'}
             </div>
           </div>
           <button

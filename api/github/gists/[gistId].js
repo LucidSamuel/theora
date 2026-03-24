@@ -2,7 +2,7 @@ export const config = { runtime: 'edge' };
 
 import { deleteUserGist, fetchUserGist, validateGistId } from '../_lib/github.js';
 import { isSameOriginMutation, jsonResponse } from '../_lib/http.js';
-import { parseEnvelope, loadAuthenticatedSession, expireSessionResponse } from '../_lib/routeHelpers.js';
+import { findEnvelopeFile, parseEnvelope, loadAuthenticatedSession, expireSessionResponse } from '../_lib/routeHelpers.js';
 
 function getGistId(request, context) {
   const fromContext = context?.params?.gistId;
@@ -31,11 +31,10 @@ export default async function handler(request, context) {
 
     try {
       const gist = await fetchUserGist(auth.session.token, gistId);
-      const raw = typeof gist.files?.['theora.json']?.content === 'string'
-        ? gist.files['theora.json'].content
-        : null;
+      const file = findEnvelopeFile(gist.files);
+      const raw = typeof file?.content === 'string' ? file.content : null;
       if (!raw) {
-        return jsonResponse({ error: 'Gist does not contain theora.json' }, 404, {
+        return jsonResponse({ error: 'Gist does not contain a Theora JSON file' }, 404, {
           Vary: 'Cookie',
         });
       }

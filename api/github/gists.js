@@ -2,19 +2,18 @@ export const config = { runtime: 'edge' };
 
 import { createUserGist, fetchUserGist, listUserGists } from './_lib/github.js';
 import { isSameOriginMutation, jsonResponse } from './_lib/http.js';
-import { parseEnvelope, loadAuthenticatedSession, expireSessionResponse } from './_lib/routeHelpers.js';
+import { findEnvelopeFile, parseEnvelope, parseSaveRequest, loadAuthenticatedSession, expireSessionResponse } from './_lib/routeHelpers.js';
 
 async function toTheoraSave(token, gist) {
   try {
-    const theoraFile = gist.files?.['theora.json'];
+    const theoraFile = findEnvelopeFile(gist.files);
     if (!theoraFile) return null;
 
     let raw = typeof theoraFile.content === 'string' ? theoraFile.content : null;
     if (!raw) {
       const fullGist = await fetchUserGist(token, gist.id);
-      raw = typeof fullGist.files?.['theora.json']?.content === 'string'
-        ? fullGist.files['theora.json'].content
-        : null;
+      const fullFile = findEnvelopeFile(fullGist.files);
+      raw = typeof fullFile?.content === 'string' ? fullFile.content : null;
     }
 
     if (!raw) return null;
@@ -92,7 +91,8 @@ export default async function handler(request) {
     }
 
     try {
-      const result = await createUserGist(auth.session.token, payload);
+      const requestData = parseSaveRequest(payload);
+      const result = await createUserGist(auth.session.token, requestData.envelope, requestData.saveName);
       return jsonResponse(result, 201, {
         Vary: 'Cookie',
       });

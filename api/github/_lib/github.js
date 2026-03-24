@@ -156,7 +156,21 @@ export function buildGistDescription(payload) {
     : `Theora ${payload.demo} save`;
 }
 
-export async function createUserGist(token, payload) {
+function buildGistFilename(saveName) {
+  if (!saveName) {
+    return 'theora.json';
+  }
+
+  const slug = saveName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+
+  return `${slug || 'theora-save'}.theora.json`;
+}
+
+export async function createUserGist(token, payload, saveName = null) {
   const validated = validateImportEnvelope(payload);
   const response = await githubJson(token, 'https://api.github.com/gists', {
     method: 'POST',
@@ -165,9 +179,9 @@ export async function createUserGist(token, payload) {
     },
     body: JSON.stringify({
       public: false,
-      description: buildGistDescription(validated),
+      description: saveName || buildGistDescription(validated),
       files: {
-        'theora.json': {
+        [buildGistFilename(saveName)]: {
           content: JSON.stringify(validated, null, 2),
         },
       },

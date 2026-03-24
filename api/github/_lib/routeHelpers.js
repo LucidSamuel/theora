@@ -15,6 +15,56 @@ export function parseEnvelope(raw) {
   }
 }
 
+function isEnvelopeCandidate(file) {
+  return Boolean(file)
+    && typeof file === 'object'
+    && (typeof file.content === 'string'
+      || typeof file.filename === 'string'
+      || typeof file.type === 'string');
+}
+
+export function findEnvelopeFile(files) {
+  const entries = Object.values(files || {}).filter(isEnvelopeCandidate);
+  if (entries.length === 0) return null;
+
+  const preferred = entries.find((file) => file.filename === 'theora.json')
+    || entries.find((file) => typeof file.filename === 'string' && file.filename.endsWith('.theora.json'))
+    || entries.find((file) => typeof file.content === 'string' && parseEnvelope(file.content))
+    || entries.find((file) => typeof file.type === 'string' && file.type === 'application/json')
+    || entries.find((file) => typeof file.filename === 'string' && file.filename.endsWith('.json'))
+    || entries.find((file) => typeof file.content === 'string');
+
+  return preferred || null;
+}
+
+export function normalizeSaveName(raw) {
+  if (typeof raw !== 'string') return null;
+  const normalized = raw.trim().replace(/\s+/g, ' ');
+  if (!normalized) return null;
+  return normalized.slice(0, 80);
+}
+
+export function parseSaveRequest(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return {
+      envelope: payload,
+      saveName: null,
+    };
+  }
+
+  if ('envelope' in payload) {
+    return {
+      envelope: payload.envelope,
+      saveName: normalizeSaveName(payload.saveName),
+    };
+  }
+
+  return {
+    envelope: payload,
+    saveName: normalizeSaveName(payload.saveName),
+  };
+}
+
 export async function loadAuthenticatedSession(request) {
   if (!isGitHubServerAuthAvailable()) {
     return {

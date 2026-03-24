@@ -12,7 +12,7 @@ interface GitHubContextValue {
   oauthAvailable: boolean;
   startOAuth: () => void;
   disconnect: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: (options?: { preserveError?: boolean }) => Promise<void>;
   handleSessionExpired: (message?: string) => Promise<void>;
   connectOpen: boolean;
   setConnectOpen: (open: boolean) => void;
@@ -67,7 +67,8 @@ export function GitHubProvider({ children }: { children: ReactNode }) {
   const [connectOpen, setConnectOpen] = useState(false);
   const [savesOpen, setSavesOpen] = useState(false);
 
-  const refreshSession = useCallback(async () => {
+  const refreshSession = useCallback(async (options?: { preserveError?: boolean }) => {
+    const preserveError = options?.preserveError ?? false;
     setStatus('connecting');
     try {
       const session = await fetchGitHubSession();
@@ -76,13 +77,17 @@ export function GitHubProvider({ children }: { children: ReactNode }) {
       if (session.connected && session.user) {
         setUser(session.user);
         setStatus('connected');
-        setError(null);
+        if (!preserveError) {
+          setError(null);
+        }
         return;
       }
 
       setUser(null);
       setStatus('disconnected');
-      setError(null);
+      if (!preserveError) {
+        setError(null);
+      }
     } catch (err) {
       setUser(null);
       setStatus('error');

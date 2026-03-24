@@ -76,10 +76,13 @@ export async function listGitHubSaves(): Promise<TheoraSave[]> {
   return payload.saves;
 }
 
-export async function createGitHubSave(envelope: TheoraImportEnvelope): Promise<{ url: string }> {
+export async function createGitHubSave(envelope: TheoraImportEnvelope, saveName?: string): Promise<{ url: string }> {
   return requestGitHubApi<{ url: string }>('/api/github/gists', {
     method: 'POST',
-    body: JSON.stringify(envelope),
+    body: JSON.stringify({
+      envelope,
+      saveName: saveName?.trim() || undefined,
+    }),
   });
 }
 

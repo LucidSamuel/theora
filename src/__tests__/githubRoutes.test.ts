@@ -83,7 +83,7 @@ async function createCookieHeader() {
 }
 
 describe('GitHub gist routes', () => {
-  it('creates unlisted GitHub saves through the backend route', async () => {
+  it('creates named unlisted GitHub saves through the backend route', async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => ({
       ok: true,
       status: 201,
@@ -104,9 +104,12 @@ describe('GitHub gist routes', () => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        version: 1,
-        demo: 'pipeline',
-        state: { scenarioName: 'Audit path', x: 3, stage: 'challenge', fault: 'none' },
+        saveName: 'My audit trace',
+        envelope: {
+          version: 1,
+          demo: 'pipeline',
+          state: { scenarioName: 'Audit path', x: 3, stage: 'challenge', fault: 'none' },
+        },
       }),
     }));
 
@@ -125,8 +128,8 @@ describe('GitHub gist routes', () => {
       Authorization: 'Bearer oauth-token-123',
     }));
     expect(requestBody.public).toBe(false);
-    expect(requestBody.description).toBe('Theora pipeline scenario: Audit path');
-    expect(requestBody.files['theora.json']!.content).toContain('"demo": "pipeline"');
+    expect(requestBody.description).toBe('My audit trace');
+    expect(requestBody.files['my-audit-trace.theora.json']!.content).toContain('"demo": "pipeline"');
   });
 
   it('lists Theora saves even when the gist list omits inline file content', async () => {
@@ -142,8 +145,8 @@ describe('GitHub gist routes', () => {
             created_at: '2026-03-22T10:00:00Z',
             updated_at: '2026-03-22T11:00:00Z',
             files: {
-              'theora.json': {
-                filename: 'theora.json',
+              'pedersen-audit.theora.json': {
+                filename: 'pedersen-audit.theora.json',
               },
             },
           },
@@ -167,7 +170,7 @@ describe('GitHub gist routes', () => {
         status: 200,
         json: async () => ({
           files: {
-            'theora.json': {
+            'pedersen-audit.theora.json': {
               content: '{"demo":"pedersen","state":{"value":5}}',
             },
           },
@@ -207,7 +210,7 @@ describe('GitHub gist routes', () => {
         status: 200,
         json: async () => ({
           files: {
-            'theora.json': {
+            'lookup-run.theora.json': {
               content: '{"demo":"lookup","state":{"table":[1,2,3],"wires":[2,3]}}',
             },
           },

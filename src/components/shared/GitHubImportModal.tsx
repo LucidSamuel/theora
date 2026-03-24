@@ -15,6 +15,7 @@ interface GitHubImportModalProps {
 export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportModalProps) {
   const { status, user, setConnectOpen, handleSessionExpired } = useGitHub();
   const [sourceUrl, setSourceUrl] = useState('');
+  const [saveName, setSaveName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
     setCopied(false);
     setGistUrl(null);
     setIsPublishing(false);
+    setSaveName('');
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -67,7 +69,10 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `theora-${exportEnvelope.demo}.json`;
+    const preferredName = saveName.trim()
+      ? saveName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64)
+      : `theora-${exportEnvelope.demo}`;
+    anchor.download = `${preferredName || `theora-${exportEnvelope.demo}`}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -88,9 +93,12 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
     setSaveError(null);
     setIsPublishing(true);
     try {
-      const result = await createGitHubSave(exportEnvelope);
+      const result = await createGitHubSave(exportEnvelope, saveName);
       setGistUrl(result.url);
       copyToClipboard(result.url);
+      if (saveName.trim()) {
+        setSaveName('');
+      }
     } catch (err) {
       if (err instanceof GitHubSessionError) {
         await handleSessionExpired('GitHub session expired — reconnect to save again');
@@ -269,6 +277,13 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
                     Connect GitHub to save this export as an unlisted Gist. Anyone with the link can still view it.
                   </div>
                 )}
+                <input
+                  className="github-import-modal__input"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="Save name (optional)"
+                  style={{ marginTop: 0, marginBottom: 10 }}
+                />
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     className="app-btn-primary rounded-lg"
