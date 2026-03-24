@@ -8,6 +8,21 @@ export interface ActiveDemoLocation {
   locationKey: string;
 }
 
+const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
+  ['pl', 'pipeline'],
+  ['m', 'merkle'],
+  ['p', 'polynomial'],
+  ['a', 'accumulator'],
+  ['r', 'recursive'],
+  ['fs', 'fiat-shamir'],
+  ['c', 'circuit'],
+  ['e', 'elliptic'],
+  ['l', 'lookup'],
+  ['ped', 'pedersen'],
+  ['plk', 'plonk'],
+  ['g16', 'groth16'],
+];
+
 export function getActiveDemoLocation(): ActiveDemoLocation {
   const hashState = getHashState();
   if (hashState && isDemoId(hashState.demo)) {
@@ -24,6 +39,24 @@ export function getActiveDemoLocation(): ActiveDemoLocation {
       activeDemo: base,
       locationKey: base,
     };
+  }
+
+  const embed = getSearchParam('embed') ?? '';
+  if (isDemoId(embed)) {
+    return {
+      activeDemo: embed,
+      locationKey: `embed:${embed}`,
+    };
+  }
+
+  for (const [param, demo] of SEARCH_PARAM_DEMO_KEYS) {
+    const value = getSearchParam(param);
+    if (value) {
+      return {
+        activeDemo: demo,
+        locationKey: `${demo}:${value}`,
+      };
+    }
   }
 
   return {
@@ -45,9 +78,13 @@ export function useActiveDemo() {
   });
 
   useEffect(() => {
-    const handleHashChange = () => setLocation(getActiveDemoLocation());
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    const handleLocationChange = () => setLocation(getActiveDemoLocation());
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
   const switchDemo = useCallback((id: DemoId) => {

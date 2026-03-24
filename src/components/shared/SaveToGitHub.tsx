@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGitHub } from '@/hooks/useGitHub';
-import { createPublicGist, getCurrentExportEnvelope } from '@/lib/githubImport';
+import { createGitHubSave, GitHubSessionError } from '@/lib/githubApi';
+import { getCurrentExportEnvelope } from '@/lib/githubImport';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast } from '@/lib/toast';
 import { ButtonControl } from '@/components/shared/Controls';
@@ -11,35 +12,29 @@ interface SaveToGitHubProps {
 }
 
 export function SaveToGitHub({ demoId }: SaveToGitHubProps) {
-  const { status, getToken, setConnectOpen } = useGitHub();
+  const { status, handleSessionExpired, setConnectOpen } = useGitHub();
   const [saving, setSaving] = useState(false);
 
-  if (status !== 'connected') {
-    return (
-      <ButtonControl
-        label="Save to GitHub"
-        onClick={() => setConnectOpen(true)}
-        variant="secondary"
-      />
-    );
-  }
-
   const handleSave = async () => {
-    const token = getToken();
-    if (!token) return;
+    if (status !== 'connected') {
+      setConnectOpen(true);
+      return;
+    }
+
     const envelope = getCurrentExportEnvelope(demoId);
     if (!envelope) {
       showToast('No state to save', 'error');
       return;
     }
+
     setSaving(true);
     try {
-      const result = await createPublicGist(envelope, token);
+      const result = await createGitHubSave(envelope);
       copyToClipboard(result.url);
-      showToast('Saved to GitHub', 'Public Gist created and URL copied');
+      showToast('Saved to GitHub', 'Unlisted Gist created and URL copied');
     } catch (err) {
-      if (err instanceof Error && (err.message.includes('401') || err.message.includes('403'))) {
-        showToast('Token expired — reconnect GitHub', 'error');
+      if (err instanceof GitHubSessionError) {
+        await handleSessionExpired('GitHub session expired — reconnect to save again');
       } else {
         showToast(err instanceof Error ? err.message : 'Save failed', 'error');
       }
@@ -51,8 +46,8 @@ export function SaveToGitHub({ demoId }: SaveToGitHubProps) {
   return (
     <ButtonControl
       label={saving ? 'Saving...' : 'Save to GitHub'}
-      onClick={handleSave}
-      disabled={saving}
+      onClick={() => { void handleSave(); }}
+      disabled={saving || status === 'connecting'}
       variant="secondary"
     />
   );

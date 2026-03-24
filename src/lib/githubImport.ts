@@ -24,119 +24,6 @@ export interface TheoraSave {
   demo: DemoId;
 }
 
-interface GitHubGistFile {
-  filename?: string;
-  content?: string;
-  raw_url?: string;
-}
-
-// ── GitHub API helpers ──────────────────────────────────────────────────────
-
-export async function fetchGitHubUser(token: string): Promise<GitHubUser> {
-  const res = await fetch('https://api.github.com/user', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-    },
-  });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('Invalid or expired token. Use a token with gist scope.');
-  }
-  if (!res.ok) throw new Error(`GitHub API error (${res.status})`);
-  const data = await res.json() as { login: string; avatar_url: string };
-  return { login: data.login, avatar_url: data.avatar_url };
-}
-
-export async function listTheoraGists(token: string): Promise<TheoraSave[]> {
-  const res = await fetch('https://api.github.com/gists?per_page=100', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to list gists (${res.status})`);
-  const gists = await res.json() as Array<{
-    id: string;
-    description: string;
-    html_url: string;
-    created_at: string;
-    updated_at: string;
-    files: Record<string, GitHubGistFile>;
-  }>;
-
-  const saves = await Promise.all(gists.map(async (g) => {
-    const theoraFile = g.files['theora.json'];
-    if (!theoraFile) return null;
-
-    let parsedDemo: DemoId | null = null;
-    if (theoraFile.content) {
-      try {
-        const parsed = JSON.parse(theoraFile.content) as Record<string, unknown>;
-        if (typeof parsed.demo === 'string' && isDemoId(parsed.demo)) {
-          parsedDemo = parsed.demo;
-        }
-      } catch {
-        return null;
-      }
-    } else {
-      try {
-        const envelope = await fetchGistEnvelope(token, g.id);
-        parsedDemo = envelope.demo;
-      } catch {
-        return null;
-      }
-    }
-
-    if (!parsedDemo) return null;
-
-    return {
-      id: g.id,
-      description: g.description || `Theora ${parsedDemo} export`,
-      html_url: g.html_url,
-      created_at: g.created_at,
-      updated_at: g.updated_at,
-      demo: parsedDemo,
-    };
-  }));
-
-  return saves.filter((save): save is TheoraSave => save !== null);
-}
-
-// Gist IDs are hex strings; reject anything with slashes, dots, or other path-traversal chars
-const VALID_GIST_ID = /^[a-zA-Z0-9_-]+$/;
-
-function validateGistId(gistId: string): string {
-  if (!VALID_GIST_ID.test(gistId)) {
-    throw new Error('Invalid Gist ID');
-  }
-  return gistId;
-}
-
-export async function deleteGist(token: string, gistId: string): Promise<void> {
-  const res = await fetch(`https://api.github.com/gists/${validateGistId(gistId)}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to delete gist (${res.status})`);
-}
-
-export async function fetchGistEnvelope(token: string, gistId: string): Promise<TheoraImportEnvelope> {
-  const res = await fetch(`https://api.github.com/gists/${validateGistId(gistId)}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to fetch gist (${res.status})`);
-  const gist = await res.json() as { files: Record<string, { content?: string }> };
-  const theoraFile = gist.files['theora.json'];
-  if (!theoraFile?.content) throw new Error('Gist does not contain theora.json');
-  return parseTheoraImport(theoraFile.content);
-}
-
 const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   pipeline: 'pl',
   merkle: 'm',
@@ -180,41 +67,6 @@ export function getCurrentExportEnvelope(activeDemo: DemoId): TheoraImportEnvelo
 
 export function serializeTheoraImport(payload: TheoraImportEnvelope): string {
   return JSON.stringify(payload, null, 2);
-}
-
-export async function createPublicGist(payload: TheoraImportEnvelope, token: string): Promise<{ url: string }> {
-  const response = await fetch('https://api.github.com/gists', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      public: true,
-      description: buildGistDescription(payload),
-      files: {
-        'theora.json': {
-          content: serializeTheoraImport(payload),
-        },
-      },
-    }),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    throw new Error('GitHub rejected the token. Use a token with gist scope.');
-  }
-
-  if (!response.ok) {
-    throw new Error(`Gist creation failed (${response.status})`);
-  }
-
-  const gist = await response.json() as { html_url?: string };
-  if (!gist.html_url) {
-    throw new Error('GitHub did not return a public Gist URL');
-  }
-
-  return { url: gist.html_url };
 }
 
 export async function fetchTheoraImport(sourceUrl: string): Promise<TheoraImportEnvelope> {
@@ -274,6 +126,14 @@ const ALLOWED_IMPORT_HOSTS = new Set([
   'gist.githubusercontent.com',
   'gist.github.com',
 ]);
+const VALID_GIST_ID = /^[0-9a-f]{1,40}$/;
+
+function validateGistId(gistId: string): string {
+  if (!VALID_GIST_ID.test(gistId)) {
+    throw new Error('Invalid Gist ID');
+  }
+  return gistId;
+}
 
 export function resolveGitHubImportSource(sourceUrl: string): { kind: 'direct'; url: string } | { kind: 'gist-api'; url: string } {
   let url: URL;
@@ -318,13 +178,4 @@ function isImportEnvelope(value: unknown): value is TheoraImportEnvelope {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
   return typeof candidate.demo === 'string' && isDemoId(candidate.demo) && 'state' in candidate;
-}
-
-function buildGistDescription(payload: TheoraImportEnvelope): string {
-  const scenarioName = typeof payload.state === 'object' && payload.state && 'scenarioName' in (payload.state as Record<string, unknown>)
-    ? (payload.state as Record<string, unknown>).scenarioName
-    : null;
-  return scenarioName && typeof scenarioName === 'string'
-    ? `Theora ${payload.demo} scenario: ${scenarioName}`
-    : `Theora ${payload.demo} export`;
 }

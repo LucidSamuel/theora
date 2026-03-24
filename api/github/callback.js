@@ -1,70 +1,64 @@
 export const config = { runtime: 'edge' };
 
-// Hardcoded allowed origins — never derive from Host header
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://www.theora.dev')
-  .split(',')
-  .map((o) => o.trim());
+import { APP_PATH } from './_lib/config.js';
+import { exchangeCodeForAccessToken, fetchGitHubUser, revokeOAuthToken } from './_lib/github.js';
+import { buildAppRedirectUrl, redirectResponse } from './_lib/http.js';
+import {
+  buildClearedSessionCookie,
+  createAuthenticatedSession,
+  destroySession,
+  isGitHubServerAuthAvailable,
+  loadSessionFromRequest,
+} from './_lib/session.js';
 
-function getAllowedOrigin(request) {
-  const host = request.headers.get('host') || '';
-  for (const origin of ALLOWED_ORIGINS) {
-    try {
-      const u = new URL(origin);
-      if (u.host === host) return origin;
-    } catch { /* skip invalid */ }
-  }
-  return ALLOWED_ORIGINS[0];
+function errorRedirect(request, returnTo, message, cookie) {
+  return redirectResponse(buildAppRedirectUrl(request, returnTo, { gh_error: message }), {
+    ...(cookie ? { 'Set-Cookie': cookie } : {}),
+  });
 }
 
 export default async function handler(request) {
+  if (!isGitHubServerAuthAvailable()) {
+    return errorRedirect(request, APP_PATH, 'GitHub save/load is unavailable on this deployment.');
+  }
+
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
-  const origin = getAllowedOrigin(request);
+  const returnedState = url.searchParams.get('state');
+  const { sessionId, session } = await loadSessionFromRequest(request);
+  const returnTo = session && typeof session.returnTo === 'string' ? session.returnTo : APP_PATH;
+  const clearedCookie = buildClearedSessionCookie(request);
 
-  if (!code) {
-    return new Response('Missing authorization code', { status: 400 });
+  if (!code || !returnedState || !sessionId || !session || session.kind !== 'pending') {
+    if (sessionId) {
+      await destroySession(sessionId);
+    }
+    return errorRedirect(request, returnTo, 'GitHub sign-in failed. Please try again.', clearedCookie);
   }
 
-  // CSRF: state parameter is required
-  if (!state) {
-    return new Response('Missing state parameter', { status: 400 });
+  if (session.oauthState !== returnedState) {
+    await destroySession(sessionId);
+    return errorRedirect(request, returnTo, 'GitHub sign-in failed. Please try again.', clearedCookie);
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    return new Response('GitHub OAuth not configured', { status: 500 });
+  let token;
+  try {
+    token = await exchangeCodeForAccessToken(request, code);
+  } catch {
+    await destroySession(sessionId);
+    return errorRedirect(request, returnTo, 'GitHub sign-in failed. Please try again.', clearedCookie);
   }
 
-  const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-    }),
-  });
-
-  const data = await tokenRes.json();
-
-  if (data.error) {
-    const msg = encodeURIComponent(data.error_description || data.error);
-    return new Response(null, {
-      status: 302,
-      headers: { Location: `${origin}/#gh_error=${msg}` },
+  try {
+    const user = await fetchGitHubUser(token);
+    await destroySession(sessionId);
+    const { cookie } = await createAuthenticatedSession(request, token, user, returnTo);
+    return redirectResponse(buildAppRedirectUrl(request, returnTo, { gh_connected: '1' }), {
+      'Set-Cookie': cookie,
     });
+  } catch {
+    await destroySession(sessionId);
+    await revokeOAuthToken(token);
+    return errorRedirect(request, returnTo, 'GitHub sign-in failed. Please try again.', clearedCookie);
   }
-
-  // Pass state back so the client can verify it
-  const encodedState = encodeURIComponent(state);
-  return new Response(null, {
-    status: 302,
-    headers: { Location: `${origin}/#gh_token=${data.access_token}&gh_state=${encodedState}` },
-  });
 }
