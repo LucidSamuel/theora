@@ -11,6 +11,7 @@ import {
   SelectControl,
 } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -28,6 +29,7 @@ import {
   setSearchParams,
 } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import {
   analyzeCircuit,
   buildDefaultCircuit,
@@ -186,27 +188,7 @@ export function PlonkDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-
-    // Save current camera state
-    const prevPanX = camera.panX;
-    const prevPanY = camera.panY;
-    const prevZoom = camera.zoom;
-
-    handleFitToView();
-
-    requestAnimationFrame(() => {
-      const data = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = data;
-      a.download = 'theora-plonk.png';
-      a.click();
-      showDownloadToast('theora-plonk.png');
-
-      // Restore camera
-      camera.panX = prevPanX;
-      camera.panY = prevPanY;
-      camera.zoom = prevZoom;
-    });
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-plonk.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -232,7 +214,7 @@ export function PlonkDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Gate selectors, wire values, copy constraints & validity');
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     // Compute bounds: gate area + badge below + copy constraint arrow region to the right
@@ -246,7 +228,7 @@ export function PlonkDemo(): JSX.Element {
       minY: 32,
       maxX: 80 + 320 + 260, // gate right edge + arrow + legend area
       maxY: bottomY,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [analysis.gates.length, camera]);
 
   return (
@@ -348,6 +330,7 @@ export function PlonkDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="plonk" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

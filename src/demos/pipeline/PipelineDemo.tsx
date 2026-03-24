@@ -17,8 +17,10 @@ import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
+import { exportCanvasPng } from '@/lib/canvas';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
 import {
@@ -297,7 +299,7 @@ export function PipelineDemo() {
     showToast('Deep link copied', `Open ${target.label} with the current pipeline state`);
   }, [activeStage, state.fault, state.results, state.secretX]);
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -307,7 +309,7 @@ export function PipelineDemo() {
       minY: 24,
       maxX: width - 40,
       maxY: 520,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   return (
@@ -486,6 +488,7 @@ export function PipelineDemo() {
             copyToClipboard(window.location.href);
             showToast('Link copied', 'Share this URL to restore the exact current state');
           }} />
+          <SaveToGitHub demoId="pipeline" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={() => {
               const url = new URL(window.location.href);
@@ -504,12 +507,7 @@ export function PipelineDemo() {
             <ButtonControl label="Export PNG" onClick={() => {
               const canvas = canvasElRef.current;
               if (!canvas) return;
-              const data = canvas.toDataURL('image/png');
-              const a = document.createElement('a');
-              a.href = data;
-              a.download = 'theora-pipeline.png';
-              a.click();
-              showDownloadToast('theora-pipeline.png');
+              exportCanvasPng(canvas, camera, handleFitToView, 'theora-pipeline.png', showDownloadToast);
             }} variant="secondary" />
               <ButtonControl label="Audit JSON" onClick={() => {
               const payload = {

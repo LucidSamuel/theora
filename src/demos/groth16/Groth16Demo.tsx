@@ -12,6 +12,7 @@ import {
   ToggleControl,
 } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -29,6 +30,7 @@ import {
   setSearchParams,
 } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import {
   buildPhaseData,
   computePublicOutput,
@@ -220,39 +222,19 @@ export function Groth16Demo(): JSX.Element {
     setEmbedOpen(true);
   }, [buildShareState]);
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 800;
     const h = rect.height || 600;
-    fitCameraToBounds(camera, canvas, { minX: 0, minY: 0, maxX: w, maxY: h });
+    fitCameraToBounds(camera, canvas, { minX: 0, minY: 0, maxX: w, maxY: h }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   const handleExportPng = useCallback(() => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-
-    // Save current camera state
-    const prevPanX = camera.panX;
-    const prevPanY = camera.panY;
-    const prevZoom = camera.zoom;
-
-    handleFitToView();
-
-    requestAnimationFrame(() => {
-      const data = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = data;
-      a.download = 'theora-groth16.png';
-      a.click();
-      showDownloadToast('theora-groth16.png');
-
-      // Restore camera
-      camera.panX = prevPanX;
-      camera.panY = prevPanY;
-      camera.zoom = prevZoom;
-    });
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-groth16.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
   const handleCopyAuditSummary = useCallback(() => {
@@ -403,6 +385,7 @@ export function Groth16Demo(): JSX.Element {
         {/* Share */}
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="groth16" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

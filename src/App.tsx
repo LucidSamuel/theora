@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
+import { GitHubProvider } from '@/hooks/useGitHub';
 import { Layout } from '@/components/layout/Layout';
 import { DemoContainer } from '@/components/layout/DemoContainer';
 import { DemoErrorBoundary } from '@/components/shared/DemoErrorBoundary';
 import { GitHubImportModal } from '@/components/shared/GitHubImportModal';
+import { GitHubConnectModal } from '@/components/shared/GitHubConnectModal';
+import { MySavesModal } from '@/components/shared/MySavesModal';
 import { MerkleDemo } from '@/demos/merkle/MerkleDemo';
 import { PolynomialDemo } from '@/demos/polynomial/PolynomialDemo';
 import { AccumulatorDemo } from '@/demos/accumulator/AccumulatorDemo';
@@ -92,7 +95,7 @@ export default function App() {
   };
 
   return (
-    <>
+    <GitHubProvider>
       <Layout
         activeDemo={activeDemo}
         onSwitchDemo={switchDemo}
@@ -107,6 +110,8 @@ export default function App() {
         </DemoContainer>
       </Layout>
       <GitHubImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} activeDemo={activeDemo} />
-    </>
+      <GitHubConnectModal />
+      <MySavesModal />
+    </GitHubProvider>
   );
 }

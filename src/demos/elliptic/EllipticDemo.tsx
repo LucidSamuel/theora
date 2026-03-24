@@ -4,6 +4,7 @@ import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, SelectControl, SliderControl, ToggleControl, ButtonControl, ControlCard, ControlNote, NumberInputControl } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -13,6 +14,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import type { CurveConfig } from './logic';
 import {
   DEFAULT_CURVE,
@@ -184,12 +186,7 @@ export function EllipticDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-elliptic.png';
-    a.click();
-    showDownloadToast('theora-elliptic.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-elliptic.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -209,7 +206,7 @@ export function EllipticDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Curve parameters, points & arithmetic results');
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -220,7 +217,7 @@ export function EllipticDemo(): JSX.Element {
       minY: 24,
       maxX: width - 24,
       maxY: height - 24,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   useEffect(() => {
@@ -296,6 +293,7 @@ export function EllipticDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="elliptic" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

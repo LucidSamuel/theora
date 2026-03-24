@@ -11,6 +11,7 @@ import {
   ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -23,6 +24,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import type { AccumulatorState, AccElement, HistoryEntry } from '@/types/accumulator';
 import { renderAccumulator } from './renderer';
 import {
@@ -670,12 +672,7 @@ export function AccumulatorDemo() {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-accumulator.png';
-    a.click();
-    showDownloadToast('theora-accumulator.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-accumulator.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -705,7 +702,7 @@ export function AccumulatorDemo() {
     showToast('Audit JSON copied', 'Accumulator value, witnesses & membership proofs');
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
 
@@ -740,7 +737,7 @@ export function AccumulatorDemo() {
       maxY = Math.max(maxY, centerY + 90 + 64);
     }
 
-    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY });
+    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera, state.elements, state.nonMembership, state.selectedIndex]);
 
   return (
@@ -924,6 +921,7 @@ export function AccumulatorDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="accumulator" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

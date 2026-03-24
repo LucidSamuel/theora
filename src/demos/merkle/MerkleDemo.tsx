@@ -11,6 +11,7 @@ import {
   ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -33,6 +34,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 
 interface MerkleState {
   leaves: string[];
@@ -579,12 +581,7 @@ export function MerkleDemo() {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-merkle.png';
-    a.click();
-    showDownloadToast('theora-merkle.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-merkle.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -615,7 +612,7 @@ export function MerkleDemo() {
     dispatch({ type: 'SET_PROOF_STEP', step: 0 });
   };
 
-  const handleFitToView = () => {
+  const handleFitToView = (options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas || positions.size === 0) return;
 
@@ -635,7 +632,7 @@ export function MerkleDemo() {
       maxY = Math.max(maxY, y + nodeRadius);
     });
 
-    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY });
+    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY }, options?.instant ? { durationMs: 0 } : undefined);
   };
 
   const handleReset = () => {
@@ -759,6 +756,7 @@ export function MerkleDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="merkle" />
           <div className="control-button-grid mt-1.5">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

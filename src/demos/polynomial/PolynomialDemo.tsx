@@ -13,6 +13,7 @@ import {
   ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -33,6 +34,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { EmbedModal } from '@/components/shared/EmbedModal';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 
 // Action types
 type PolynomialAction =
@@ -426,7 +428,7 @@ export function PolynomialDemo() {
     dispatch({ type: 'SET_VIEW_RANGE', viewRange: newRange });
   }, [state.coefficients, state.viewRange.xMin, state.viewRange.xMax]);
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -437,7 +439,7 @@ export function PolynomialDemo() {
       minY: 24,
       maxX: width - 24,
       maxY: height - 24,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   const handleEmbedPlay = useCallback(async () => {
@@ -493,12 +495,7 @@ export function PolynomialDemo() {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-polynomial.png';
-    a.click();
-    showDownloadToast('theora-polynomial.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-polynomial.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -812,6 +809,7 @@ export function PolynomialDemo() {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="polynomial" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

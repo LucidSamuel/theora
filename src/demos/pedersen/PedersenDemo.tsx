@@ -11,6 +11,7 @@ import {
   ToggleControl,
 } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -19,6 +20,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import {
   decodeState,
   decodeStatePlain,
@@ -167,7 +169,7 @@ export function PedersenDemo(): JSX.Element {
     setEmbedOpen(true);
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const isHomo = homomorphic !== null;
@@ -176,33 +178,13 @@ export function PedersenDemo(): JSX.Element {
       minY: 30,
       maxX: isHomo ? 780 : 600,
       maxY: isHomo ? 700 : 520,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera, homomorphic]);
 
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-
-    // Save current camera state
-    const prevPanX = camera.panX;
-    const prevPanY = camera.panY;
-    const prevZoom = camera.zoom;
-
-    handleFitToView();
-
-    requestAnimationFrame(() => {
-      const data = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = data;
-      a.download = 'theora-pedersen.png';
-      a.click();
-      showDownloadToast('theora-pedersen.png');
-
-      // Restore camera
-      camera.panX = prevPanX;
-      camera.panY = prevPanY;
-      camera.zoom = prevZoom;
-    });
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-pedersen.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -332,6 +314,7 @@ export function PedersenDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="pedersen" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

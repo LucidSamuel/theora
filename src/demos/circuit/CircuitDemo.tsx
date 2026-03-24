@@ -4,6 +4,7 @@ import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, SliderControl, ToggleControl, ButtonControl, ControlCard, ControlNote, NumberInputControl } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -13,6 +14,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import { buildWitness, evaluateCircuit, getExploitWitness, getR1CSRows, witnessSatisfiesAll } from './logic';
 import { renderCircuit } from './renderer';
 
@@ -124,12 +126,7 @@ export function CircuitDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-circuit.png';
-    a.click();
-    showDownloadToast('theora-circuit.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-circuit.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -146,7 +143,7 @@ export function CircuitDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Witness values, constraint status & circuit mode');
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -157,7 +154,7 @@ export function CircuitDemo(): JSX.Element {
       minY: 32,
       maxX: width - 40,
       maxY: height - 32,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   return (
@@ -226,6 +223,7 @@ export function CircuitDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="circuit" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

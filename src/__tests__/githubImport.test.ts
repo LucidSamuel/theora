@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { applyImportedState, createPublicGist, fetchTheoraImport, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
+import { applyImportedState, createPublicGist, fetchGistEnvelope, fetchTheoraImport, listTheoraGists, parseTheoraImport, resolveGitHubImportSource, getCurrentExportEnvelope, serializeTheoraImport } from '@/lib/githubImport';
 import { getActiveDemoLocation } from '@/hooks/useActiveDemo';
 
 const originalWindow = (globalThis as { window?: unknown }).window;
@@ -134,6 +134,99 @@ describe('same-demo import regression', () => {
 });
 
 describe('gist publishing', () => {
+  it('lists Theora saves even when the gist list omits inline file content', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ([
+          {
+            id: 'gist-1',
+            description: '',
+            html_url: 'https://gist.github.com/user/gist-1',
+            created_at: '2026-03-22T10:00:00Z',
+            updated_at: '2026-03-22T11:00:00Z',
+            files: {
+              'theora.json': {
+                filename: 'theora.json',
+              },
+            },
+          },
+          {
+            id: 'gist-2',
+            description: 'Ignore me',
+            html_url: 'https://gist.github.com/user/gist-2',
+            created_at: '2026-03-22T10:00:00Z',
+            updated_at: '2026-03-22T11:00:00Z',
+            files: {
+              'notes.txt': {
+                filename: 'notes.txt',
+                content: 'not a theora export',
+              },
+            },
+          },
+        ]),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: {
+            'theora.json': {
+              content: '{"demo":"pedersen","state":{"value":5}}',
+            },
+          },
+        }),
+      });
+
+    Object.defineProperty(globalThis, 'fetch', {
+      value: fetchMock,
+      configurable: true,
+    });
+
+    const saves = await listTheoraGists('ghp_test');
+
+    expect(saves).toEqual([
+      {
+        id: 'gist-1',
+        description: 'Theora pedersen export',
+        html_url: 'https://gist.github.com/user/gist-1',
+        created_at: '2026-03-22T10:00:00Z',
+        updated_at: '2026-03-22T11:00:00Z',
+        demo: 'pedersen',
+      },
+    ]);
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.github.com/gists/gist-1', expect.objectContaining({
+      headers: expect.objectContaining({
+        Authorization: 'Bearer ghp_test',
+      }),
+    }));
+  });
+
+  it('loads a specific gist envelope from the private gist api', async () => {
+    Object.defineProperty(globalThis, 'fetch', {
+      value: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          files: {
+            'theora.json': {
+              content: '{"demo":"lookup","state":{"table":[1,2,3],"wires":[2,3]}}',
+            },
+          },
+        }),
+      })),
+      configurable: true,
+    });
+
+    const result = await fetchGistEnvelope('ghp_test', 'gist-123');
+
+    expect(result).toEqual({
+      demo: 'lookup',
+      state: { table: [1, 2, 3], wires: [2, 3] },
+    });
+  });
+
   it('imports valid Theora payloads from gist files without a json extension', async () => {
     Object.defineProperty(globalThis, 'fetch', {
       value: vi.fn(async () => ({

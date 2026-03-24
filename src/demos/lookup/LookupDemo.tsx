@@ -4,6 +4,7 @@ import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, TextInput, ButtonControl, ControlCard, ControlNote } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -13,6 +14,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
+import { exportCanvasPng } from '@/lib/canvas';
 import { analyzeLookup, parseNumberList } from './logic';
 import { renderLookup } from './renderer';
 
@@ -98,12 +100,7 @@ export function LookupDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-lookup.png';
-    a.click();
-    showDownloadToast('theora-lookup.png');
+    exportCanvasPng(canvas, camera, handleFitToView, 'theora-lookup.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -120,7 +117,7 @@ export function LookupDemo(): JSX.Element {
     showToast('Audit JSON copied', 'Lookup table, wire values & analysis results');
   };
 
-  const handleFitToView = useCallback(() => {
+  const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -134,7 +131,7 @@ export function LookupDemo(): JSX.Element {
       minY: 40,
       maxX: badgeRight,
       maxY: 96 + columnHeight + 16,
-    });
+    }, options?.instant ? { durationMs: 0 } : undefined);
   }, [analysis.sortedTable.length, analysis.sortedWires.length, camera]);
 
   return (
@@ -178,6 +175,7 @@ export function LookupDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="lookup" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

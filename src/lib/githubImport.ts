@@ -8,6 +8,125 @@ export interface TheoraImportEnvelope {
   state: unknown;
 }
 
+// ── GitHub user & save types ────────────────────────────────────────────────
+
+export interface GitHubUser {
+  login: string;
+  avatar_url: string;
+}
+
+export interface TheoraSave {
+  id: string;
+  description: string;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  demo: DemoId;
+}
+
+interface GitHubGistFile {
+  filename?: string;
+  content?: string;
+  raw_url?: string;
+}
+
+// ── GitHub API helpers ──────────────────────────────────────────────────────
+
+export async function fetchGitHubUser(token: string): Promise<GitHubUser> {
+  const res = await fetch('https://api.github.com/user', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    },
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new Error('Invalid or expired token. Use a token with gist scope.');
+  }
+  if (!res.ok) throw new Error(`GitHub API error (${res.status})`);
+  const data = await res.json() as { login: string; avatar_url: string };
+  return { login: data.login, avatar_url: data.avatar_url };
+}
+
+export async function listTheoraGists(token: string): Promise<TheoraSave[]> {
+  const res = await fetch('https://api.github.com/gists?per_page=100', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    },
+  });
+  if (!res.ok) throw new Error(`Failed to list gists (${res.status})`);
+  const gists = await res.json() as Array<{
+    id: string;
+    description: string;
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+    files: Record<string, GitHubGistFile>;
+  }>;
+
+  const saves = await Promise.all(gists.map(async (g) => {
+    const theoraFile = g.files['theora.json'];
+    if (!theoraFile) return null;
+
+    let parsedDemo: DemoId | null = null;
+    if (theoraFile.content) {
+      try {
+        const parsed = JSON.parse(theoraFile.content) as Record<string, unknown>;
+        if (typeof parsed.demo === 'string' && isDemoId(parsed.demo)) {
+          parsedDemo = parsed.demo;
+        }
+      } catch {
+        return null;
+      }
+    } else {
+      try {
+        const envelope = await fetchGistEnvelope(token, g.id);
+        parsedDemo = envelope.demo;
+      } catch {
+        return null;
+      }
+    }
+
+    if (!parsedDemo) return null;
+
+    return {
+      id: g.id,
+      description: g.description || `Theora ${parsedDemo} export`,
+      html_url: g.html_url,
+      created_at: g.created_at,
+      updated_at: g.updated_at,
+      demo: parsedDemo,
+    };
+  }));
+
+  return saves.filter((save): save is TheoraSave => save !== null);
+}
+
+export async function deleteGist(token: string, gistId: string): Promise<void> {
+  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    },
+  });
+  if (!res.ok) throw new Error(`Failed to delete gist (${res.status})`);
+}
+
+export async function fetchGistEnvelope(token: string, gistId: string): Promise<TheoraImportEnvelope> {
+  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch gist (${res.status})`);
+  const gist = await res.json() as { files: Record<string, { content?: string }> };
+  const theoraFile = gist.files['theora.json'];
+  if (!theoraFile?.content) throw new Error('Gist does not contain theora.json');
+  return parseTheoraImport(theoraFile.content);
+}
+
 const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   pipeline: 'pl',
   merkle: 'm',

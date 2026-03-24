@@ -32,7 +32,9 @@ import { useFollowCamera } from '@/hooks/useFollowCamera';
 import { renderProofTree, renderIvcChain } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
+import { exportCanvasPng } from '@/lib/canvas';
 import { EmbedModal } from '@/components/shared/EmbedModal';
+import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
 
 type Action =
   | { type: 'SET_MODE'; mode: RecursiveMode }
@@ -739,54 +741,7 @@ export function RecursiveDemo(): JSX.Element {
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-
-    // Save current camera state
-    const prevPanX = camera.panX;
-    const prevPanY = camera.panY;
-    const prevZoom = camera.zoom;
-
-    // Fit tree to view for the export
-    fitToView();
-
-    // Manually redraw one frame so the canvas reflects the fit-to-view
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const dpr = window.devicePixelRatio || 1;
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-
-      ctx.save();
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-
-      // Background
-      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-      ctx.fillStyle = isDark ? '#0a0a0a' : '#f9f9f9';
-      ctx.fillRect(0, 0, w, h);
-
-      // Apply camera transform
-      ctx.translate(camera.panX, camera.panY);
-      ctx.scale(camera.zoom, camera.zoom);
-
-      const worldMouse = camera.toWorld(0, 0);
-      if (state.mode === 'tree') {
-        renderProofTree(ctx, { time: 0, delta: 0, frameCount: 0, width: w, height: h, camera: { panX: camera.panX, panY: camera.panY, zoom: camera.zoom } }, state.root, positions, state.verification, state.showPastaCurves, state.showProofSize, worldMouse.x, worldMouse.y, theme);
-      } else {
-        renderIvcChain(ctx, { time: 0, delta: 0, frameCount: 0, width: w, height: h, camera: { panX: camera.panX, panY: camera.panY, zoom: camera.zoom } }, state.ivcChain, state.showPastaCurves, worldMouse.x, worldMouse.y, theme);
-      }
-
-      ctx.restore();
-    }
-
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = 'theora-recursive.png';
-    a.click();
-    showDownloadToast('theora-recursive.png');
-
-    // Restore camera
-    camera.setPanZoom(prevPanX, prevPanY, prevZoom);
+    exportCanvasPng(canvas, camera, fitToView, 'theora-recursive.png', showDownloadToast);
   };
 
   const handleCopyAuditSummary = () => {
@@ -1012,6 +967,7 @@ export function RecursiveDemo(): JSX.Element {
 
         <ControlGroup label="Share">
           <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
+          <SaveToGitHub demoId="recursive" />
           <div className="control-button-grid">
             <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
             <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />

@@ -119,6 +119,35 @@ export function drawGrid(
   }
 }
 
+/**
+ * Export a canvas as a PNG with fit-to-view before capture.
+ * Saves camera state, fits instantly for capture, waits one frame, captures, then restores.
+ */
+export function exportCanvasPng(
+  canvas: HTMLCanvasElement,
+  camera: { panX: number; panY: number; zoom: number; setPanZoom: (x: number, y: number, z: number) => void },
+  fitToView: (options?: { instant?: boolean }) => void,
+  filename: string,
+  toast: (filename: string) => void,
+): void {
+  const prevPanX = camera.panX;
+  const prevPanY = camera.panY;
+  const prevZoom = camera.zoom;
+
+  fitToView({ instant: true });
+
+  requestAnimationFrame(() => {
+    const data = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = filename;
+    a.click();
+    toast(filename);
+
+    camera.setPanZoom(prevPanX, prevPanY, prevZoom);
+  });
+}
+
 export function drawArrow(
   ctx: CanvasRenderingContext2D,
   x1: number,

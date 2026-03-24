@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DEMOS, type DemoId } from '@/types';
 import { DemoIcon } from '@/components/shared/DemoIcon';
+import { useGitHub } from '@/hooks/useGitHub';
 import type { Theme } from '@/lib/theme';
 
 function HeaderBtn({
@@ -73,6 +74,152 @@ function ImportBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
+function GitHubConnectBtn({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Connect GitHub"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '0 10px',
+        height: '26px',
+        borderRadius: '6px',
+        border: '1px solid',
+        borderColor: hovered ? 'var(--text-muted)' : 'var(--border)',
+        background: hovered ? 'var(--button-bg-strong)' : 'transparent',
+        color: hovered ? 'var(--text-primary)' : 'var(--text-muted)',
+        cursor: 'pointer',
+        fontSize: '12px',
+        fontFamily: 'var(--font-display)',
+        fontWeight: 500,
+        letterSpacing: '0.01em',
+        transition: 'background 120ms ease, color 120ms ease, border-color 120ms ease',
+        marginRight: '4px',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z"/>
+      </svg>
+      Connect
+    </button>
+  );
+}
+
+function GitHubUserBtn({
+  login,
+  avatarUrl,
+  onOpenSaves,
+  onOpenConnect,
+  onOpenImport,
+}: {
+  login: string;
+  avatarUrl: string;
+  onOpenSaves: () => void;
+  onOpenConnect: () => void;
+  onOpenImport: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div style={{ position: 'relative', marginRight: 4 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={`GitHub: ${login}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '0 10px',
+          height: '26px',
+          borderRadius: '6px',
+          border: '1px solid',
+          borderColor: open || hovered ? 'var(--text-muted)' : 'var(--border)',
+          background: open || hovered ? 'var(--button-bg-strong)' : 'transparent',
+          color: open || hovered ? 'var(--text-primary)' : 'var(--text-muted)',
+          cursor: 'pointer',
+          fontSize: '12px',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 500,
+          letterSpacing: '0.01em',
+          transition: 'background 120ms ease, color 120ms ease, border-color 120ms ease',
+        }}
+      >
+        <img
+          src={avatarUrl}
+          alt={login}
+          style={{ width: 16, height: 16, borderRadius: '50%' }}
+        />
+        {login}
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              marginTop: 6,
+              minWidth: 160,
+              padding: '6px',
+              borderRadius: 10,
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              zIndex: 100,
+            }}
+          >
+            <DropdownItem label="My Saves" onClick={() => { setOpen(false); onOpenSaves(); }} />
+            <DropdownItem label="Import" onClick={() => { setOpen(false); onOpenImport(); }} />
+            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+            <DropdownItem label="Settings" onClick={() => { setOpen(false); onOpenConnect(); }} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DropdownItem({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'block',
+        width: '100%',
+        padding: '7px 10px',
+        borderRadius: 6,
+        border: 'none',
+        background: hovered ? 'var(--button-bg-strong)' : 'transparent',
+        color: hovered ? 'var(--text-primary)' : 'var(--text-secondary)',
+        cursor: 'pointer',
+        fontSize: 12,
+        fontFamily: 'var(--font-display)',
+        fontWeight: 500,
+        textAlign: 'left',
+        transition: 'background 80ms ease, color 80ms ease',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 interface HeaderProps {
   activeDemo: DemoId;
   theme: Theme;
@@ -87,6 +234,7 @@ interface HeaderProps {
 
 export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenImport, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
+  const { status, user, setConnectOpen, setSavesOpen } = useGitHub();
 
   return (
     <header
@@ -119,7 +267,20 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
         </span>
       </div>
       <div className="flex items-center gap-0.5">
-        <ImportBtn onClick={onOpenImport} />
+        {status === 'connected' && user ? (
+          <GitHubUserBtn
+            login={user.login}
+            avatarUrl={user.avatar_url}
+            onOpenSaves={() => setSavesOpen(true)}
+            onOpenConnect={() => setConnectOpen(true)}
+            onOpenImport={onOpenImport}
+          />
+        ) : (
+          <>
+            <ImportBtn onClick={onOpenImport} />
+            <GitHubConnectBtn onClick={() => setConnectOpen(true)} />
+          </>
+        )}
         <HeaderBtn
           onClick={onToggleNav}
           label="Toggle sidebar"
