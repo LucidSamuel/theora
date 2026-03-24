@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGitHub } from '@/hooks/useGitHub';
 
 export function GitHubConnectModal() {
-  const { status, user, error, connect, disconnect, connectOpen, setConnectOpen } = useGitHub();
+  const { status, user, error, oauthAvailable, connect, startOAuth, disconnect, connectOpen, setConnectOpen } = useGitHub();
   const [token, setToken] = useState('');
   const [persist, setPersist] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPat, setShowPat] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Reset form when modal opens
@@ -151,81 +152,114 @@ export function GitHubConnectModal() {
           </div>
         ) : (
           <div>
-            <div
-              style={{
-                padding: '16px', borderRadius: 12,
-                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-              }}
-            >
+            {displayError && (
               <div
-                className="text-[10px] font-bold uppercase"
-                style={{ color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 10 }}
-              >
-                Personal Access Token
-              </div>
-              <input
-                type="password"
-                className="github-import-modal__input"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && token.trim()) handleConnect(); }}
-                placeholder="ghp_... (gist scope)"
-                autoComplete="off"
-                autoFocus
-                style={{ marginTop: 0, marginBottom: 10 }}
-              />
-              <label
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  marginBottom: 12, fontSize: 11, color: 'var(--text-muted)',
-                  cursor: 'pointer', userSelect: 'none',
+                  marginBottom: 12, padding: '8px 12px', borderRadius: 8,
+                  background: 'var(--status-error-bg)', color: 'var(--status-error)', fontSize: 12,
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={persist}
-                  onChange={(e) => setPersist(e.target.checked)}
-                  style={{ accentColor: 'var(--text-muted)' }}
-                />
-                Remember on this device
-              </label>
+                {displayError}
+              </div>
+            )}
 
-              {displayError && (
+            {/* OAuth — primary action */}
+            {oauthAvailable && (
+              <button
+                className="app-btn-primary rounded-lg"
+                onClick={startOAuth}
+                style={{
+                  width: '100%', height: 42, fontSize: 13, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 14 14" fill="currentColor">
+                  <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z"/>
+                </svg>
+                Sign in with GitHub
+              </button>
+            )}
+
+            {/* PAT fallback — collapsible when OAuth is available */}
+            {oauthAvailable && (
+              <button
+                onClick={() => setShowPat((v) => !v)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 11, color: 'var(--text-muted)', padding: 0,
+                  display: 'flex', alignItems: 'center', gap: 4, marginBottom: showPat ? 12 : 0,
+                }}
+              >
+                <span style={{ fontSize: 9, transition: 'transform 150ms', transform: showPat ? 'rotate(90deg)' : 'rotate(0deg)' }}>&#9654;</span>
+                Use a personal access token instead
+              </button>
+            )}
+
+            {(showPat || !oauthAvailable) && (
+              <div
+                style={{
+                  padding: '16px', borderRadius: 12,
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                }}
+              >
                 <div
+                  className="text-[10px] font-bold uppercase"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 10 }}
+                >
+                  Personal Access Token
+                </div>
+                <input
+                  type="password"
+                  className="github-import-modal__input"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && token.trim()) handleConnect(); }}
+                  placeholder="ghp_... (gist scope)"
+                  autoComplete="off"
+                  autoFocus={!oauthAvailable}
+                  style={{ marginTop: 0, marginBottom: 10 }}
+                />
+                <label
                   style={{
-                    marginBottom: 12, padding: '8px 12px', borderRadius: 8,
-                    background: 'var(--status-error-bg)', color: 'var(--status-error)', fontSize: 12,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    marginBottom: 12, fontSize: 11, color: 'var(--text-muted)',
+                    cursor: 'pointer', userSelect: 'none',
                   }}
                 >
-                  {displayError}
-                </div>
-              )}
+                  <input
+                    type="checkbox"
+                    checked={persist}
+                    onChange={(e) => setPersist(e.target.checked)}
+                    style={{ accentColor: 'var(--text-muted)' }}
+                  />
+                  Remember on this device
+                </label>
 
-              <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  className="app-btn-primary rounded-lg flex-1"
+                  className="app-btn-primary rounded-lg"
                   onClick={handleConnect}
                   disabled={isSubmitting || !token.trim()}
-                  style={{ height: 36, fontSize: 12, opacity: (isSubmitting || !token.trim()) ? 0.4 : 1 }}
+                  style={{ width: '100%', height: 36, fontSize: 12, opacity: (isSubmitting || !token.trim()) ? 0.4 : 1 }}
                 >
-                  {isSubmitting ? 'Connecting...' : 'Connect'}
+                  {isSubmitting ? 'Connecting...' : 'Connect with token'}
                 </button>
-              </div>
 
-              <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                Create a token at{' '}
-                <a
-                  href="https://github.com/settings/tokens/new?scopes=gist&description=Theora"
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}
-                >
-                  github.com/settings/tokens
-                </a>
-                {' '}with <code className="font-mono" style={{ fontSize: 10 }}>gist</code> scope only.
-                {!persist && ' Token is used for this session only.'}
+                <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  Create a token at{' '}
+                  <a
+                    href="https://github.com/settings/tokens/new?scopes=gist&description=Theora"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}
+                  >
+                    github.com/settings/tokens
+                  </a>
+                  {' '}with <code className="font-mono" style={{ fontSize: 10 }}>gist</code> scope only.
+                  {!persist && ' Token is used for this session only.'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
