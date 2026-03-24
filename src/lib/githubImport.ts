@@ -102,8 +102,18 @@ export async function listTheoraGists(token: string): Promise<TheoraSave[]> {
   return saves.filter((save): save is TheoraSave => save !== null);
 }
 
+// Gist IDs are hex strings; reject anything with slashes, dots, or other path-traversal chars
+const VALID_GIST_ID = /^[a-zA-Z0-9_-]+$/;
+
+function validateGistId(gistId: string): string {
+  if (!VALID_GIST_ID.test(gistId)) {
+    throw new Error('Invalid Gist ID');
+  }
+  return gistId;
+}
+
 export async function deleteGist(token: string, gistId: string): Promise<void> {
-  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+  const res = await fetch(`https://api.github.com/gists/${validateGistId(gistId)}`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -114,7 +124,7 @@ export async function deleteGist(token: string, gistId: string): Promise<void> {
 }
 
 export async function fetchGistEnvelope(token: string, gistId: string): Promise<TheoraImportEnvelope> {
-  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+  const res = await fetch(`https://api.github.com/gists/${validateGistId(gistId)}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
@@ -258,12 +268,23 @@ export function parseTheoraImport(raw: string): TheoraImportEnvelope {
   return parsed;
 }
 
+const ALLOWED_IMPORT_HOSTS = new Set([
+  'github.com',
+  'raw.githubusercontent.com',
+  'gist.githubusercontent.com',
+  'gist.github.com',
+]);
+
 export function resolveGitHubImportSource(sourceUrl: string): { kind: 'direct'; url: string } | { kind: 'gist-api'; url: string } {
   let url: URL;
   try {
     url = new URL(sourceUrl);
   } catch {
     throw new Error('Enter a valid public GitHub, raw GitHub, or Gist URL');
+  }
+
+  if (!ALLOWED_IMPORT_HOSTS.has(url.hostname)) {
+    throw new Error('Only GitHub URLs are supported for import');
   }
 
   if (url.hostname === 'github.com') {
@@ -287,10 +308,10 @@ export function resolveGitHubImportSource(sourceUrl: string): { kind: 'direct'; 
     if (!gistId) {
       throw new Error('Could not determine the public Gist ID');
     }
-    return { kind: 'gist-api', url: `https://api.github.com/gists/${gistId}` };
+    return { kind: 'gist-api', url: `https://api.github.com/gists/${validateGistId(gistId)}` };
   }
 
-  return { kind: 'direct', url: url.toString() };
+  throw new Error('Could not resolve GitHub URL. Use a repo file, raw, or Gist URL.');
 }
 
 function isImportEnvelope(value: unknown): value is TheoraImportEnvelope {

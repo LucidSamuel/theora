@@ -11,20 +11,36 @@ function getContainer(): HTMLDivElement {
   return container;
 }
 
-export function showToast(message: string, subOrTone?: string, duration = 2600): void {
-  const tone: ToastTone = subOrTone === 'error' ? 'error' : 'success';
-  const sub = subOrTone === 'error' ? undefined : subOrTone;
-  const icon = tone === 'error' ? '!' : '✓';
-  const c = getContainer();
+function buildToastElement(icon: string, message: string, sub?: string, tone: ToastTone = 'success'): HTMLDivElement {
   const el = document.createElement('div');
   el.className = `theora-toast theora-toast--${tone}`;
-  el.innerHTML = `
-    <span class="theora-toast__icon">${icon}</span>
-    <div class="theora-toast__body">
-      <div class="theora-toast__msg">${message}</div>
-      ${sub ? `<div class="theora-toast__sub">${sub}</div>` : ''}
-    </div>
-  `;
+
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'theora-toast__icon';
+  iconSpan.textContent = icon;
+
+  const body = document.createElement('div');
+  body.className = 'theora-toast__body';
+
+  const msg = document.createElement('div');
+  msg.className = 'theora-toast__msg';
+  msg.textContent = message;
+  body.appendChild(msg);
+
+  if (sub) {
+    const subDiv = document.createElement('div');
+    subDiv.className = 'theora-toast__sub';
+    subDiv.textContent = sub;
+    body.appendChild(subDiv);
+  }
+
+  el.appendChild(iconSpan);
+  el.appendChild(body);
+  return el;
+}
+
+function showAndDismiss(el: HTMLDivElement, duration: number): void {
+  const c = getContainer();
   c.appendChild(el);
 
   requestAnimationFrame(() => {
@@ -37,25 +53,15 @@ export function showToast(message: string, subOrTone?: string, duration = 2600):
   }, duration);
 }
 
+export function showToast(message: string, subOrTone?: string, duration = 2600): void {
+  const tone: ToastTone = subOrTone === 'error' ? 'error' : 'success';
+  const sub = subOrTone === 'error' ? undefined : subOrTone;
+  const icon = tone === 'error' ? '!' : '✓';
+  const el = buildToastElement(icon, message, sub, tone);
+  showAndDismiss(el, duration);
+}
+
 export function showDownloadToast(filename: string): void {
-  const c = getContainer();
-  const el = document.createElement('div');
-  el.className = 'theora-toast';
-  el.innerHTML = `
-    <span class="theora-toast__icon">↓</span>
-    <div class="theora-toast__body">
-      <div class="theora-toast__msg">File downloaded</div>
-      <div class="theora-toast__sub">${filename}</div>
-    </div>
-  `;
-  c.appendChild(el);
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => el.classList.add('theora-toast--visible'));
-  });
-
-  setTimeout(() => {
-    el.classList.remove('theora-toast--visible');
-    el.addEventListener('transitionend', () => el.remove(), { once: true });
-  }, 2600);
+  const el = buildToastElement('↓', 'File downloaded', filename);
+  showAndDismiss(el, 2600);
 }
