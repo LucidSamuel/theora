@@ -3,14 +3,22 @@ export type Theme = 'dark' | 'light';
 const THEME_KEY = 'theora-theme-v2';
 
 export function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {
+    // localStorage blocked in cross-origin iframes
+  }
   return 'dark';
 }
 
 export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(THEME_KEY, theme);
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // localStorage blocked in cross-origin iframes
+  }
 }
 
 export const DEMO_COLORS = {

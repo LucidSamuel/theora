@@ -31,7 +31,11 @@ export function CanvasToolbar({ camera, className, storageKey, onReset }: Canvas
 
   useEffect(() => {
     if (!storageKey || typeof window === 'undefined') return;
-    window.localStorage.setItem(storageKey, JSON.stringify(offset));
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(offset));
+    } catch {
+      // localStorage may be blocked in cross-origin iframes (e.g. Safari privacy mode)
+    }
   }, [offset, storageKey]);
 
   useEffect(() => {

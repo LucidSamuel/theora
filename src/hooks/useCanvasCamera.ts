@@ -1,4 +1,4 @@
-import { useRef, useCallback, type WheelEvent as ReactWheelEvent, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { useRef, useCallback, useState, type WheelEvent as ReactWheelEvent, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from 'react';
 
 export interface CanvasCamera {
   panX: number;
@@ -42,6 +42,9 @@ export function useCanvasCamera(): CanvasCamera {
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOriginRef = useRef({ x: 0, y: 0 });
 
+  // Trigger re-render when mode changes so toolbar active state + cursor update
+  const [, setModeVersion] = useState(0);
+
   // Pinch-zoom tracking
   const lastPinchDistRef = useRef(0);
 
@@ -77,6 +80,7 @@ export function useCanvasCamera(): CanvasCamera {
     modeRef.current = mode;
     isPanningRef.current = false;
     suppressClickRef.current = false;
+    setModeVersion((v) => v + 1);
   }, []);
 
   const shouldHandleClick = useCallback(() => !suppressClickRef.current && modeRef.current !== 'pan', []);

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 
 export interface CameraState {
   panX: number;
@@ -50,6 +50,23 @@ export function AnimatedCanvas({
 
   drawRef.current = draw;
   cameraRef.current = camera ?? DEFAULT_CAMERA;
+
+  // Attach wheel handler natively with { passive: false } so e.preventDefault()
+  // actually works. React 18 registers onWheel as passive, making preventDefault()
+  // a no-op — this causes scroll pass-through in iframes instead of canvas zoom.
+  const wheelRef = useRef(onWheel);
+  wheelRef.current = onWheel;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handler = (e: WheelEvent) => {
+      // Safe cast: handlers only use preventDefault(), deltaY, clientX, clientY, currentTarget
+      wheelRef.current?.(e as unknown as React.WheelEvent<HTMLCanvasElement>);
+    };
+    canvas.addEventListener('wheel', handler, { passive: false });
+    return () => canvas.removeEventListener('wheel', handler);
+  }, []);
 
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -155,7 +172,6 @@ export function AnimatedCanvas({
         touchAction: 'none',
         cursor: camera && 'cursor' in camera ? String(camera.cursor) : 'default',
       }}
-      onWheel={onWheel}
       onMouseMove={onMouseMove}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
