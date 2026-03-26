@@ -20,6 +20,10 @@ import { PedersenDemo } from '@/demos/pedersen/PedersenDemo';
 import { PlonkDemo } from '@/demos/plonk/PlonkDemo';
 import { Groth16Demo } from '@/demos/groth16/Groth16Demo';
 import { PipelineDemo } from '@/demos/pipeline/PipelineDemo';
+import { ConstraintCounterDemo } from '@/demos/constraint-counter/ConstraintCounterDemo';
+import { ObliviousSyncDemo } from '@/demos/oblivious-sync/ObliviousSyncDemo';
+import { RerandomizationDemo } from '@/demos/rerandomization/RerandomizationDemo';
+import { SplitAccumulationDemo } from '@/demos/split-accumulation/SplitAccumulationDemo';
 import { DEMOS } from '@/types';
 
 const DEMO_NAMES = {
@@ -28,11 +32,15 @@ const DEMO_NAMES = {
   polynomial: 'Polynomial Commitments',
   accumulator: 'RSA Accumulator',
   recursive: 'Recursive Proofs',
+  'split-accumulation': 'Split Accumulation',
+  rerandomization: 'Proof Rerandomization',
+  'oblivious-sync': 'Oblivious Sync',
   elliptic: 'Elliptic Curves',
   'fiat-shamir': 'Fiat-Shamir',
   circuit: 'R1CS Circuits',
   lookup: 'Lookup Arguments',
   pedersen: 'Pedersen Commitments',
+  'constraint-counter': 'Pedersen vs Poseidon',
   plonk: 'PLONK Arithmetization',
   groth16: 'Groth16 zkSNARK',
 } as const;
@@ -67,8 +75,6 @@ export default function App() {
 
   const renderDemo = () => {
     switch (activeDemo) {
-      case 'pipeline':
-        return <PipelineDemo />;
       case 'merkle':
         return <MerkleDemo />;
       case 'polynomial':
@@ -77,6 +83,12 @@ export default function App() {
         return <AccumulatorDemo />;
       case 'recursive':
         return <RecursiveDemo />;
+      case 'split-accumulation':
+        return <SplitAccumulationDemo />;
+      case 'rerandomization':
+        return <RerandomizationDemo />;
+      case 'oblivious-sync':
+        return <ObliviousSyncDemo />;
       case 'elliptic':
         return <EllipticDemo />;
       case 'fiat-shamir':
@@ -87,10 +99,14 @@ export default function App() {
         return <LookupDemo />;
       case 'pedersen':
         return <PedersenDemo />;
+      case 'constraint-counter':
+        return <ConstraintCounterDemo />;
       case 'plonk':
         return <PlonkDemo />;
       case 'groth16':
         return <Groth16Demo />;
+      case 'pipeline':
+        return <PipelineDemo />;
     }
   };
 

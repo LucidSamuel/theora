@@ -57,8 +57,47 @@ const DEMO_DATA = [
     ],
   },
   {
-    id: 'elliptic',
+    id: 'split-accumulation',
     num: '05',
+    title: 'Split Accumulation',
+    tag: 'HALO RECURSION · MSM DEFERRAL · FOLDING',
+    body: 'Compare naive recursion against Halo-style accumulation side by side. Step through recursive claims, watch the accumulator absorb each fold, and see a single final MSM settle the whole chain.',
+    features: [
+      'Naive vs accumulated verifier panels',
+      'Step-by-step fold progression with autoplay',
+      'Live cost ratio and deferred-work tracking',
+      'Final settlement MSM highlight',
+    ],
+  },
+  {
+    id: 'rerandomization',
+    num: '06',
+    title: 'Proof Rerandomization',
+    tag: 'UNLINKABILITY · BLINDING · BYTE-LEVEL TRANSCRIPTS',
+    body: 'Watch an original proof and its rerandomized twin side by side. Every byte changes, yet the verifier still accepts the same statement. Then try to match shuffled rerandomized proofs back to their originals.',
+    features: [
+      'Byte-level proof component comparison',
+      'Repeated rerandomization of one statement',
+      'Live changed-byte counter',
+      'Matching game for unlinkability intuition',
+    ],
+  },
+  {
+    id: 'oblivious-sync',
+    num: '07',
+    title: 'Oblivious Sync',
+    tag: 'WALLET PRIVACY · BLINDED NULLIFIERS · DISJOINTNESS PROOFS',
+    body: 'Step through a wallet syncing against a remote spent-note service. The wallet blinds its nullifiers, the service proves disjointness, and both sides learn only the minimum necessary to complete sync.',
+    features: [
+      'Five protocol rounds with stepping',
+      'Wallet vs service knowledge tracking',
+      'Injectable spent-note collision',
+      'Blinded nullifier transcript view',
+    ],
+  },
+  {
+    id: 'elliptic',
+    num: '08',
     title: 'Elliptic Curves',
     tag: 'POINT ADDITION · DOUBLE-AND-ADD · PASTA CYCLE',
     body: 'Plot discrete curve points over a finite field, pick two points to add, and step through scalar multiplication. The side panel bridges from toy arithmetic to the Pallas/Vesta cycle used in modern proof systems.',
@@ -71,7 +110,7 @@ const DEMO_DATA = [
   },
   {
     id: 'fiat-shamir',
-    num: '06',
+    num: '09',
     title: 'Fiat-Shamir',
     tag: 'TRANSCRIPTS · CHALLENGES · FORGERIES',
     body: 'Compare a live interactive proof against correct and broken Fiat-Shamir transcript hashing. Watch challenge derivation change, then see a forged proof succeed only when the commitment is omitted from the hash.',
@@ -84,7 +123,7 @@ const DEMO_DATA = [
   },
   {
     id: 'circuit',
-    num: '07',
+    num: '10',
     title: 'R1CS Circuits',
     tag: 'ARITHMETIC GATES · WITNESSES · UNDERCONSTRAINTS',
     body: 'Inspect a small arithmetic circuit for x² + y = z, compare the witness against the active constraints, and toggle a broken version where the output relation silently disappears.',
@@ -97,7 +136,7 @@ const DEMO_DATA = [
   },
   {
     id: 'lookup',
-    num: '08',
+    num: '11',
     title: 'Lookup Arguments',
     tag: 'TABLES · MULTISETS · PERMUTATION CHECKS',
     body: 'Edit a lookup table and queried wire values, then compare the sorted multisets to see when a lookup passes, when values are missing, and when multiplicities overflow the table.',
@@ -110,7 +149,7 @@ const DEMO_DATA = [
   },
   {
     id: 'pedersen',
-    num: '09',
+    num: '12',
     title: 'Pedersen Commitments',
     tag: 'HIDING · BINDING · HOMOMORPHIC ADDITION',
     body: 'Compute C = g^v · h^r mod p over a small prime field. Toggle the blinding factor, then verify that the product of two commitments equals a direct commitment to their sum.',
@@ -122,8 +161,21 @@ const DEMO_DATA = [
     ],
   },
   {
+    id: 'constraint-counter',
+    num: '13',
+    title: 'Pedersen vs Poseidon',
+    tag: 'MERKLE COSTS · R1CS · BOOTLE16',
+    body: 'Quantify why Poseidon replaced Pedersen for Merkle-heavy zk circuits. Compare one hash, a full authentication path, and even a whole tree build under both R1CS and Bootle16 cost models.',
+    features: [
+      'Per-hash Pedersen vs Poseidon counts',
+      'Depth-adjustable Merkle path comparison',
+      'Full-tree amplification with large counts',
+      'R1CS and Bootle16 side by side',
+    ],
+  },
+  {
     id: 'groth16',
-    num: '10',
+    num: '14',
     title: 'Groth16 zkSNARK',
     tag: 'R1CS · QAP · PAIRING VERIFICATION',
     body: 'Walk through the full Groth16 pipeline: R1CS encoding, QAP conversion, trusted setup, proof generation, and pairing-based verification for f(x) = x² + x + 5 over GF(101).',
@@ -136,7 +188,7 @@ const DEMO_DATA = [
   },
   {
     id: 'plonk',
-    num: '11',
+    num: '15',
     title: 'PLONK Arithmetization',
     tag: 'GATE EQUATIONS · COPY CONSTRAINTS · SELECTORS',
     body: 'Explore PLONK gate equations and copy constraints with a 3-gate arithmetic circuit. Edit wire values, break a copy constraint, and see exactly which equations fail.',
@@ -149,7 +201,7 @@ const DEMO_DATA = [
   },
   {
     id: 'pipeline',
-    num: '12',
+    num: '16',
     title: 'Proof Pipeline',
     tag: 'END-TO-END · FAULT INJECTION · LINKED STATE',
     body: 'End-to-end walkthrough from witness to verification: R1CS encoding, Lagrange interpolation, simulated KZG, Fiat-Shamir challenge. Inject faults and watch corruption propagate through the pipeline.',
@@ -166,9 +218,9 @@ const DEMO_COUNT_LABEL = String(DEMO_DATA.length).padStart(2, '0');
 
 const TICKER_ITEMS = [
   'MERKLE TREES', 'KZG COMMITMENTS', 'RSA ACCUMULATORS', 'RECURSIVE PROOFS',
-  'ELLIPTIC CURVES', 'FIAT-SHAMIR', 'R1CS', 'LOOKUP ARGUMENTS',
-  'PEDERSEN COMMITMENTS', 'GROTH16', 'PLONK', 'PROOF PIPELINE',
-  'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
+  'SPLIT ACCUMULATION', 'PROOF RERANDOMIZATION', 'OBLIVIOUS SYNC', 'ELLIPTIC CURVES', 'FIAT-SHAMIR', 'R1CS', 'LOOKUP ARGUMENTS',
+  'PEDERSEN COMMITMENTS', 'POSEIDON HASHING', 'GROTH16', 'PLONK', 'PROOF PIPELINE',
+  'HALO RECURSION', 'MSM DEFERRAL', 'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
   'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
 ];
 

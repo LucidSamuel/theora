@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildWitness, evaluateCircuit, getExploitWitness, witnessSatisfiesAll } from '@/demos/circuit/logic';
+import {
+  buildWitness,
+  evaluateCircuit,
+  getBootle16Breakdown,
+  getExploitWitness,
+  witnessSatisfiesAll,
+} from '@/demos/circuit/logic';
 
 describe('circuit logic', () => {
   it('accepts a valid witness in safe mode', () => {
@@ -47,5 +53,15 @@ describe('circuit logic', () => {
     expect(witnessSatisfiesAll(witness, false)).toBe(false);
     // But in broken mode (constraint 2 dropped), only t=x*x is checked → passes
     expect(witnessSatisfiesAll(witness, true)).toBe(true);
+  });
+
+  it('builds a Bootle16-style split of multiplication and linear constraints', () => {
+    const witness = buildWitness(3, 4, 13);
+    const breakdown = getBootle16Breakdown(witness, false);
+
+    expect(breakdown.multiplication).toHaveLength(1);
+    expect(breakdown.multiplication[0]?.satisfied).toBe(true);
+    expect(breakdown.linear).toHaveLength(1);
+    expect(breakdown.linear[0]?.equation).toContain('z - t - y');
   });
 });

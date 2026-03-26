@@ -1,12 +1,14 @@
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, drawLine, drawRoundedRect, hexToRgba } from '@/lib/canvas';
-import type { ConstraintCheck, Witness } from './logic';
+import type { Bootle16Breakdown, ConstraintCheck, Witness } from './logic';
 
 export function renderCircuit(
   ctx: CanvasRenderingContext2D,
   frame: FrameInfo,
   witness: Witness,
   constraints: ConstraintCheck[],
+  bootle16: Bootle16Breakdown,
+  viewMode: 'r1cs' | 'bootle16',
   broken: boolean,
   theme: 'dark' | 'light'
 ): void {
@@ -65,7 +67,7 @@ export function renderCircuit(
 
   ctx.textBaseline = 'alphabetic';
 
-  // ── Constraint panel ──────────────────────────────────────────────────────
+  // ── Constraint / representation panel ────────────────────────────────────
   const panelX = width - 280;
   const panelY = 32;
   ctx.fillStyle = hexToRgba(isDark ? '#111113' : '#ffffff', 0.96);
@@ -77,20 +79,73 @@ export function renderCircuit(
   ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText('Constraint Checks', panelX + 12, panelY + 22);
+  ctx.fillText(viewMode === 'bootle16' ? 'Bootle16 View' : 'Constraint Checks', panelX + 12, panelY + 22);
 
-  constraints.forEach((constraint, index) => {
-    const y = panelY + 48 + index * 52;
-    const ok = constraint.satisfied;
-    ctx.fillStyle = hexToRgba(ok ? '#22c55e' : '#ef4444', isDark ? 0.09 : 0.07);
+  if (viewMode === 'r1cs') {
+    constraints.forEach((constraint, index) => {
+      const y = panelY + 48 + index * 52;
+      const ok = constraint.satisfied;
+      ctx.fillStyle = hexToRgba(ok ? '#22c55e' : '#ef4444', isDark ? 0.09 : 0.07);
+      ctx.fillRect(panelX + 12, y - 16, 216, 38);
+      ctx.strokeStyle = hexToRgba(ok ? '#22c55e' : '#ef4444', isDark ? 0.55 : 0.45);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(panelX + 12, y - 16, 216, 38);
+      ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+      ctx.font = '11px monospace';
+      ctx.fillText(constraint.label, panelX + 20, y);
+      ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+      ctx.fillText(`${constraint.left} ?= ${constraint.right}`, panelX + 20, y + 14);
+    });
+    return;
+  }
+
+  ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+  ctx.font = '10px monospace';
+  ctx.fillText('Multiplication constraints', panelX + 12, panelY + 46);
+
+  bootle16.multiplication.forEach((constraint, index) => {
+    const y = panelY + 70 + index * 52;
+    ctx.fillStyle = hexToRgba(constraint.satisfied ? '#22c55e' : '#ef4444', isDark ? 0.09 : 0.07);
     ctx.fillRect(panelX + 12, y - 16, 216, 38);
-    ctx.strokeStyle = hexToRgba(ok ? '#22c55e' : '#ef4444', isDark ? 0.55 : 0.45);
+    ctx.strokeStyle = hexToRgba(constraint.satisfied ? '#22c55e' : '#ef4444', isDark ? 0.55 : 0.45);
     ctx.lineWidth = 1;
     ctx.strokeRect(panelX + 12, y - 16, 216, 38);
     ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
-    ctx.font = '11px monospace';
-    ctx.fillText(constraint.label, panelX + 20, y);
+    ctx.fillText(`${constraint.leftWire} · ${constraint.rightWire} -> ${constraint.outputWire}`, panelX + 20, y);
     ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
-    ctx.fillText(`${constraint.left} ?= ${constraint.right}`, panelX + 20, y + 14);
+    ctx.fillText(`${constraint.left} · ${constraint.right} = ${constraint.output}`, panelX + 20, y + 14);
+  });
+
+  const matrixY = panelY + 150;
+  ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+  ctx.font = '10px monospace';
+  ctx.fillText('Linear constraint matrix', panelX + 12, matrixY);
+
+  const headerY = matrixY + 22;
+  bootle16.columns.forEach((column, index) => {
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.fillText(column, panelX + 20 + index * 34, headerY);
+  });
+
+  if (bootle16.linear.length === 0) {
+    ctx.fillStyle = hexToRgba('#ef4444', 0.9);
+    ctx.font = '11px monospace';
+    ctx.fillText('no output linear row (broken mode)', panelX + 20, headerY + 28);
+    return;
+  }
+
+  bootle16.linear.forEach((row, rowIndex) => {
+    const y = headerY + 28 + rowIndex * 44;
+    row.coefficients.forEach((value, colIndex) => {
+      ctx.fillStyle = hexToRgba(row.satisfied ? '#22c55e' : '#ef4444', isDark ? 0.14 : 0.10);
+      ctx.fillRect(panelX + 14 + colIndex * 34, y - 12, 28, 24);
+      ctx.strokeStyle = hexToRgba(row.satisfied ? '#22c55e' : '#ef4444', 0.4);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(panelX + 14 + colIndex * 34, y - 12, 28, 24);
+      ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+      ctx.fillText(String(value), panelX + 22 + colIndex * 34, y + 4);
+    });
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+    ctx.fillText(row.equation, panelX + 18, y + 28);
   });
 }

@@ -18,6 +18,7 @@ import { useInfoPanel } from '@/components/layout/InfoContext';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import type { RecursiveState, ProofNode, RecursiveMode } from '@/types/recursive';
 import {
+  buildFuseCalls,
   buildProofTree,
   getVerificationOrder,
   verifyNode,
@@ -258,6 +259,7 @@ export function RecursiveDemo(): JSX.Element {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const followCamera = useFollowCamera(camera);
   const [followEnabled, setFollowEnabled] = useState(true);
+  const [treeLens, setTreeLens] = useState<'verify' | 'fuse'>('verify');
   const lastFollowedIndexRef = useRef(-1);
   const verificationDoneRef = useRef(false);
 
@@ -316,6 +318,7 @@ export function RecursiveDemo(): JSX.Element {
     }
     return new Map();
   }, [state.root, state.mode, canvasSize]);
+  const fuseCalls = useMemo(() => (state.root ? buildFuseCalls(state.root) : new Map()), [state.root]);
 
   // Fit tree into view — reusable for initial load + reset button
   // Reserve 50px at bottom for the screen-space status legend
@@ -459,6 +462,8 @@ export function RecursiveDemo(): JSX.Element {
           state.verification,
           state.showPastaCurves,
           state.showProofSize,
+          treeLens,
+          fuseCalls,
           worldMouse.x,
           worldMouse.y,
           theme
@@ -468,7 +473,9 @@ export function RecursiveDemo(): JSX.Element {
           ? {
               key: hovered.id,
               title: `${hovered.label} (id: ${hovered.id})`,
-              body: `Status: ${hovered.status}. Curve: ${hovered.curve}.`,
+              body: treeLens === 'fuse'
+                ? `${fuseCalls.get(hovered.id)?.expression ?? 'claim(...)'} => ${fuseCalls.get(hovered.id)?.outputHash.slice(0, 10)}…. Curve: ${hovered.curve}.`
+                : `Status: ${hovered.status}. Curve: ${hovered.curve}.`,
             }
           : null;
 
@@ -512,6 +519,8 @@ export function RecursiveDemo(): JSX.Element {
       interaction.mouseX,
       interaction.mouseY,
       theme,
+      treeLens,
+      fuseCalls,
       canvasSize,
       followCamera,
     ]
@@ -582,6 +591,7 @@ export function RecursiveDemo(): JSX.Element {
       showPasta?: boolean;
       showProofSize?: boolean;
       badProofNode?: string | null;
+      treeLens?: 'verify' | 'fuse';
       autoplay?: boolean;
       verifiedNodes?: string[];
       failedNodes?: string[];
@@ -597,6 +607,7 @@ export function RecursiveDemo(): JSX.Element {
       showPasta?: boolean;
       showProofSize?: boolean;
       badProofNode?: string | null;
+      treeLens?: 'verify' | 'fuse';
       autoplay?: boolean;
       verifiedNodes?: string[];
       failedNodes?: string[];
@@ -615,6 +626,9 @@ export function RecursiveDemo(): JSX.Element {
     }
     if (typeof payload.showProofSize === 'boolean' && payload.showProofSize !== initialState.showProofSize) {
       dispatch({ type: 'TOGGLE_PROOF_SIZE' });
+    }
+    if (payload.treeLens === 'fuse' || payload.treeLens === 'verify') {
+      setTreeLens(payload.treeLens);
     }
     if (payload.mode === 'ivc') {
       dispatch({ type: 'BUILD_IVC' });
@@ -697,11 +711,12 @@ export function RecursiveDemo(): JSX.Element {
       showPasta: state.showPastaCurves,
       showProofSize: state.showProofSize,
       badProofNode: state.badProofTarget,
+      treeLens,
       autoplay,
       ...runtimeState,
     };
     setSearchParams({ r: encodeState(payload) });
-  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget, runtimeState]);
+  }, [state.mode, state.treeDepth, state.ivcLength, state.showPastaCurves, state.showProofSize, state.badProofTarget, treeLens, runtimeState]);
 
   const buildShareState = () => {
     const autoplay = state.mode === 'tree' && Boolean(state.badProofTarget) ? true : undefined;
@@ -712,6 +727,7 @@ export function RecursiveDemo(): JSX.Element {
       showPasta: state.showPastaCurves,
       showProofSize: state.showProofSize,
       badProofNode: state.badProofTarget,
+      treeLens,
       autoplay,
       ...runtimeState,
     };
@@ -764,7 +780,7 @@ export function RecursiveDemo(): JSX.Element {
       setEntry('recursive', {
         title: hoverInfo.title,
         body: hoverInfo.body,
-        nextSteps: ['Run auto-verify or step manually', 'Toggle Pasta curves'],
+        nextSteps: treeLens === 'fuse' ? ['Inspect the accumulator hash at internal nodes', 'Switch back to verification lens'] : ['Run auto-verify or step manually', 'Toggle Pasta curves'],
       });
       return;
     }
@@ -788,11 +804,15 @@ export function RecursiveDemo(): JSX.Element {
     }
 
     setEntry('recursive', {
-      title: state.verification.isRunning ? 'Auto-verify running' : 'Tree verification',
-      body: `Depth ${state.treeDepth}. Verification proceeds bottom-up with constant proof size.`,
-      nextSteps: ['Click Auto to animate verification', 'Inject a bad proof to see failure'],
+      title: treeLens === 'fuse' ? 'Prover-side fuse tree' : (state.verification.isRunning ? 'Auto-verify running' : 'Tree verification'),
+      body: treeLens === 'fuse'
+        ? `Depth ${state.treeDepth}. Each internal node now shows fuse(left, right) and the accumulator hash it produces on the prover side.`
+        : `Depth ${state.treeDepth}. Verification proceeds bottom-up with constant proof size.`,
+      nextSteps: treeLens === 'fuse'
+        ? ['Inspect internal fuse calls', 'Watch the root accumulator change as the tree grows']
+        : ['Click Auto to animate verification', 'Inject a bad proof to see failure'],
     });
-  }, [hoverInfo, state.mode, state.ivcLength, state.badProofTarget, state.verification.isRunning, state.treeDepth, setEntry]);
+  }, [hoverInfo, state.mode, state.ivcLength, state.badProofTarget, state.verification.isRunning, state.treeDepth, setEntry, treeLens]);
 
   return (
     <DemoLayout
@@ -853,6 +873,15 @@ export function RecursiveDemo(): JSX.Element {
                 max={5}
                 step={1}
                 onChange={(value) => dispatch({ type: 'SET_DEPTH', depth: value })}
+              />
+              <SelectControl
+                label="Tree lens"
+                value={treeLens}
+                options={[
+                  { value: 'verify', label: 'Verification flow' },
+                  { value: 'fuse', label: 'Fuse tree' },
+                ]}
+                onChange={(value) => setTreeLens(value as 'verify' | 'fuse')}
               />
               <ButtonControl label="Build Tree" onClick={() => dispatch({ type: 'BUILD_TREE' })} />
             </ControlGroup>
@@ -997,6 +1026,14 @@ export function RecursiveDemo(): JSX.Element {
               <div className="control-kicker">Total nodes</div>
               <div className="control-value font-mono">{stats.totalNodes}</div>
             </ControlCard>
+            {treeLens === 'fuse' && state.root && (
+              <ControlCard>
+                <div className="control-kicker">Root accumulator</div>
+                <div className="break-all font-mono text-xs" style={{ color: 'var(--text-primary)' }}>
+                  {fuseCalls.get(state.root.id)?.outputHash.slice(0, 12)}...
+                </div>
+              </ControlCard>
+            )}
             <ControlCard tone="success">
               <div className="control-kicker">Verified</div>
               <div className="control-value font-mono" style={{ color: 'var(--status-success)' }}>{stats.verified}</div>

@@ -1,6 +1,7 @@
 import type { ProofNode, VerificationState, IvcChain } from '@/types/recursive';
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawRoundedRect, hexToRgba } from '@/lib/canvas';
+import type { FuseCall } from './logic';
 import { getConstantProofSize } from './logic';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -359,6 +360,8 @@ export function renderProofTree(
   verification: VerificationState,
   showPastaCurves: boolean,
   showProofSize: boolean,
+  treeLens: 'verify' | 'fuse',
+  fuseCalls: Map<string, FuseCall>,
   mouseX: number,
   mouseY: number,
   theme: 'dark' | 'light'
@@ -456,6 +459,27 @@ export function renderProofTree(
     drawNode(ctx, node, pos.x, pos.y, time, showPastaCurves, showProofSize, isRoot, isHovered, colors);
   }
 
+  if (treeLens === 'fuse') {
+    for (const node of allNodes) {
+      const pos = positions.get(node.id);
+      const fuse = fuseCalls.get(node.id);
+      if (!pos || !fuse) continue;
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      if (fuse.isLeaf) {
+        ctx.fillStyle = hexToRgba(colors.textMuted, 0.7);
+        ctx.fillText(`acc ${fuse.outputHash.slice(0, 6)}…`, pos.x, pos.y + NH / 2 + 18);
+      } else {
+        ctx.fillStyle = hexToRgba(colors.verifying.border, 0.9);
+        ctx.fillText(fuse.expression, pos.x, pos.y - NH / 2 - 14);
+        ctx.fillStyle = hexToRgba(colors.verified.border, 0.9);
+        ctx.fillText(`acc ${fuse.outputHash.slice(0, 8)}…`, pos.x, pos.y + NH / 2 + 18);
+      }
+    }
+  }
+
   // ── Status legend (screen-space, truly centered on canvas) ────────────────
   // Break out of camera transform so legend stays fixed on screen
   const dpr = window.devicePixelRatio || 1;
@@ -468,6 +492,10 @@ export function renderProofTree(
     { label: 'Verified',  color: colors.verified.border },
     { label: 'Failed',    color: colors.failed.border },
   ];
+  if (treeLens === 'fuse') {
+    legendItems.push({ label: 'Fuse()', color: colors.verifying.border });
+    legendItems.push({ label: 'Accumulator', color: colors.verified.border });
+  }
   if (showPastaCurves) {
     legendItems.push({ label: 'Pallas', color: colors.pallas });
     legendItems.push({ label: 'Vesta',  color: colors.vesta });

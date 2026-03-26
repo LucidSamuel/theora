@@ -198,6 +198,50 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: strin
       { label: 'Nitpick – Groth16 Explained', url: 'https://www.zeroknowledgeblog.com/index.php/groth16' },
     ],
   },
+  'split-accumulation': {
+    concepts: [
+      'Naive recursive verification embeds a full multi-scalar multiplication (MSM) at every step, making the verifier circuit enormous.',
+      'Split accumulation defers the MSM into a running accumulator via cheap random linear combinations (~10 field ops per fold).',
+      'A single final MSM settles all deferred work, making total cost O(n·fieldOps + MSM) instead of O(n·MSM).',
+    ],
+    resources: [
+      { label: 'Halo: Recursive Proof Composition (IACR)', url: 'https://eprint.iacr.org/2019/1021' },
+      { label: 'Nova: Recursive SNARKs without SNARKs (IACR)', url: 'https://eprint.iacr.org/2021/370' },
+    ],
+  },
+  rerandomization: {
+    concepts: [
+      'Rerandomization changes every byte of a proof transcript while preserving the statement and verifier acceptance.',
+      'This breaks trivial linkability based on proof bytes, commitment openings, or transcript hashes.',
+      'The security goal is not hiding the statement — it is hiding whether two presentations came from the same prior proof.',
+    ],
+    resources: [
+      { label: 'Bowe, Gabizon, Green – A Formal Treatment of Rerandomized Proofs', url: 'https://eprint.iacr.org/' },
+      { label: 'Zcash Halo 2 Book – Transcript and commitments', url: 'https://zcash.github.io/halo2/' },
+    ],
+  },
+  'oblivious-sync': {
+    concepts: [
+      'The wallet blinds nullifiers before sending them to the remote service, so the server never sees raw note identifiers.',
+      'The service proves a set relation over the blinded batch, typically disjointness from the spent set.',
+      'This is a privacy-preserving sync pattern: the wallet learns whether any note is spent without revealing which notes it owns.',
+    ],
+    resources: [
+      { label: 'Tachyon overview – Oblivious synchronization', url: 'https://electriccoin.co/' },
+      { label: 'Zcash protocol concepts – Nullifiers and spends', url: 'https://zips.z.cash/protocol/protocol.pdf' },
+    ],
+  },
+  'constraint-counter': {
+    concepts: [
+      'Pedersen commitments are useful, but Pedersen hashing is relatively expensive inside zk circuits because it expands to many fixed-base scalar operations.',
+      'Poseidon is designed to be arithmetization-friendly, so the same Merkle structure costs far fewer constraints.',
+      'Merkle costs compound linearly along authentication paths and exponentially over full-tree construction, so per-hash savings matter a lot.',
+    ],
+    resources: [
+      { label: 'Poseidon hash paper (IACR)', url: 'https://eprint.iacr.org/2019/458' },
+      { label: 'Halo 2 gadget notes – Why Poseidon replaced Pedersen for Merkle paths', url: 'https://zcash.github.io/halo2/' },
+    ],
+  },
 };
 
 const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
@@ -261,6 +305,26 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
     { term: 'CRS', definition: 'Common reference string produced by a circuit-specific trusted setup.' },
     { term: 'Pairing', definition: 'Bilinear map used to check the proof equation without revealing inputs.' },
   ],
+  'split-accumulation': [
+    { term: 'MSM', definition: 'Multi-scalar multiplication — the expensive operation deferred by accumulation.' },
+    { term: 'Fold', definition: 'Random linear combination that merges a new claim into the accumulator.' },
+    { term: 'Settlement', definition: 'The single final MSM that verifies all accumulated claims at once.' },
+  ],
+  rerandomization: [
+    { term: 'Transcript', definition: 'The byte-level record of commitments, openings, and proof messages.' },
+    { term: 'Unlinkability', definition: 'Two valid proofs cannot be correlated just by comparing their bytes.' },
+    { term: 'Rerandomizer', definition: 'Fresh randomness used to blind the existing proof transcript.' },
+  ],
+  'oblivious-sync': [
+    { term: 'Nullifier', definition: 'A note identifier that reveals whether a note has been spent.' },
+    { term: 'Blinding', definition: 'Masking the nullifier before it leaves the wallet.' },
+    { term: 'Disjointness proof', definition: 'A proof that two sets do not intersect without revealing the sets themselves.' },
+  ],
+  'constraint-counter': [
+    { term: 'Constraint', definition: 'One arithmetic relation that the prover must satisfy inside the circuit.' },
+    { term: 'Merkle path', definition: 'The sequence of hashes from one leaf up to the root.' },
+    { term: 'Arithmetization-friendly hash', definition: 'A hash designed to minimize circuit cost, such as Poseidon.' },
+  ],
 };
 
 const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
@@ -269,11 +333,15 @@ const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   polynomial: ['Adjust coefficients', 'Commit to the polynomial', 'Challenge and verify'],
   accumulator: ['Add primes', 'Select an element', 'Compute a witness'],
   recursive: ['Build a tree', 'Run auto-verify', 'Try IVC mode'],
+  'split-accumulation': ['Step through all recursive steps', 'Compare naive vs accumulated cost', 'Settle the accumulator'],
+  rerandomization: ['Rerandomize the same proof again', 'Try the matching game', 'Compare changed bytes across components'],
+  'oblivious-sync': ['Step through every protocol round', 'Inject a spent-note collision', 'Compare what wallet vs service learns'],
   elliptic: ['Pick two points', 'Inspect the line and reflected sum', 'Step through scalar multiplication'],
   'fiat-shamir': ['Compare interactive mode', 'Switch to a broken transcript', 'Attempt the forged proof'],
   circuit: ['Adjust witness values', 'Toggle the broken circuit', 'Inspect which constraints fail'],
   lookup: ['Edit the lookup table', 'Add wire values', 'Check the multiset permutation result'],
   pedersen: ['Set a value and commit', 'Toggle the blinding factor reveal', 'Try homomorphic addition'],
+  'constraint-counter': ['Raise the tree depth', 'Compare path cost against full-tree cost', 'Use the ratio to explain why Poseidon wins in Merkle circuits'],
   plonk: ['Inspect gate selectors', 'Trace the copy constraints', 'Add a custom gate'],
   groth16: ['Step through the QAP encoding', 'Inspect the trusted setup output', 'Verify the pairing equation'],
 };

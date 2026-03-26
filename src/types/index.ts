@@ -2,12 +2,16 @@ export const DEMO_IDS = [
   'merkle',
   'accumulator',
   'polynomial',
-  'circuit',
-  'lookup',
+  'recursive',
+  'split-accumulation',
+  'rerandomization',
+  'oblivious-sync',
   'elliptic',
   'fiat-shamir',
-  'recursive',
+  'circuit',
+  'lookup',
   'pedersen',
+  'constraint-counter',
   'plonk',
   'groth16',
   'pipeline',
@@ -93,12 +97,44 @@ export const DEMOS: DemoMeta[] = [
     accent: 'var(--recursive)',
   },
   {
+    id: 'split-accumulation',
+    title: 'Split Accumulation',
+    subtitle: 'See why Halo-style recursion works without pairings.',
+    description:
+      'Split accumulation defers expensive multi-scalar multiplications into a running accumulator. Each recursive step does only cheap field operations, and a single final MSM settles everything. This is the core insight behind Halo, Nova, and Sangria — and the reason Ragu achieves recursion without trusted setup.',
+    accent: '#6ee7b7',
+  },
+  {
+    id: 'rerandomization',
+    title: 'Proof Rerandomization',
+    subtitle: 'Watch proof bytes change while the verified statement stays fixed.',
+    description:
+      'Rerandomization blinds the transcript of an existing proof so that every byte-level component changes while the public statement and verifier acceptance remain the same. This is a concrete way to explain unlinkability in proof-carrying systems.',
+    accent: '#a78bfa',
+  },
+  {
+    id: 'oblivious-sync',
+    title: 'Oblivious Sync',
+    subtitle: 'Show a wallet proving spent-note disjointness without revealing its notes.',
+    description:
+      'Oblivious synchronization lets a wallet query a remote spent-note service without exposing its real nullifiers. The wallet blinds its note identifiers, the service proves disjointness against the spent set, and the wallet learns only whether the sync is clean.',
+    accent: '#38bdf8',
+  },
+  {
     id: 'pedersen',
     title: 'Pedersen Commitments',
     subtitle: 'Commit to a value with a blinding factor and verify homomorphic addition.',
     description:
       'A Pedersen commitment is a perfectly hiding and computationally binding commitment scheme. Given generators g and h of a cyclic group, C = g^v · h^r binds the prover to value v while r keeps v secret. The scheme is additively homomorphic: committing to two values and multiplying the commitments yields a valid commitment to their sum.',
     accent: '#a3e635',
+  },
+  {
+    id: 'constraint-counter',
+    title: 'Pedersen vs Poseidon',
+    subtitle: 'Quantify how Merkle-hash choice changes R1CS and Bootle16 cost.',
+    description:
+      'Pedersen commitments are flexible, but Pedersen hashing is expensive inside zk circuits. This demo compares Pedersen and Poseidon side by side, then extrapolates the difference over Merkle paths and full trees to make the savings immediate and quantitative.',
+    accent: '#38bdf8',
   },
   {
     id: 'plonk',

@@ -2,6 +2,15 @@ import { fnv1a } from '@/lib/hash';
 import { createSpring2D } from '@/lib/animation';
 import type { ProofNode, IvcChain, IvcStep, ProofStatus, Curve } from '@/types/recursive';
 
+export interface FuseCall {
+  nodeId: string;
+  outputHash: string;
+  expression: string;
+  inputs: string[];
+  inputHashes: string[];
+  isLeaf: boolean;
+}
+
 /**
  * Builds a complete binary proof tree of given depth
  * Even depths use Pallas curve, odd depths use Vesta curve
@@ -193,6 +202,40 @@ export function getAllNodes(root: ProofNode): Map<string, ProofNode> {
 
   traverse(root);
   return nodes;
+}
+
+export function buildFuseCalls(root: ProofNode): Map<string, FuseCall> {
+  const calls = new Map<string, FuseCall>();
+
+  function walk(node: ProofNode): string {
+    if (node.children.length === 0) {
+      const outputHash = fnv1a(`leaf:${node.id}:${node.curve}`);
+      calls.set(node.id, {
+        nodeId: node.id,
+        outputHash,
+        expression: `claim(${node.label})`,
+        inputs: [],
+        inputHashes: [],
+        isLeaf: true,
+      });
+      return outputHash;
+    }
+
+    const childHashes = node.children.map((child) => walk(child));
+    const outputHash = fnv1a(`fuse:${childHashes.join(':')}:${node.curve}:${node.id}`);
+    calls.set(node.id, {
+      nodeId: node.id,
+      outputHash,
+      expression: `fuse(${node.children.map((child) => child.label).join(', ')})`,
+      inputs: node.children.map((child) => child.label),
+      inputHashes: childHashes,
+      isLeaf: false,
+    });
+    return outputHash;
+  }
+
+  walk(root);
+  return calls;
 }
 
 /**

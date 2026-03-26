@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  buildFuseCalls,
   buildProofTree,
   getVerificationOrder,
   verifyNode,
@@ -197,6 +198,24 @@ describe('getAllNodes', () => {
     const root = buildProofTree(1, null);
     const nodes = getAllNodes(root);
     expect(nodes.has(root.id)).toBe(true);
+  });
+});
+
+describe('buildFuseCalls', () => {
+  it('creates a fuse expression for every node in the tree', () => {
+    const root = buildProofTree(1, null);
+    const fuseCalls = buildFuseCalls(root);
+
+    expect(fuseCalls.size).toBe(3);
+    expect(fuseCalls.get(root.id)?.expression).toContain('fuse(');
+    expect(fuseCalls.get(root.children[0]!.id)?.isLeaf).toBe(true);
+  });
+
+  it('changes the root accumulator hash when the tree shape changes', () => {
+    const shallow = buildFuseCalls(buildProofTree(1, null));
+    const deep = buildFuseCalls(buildProofTree(2, null));
+
+    expect(shallow.get('node_0_0')?.outputHash).not.toBe(deep.get('node_0_0')?.outputHash);
   });
 });
 
