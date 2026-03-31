@@ -323,7 +323,7 @@ export function GitHubImportModal({ isOpen, onClose, activeDemo }: GitHubImportM
             </>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              Export becomes available once this demo has shareable state. All 12 demos support import/export.
+              Export becomes available once this demo has shareable state. All 16 demos support import/export.
             </div>
           )}
         </div>

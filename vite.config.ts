@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     host: process.env.REPL_SLUG ? '0.0.0.0' : 'localhost',
-    port: 5000,
+    port: 5173,
   },
   build: {
     sourcemap: false,

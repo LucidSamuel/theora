@@ -65,7 +65,7 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
   );
 }
 
-const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: string; url: string }[] }> = {
+export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: string; url: string }[] }> = {
   pipeline: {
     concepts: [
       'A proof system chains primitives: computation → constraints → polynomial → commitment → challenge → opening → verification.',
@@ -244,7 +244,7 @@ const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: strin
   },
 };
 
-const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
+export const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
   pipeline: [
     { term: 'R1CS', definition: 'Rank-1 constraint system encoding a computation.' },
     { term: 'Commitment', definition: 'Binding hash of polynomial coefficients.' },
@@ -327,7 +327,7 @@ const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
   ],
 };
 
-const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
+export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   pipeline: ['Step through all 7 stages', 'Inject a bad witness fault', 'Try weak Fiat-Shamir'],
   merkle: ['Add a leaf', 'Generate a proof', 'Step through hashing'],
   polynomial: ['Adjust coefficients', 'Commit to the polynomial', 'Challenge and verify'],
@@ -364,6 +364,7 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
         backgroundColor: 'var(--bg-primary)',
         width: 288,
         padding: '24px 20px 32px',
+        fontFamily: 'var(--font-sans)',
       }}
     >
       <h3 className="text-[11px] font-bold uppercase tracking-wider mb-2 font-display" style={{ color: demo.accent }}>

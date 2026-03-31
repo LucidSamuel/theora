@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GitHubProvider } from '@/hooks/useGitHub';
 import { Layout } from '@/components/layout/Layout';
 import { DemoContainer } from '@/components/layout/DemoContainer';
@@ -48,6 +49,7 @@ const DEMO_NAMES = {
 export default function App() {
   const { theme, toggle } = useTheme();
   const { activeDemo, activeLocationKey, switchDemo } = useActiveDemo();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
@@ -63,6 +65,8 @@ export default function App() {
   }, [activeDemo, switchDemo]);
 
   useEffect(() => {
+    if (isMobile) return;
+
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'CANVAS') return;
@@ -71,7 +75,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [navigateDemo]);
+  }, [isMobile, navigateDemo]);
 
   const renderDemo = () => {
     switch (activeDemo) {

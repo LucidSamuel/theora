@@ -1,252 +1,80 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@/hooks/useTheme';
-import { HeroAnimation } from '@/components/landing/HeroAnimation';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { HeroAnimation } from "@/components/landing/HeroAnimation";
+import { DemoIcon } from "@/components/shared/DemoIcon";
+import { DEMO_GROUPS } from "@/content/demoGroups";
+import { useTheme } from "@/hooks/useTheme";
+import { DEMOS, type DemoId } from "@/types";
 
-const DEMO_DATA = [
-  {
-    id: 'merkle',
-    num: '01',
-    title: 'Merkle Tree',
-    tag: 'HASH TREES · MEMBERSHIP PROOFS',
-    body: 'Build a binary hash tree from arbitrary data. Generate inclusion proofs, step through verification one hash at a time, and watch the exact path of changed hashes cascade to the root.',
-    features: [
-      'SHA-256 and FNV-1a hash functions',
-      'Step-through proof verification',
-      'Spring-physics canvas animation',
-      'Proof export as JSON or audit summary',
-    ],
-  },
-  {
-    id: 'polynomial',
-    num: '02',
-    title: 'KZG Commitments',
-    tag: 'POLYNOMIAL EVALUATION · ELLIPTIC CURVES',
-    body: 'Commit to a polynomial, pick a challenge point, reveal a value, and verify the full 4-step KZG flow animated. Drag coefficients to reshape the curve in real time.',
-    features: [
-      'Lagrange interpolation by clicking the canvas',
-      'Polynomial comparison via Schwartz-Zippel',
-      'KZG commit → challenge → prove → verify',
-      'Synthetic division for quotient polynomial',
-    ],
-  },
-  {
-    id: 'accumulator',
-    num: '03',
-    title: 'RSA Accumulator',
-    tag: 'SET MEMBERSHIP · MODULAR EXPONENTIATION',
-    body: 'Add prime numbers to a cryptographic accumulator and prove membership or non-membership without revealing the entire set. Witness computation via extended GCD.',
-    features: [
-      'Membership and non-membership proofs',
-      'Batch add with comma-separated primes',
-      'Orbital visualization with spring physics',
-      'Full operation history with before/after',
-    ],
-  },
-  {
-    id: 'recursive',
-    num: '04',
-    title: 'Recursive Proofs',
-    tag: 'IVC · PASTA CURVES · PROOF COMPOSITION',
-    body: 'Proof trees where each node verifies its children, built on Pallas/Vesta curve cycling. Inject a bad proof at any node and watch soundness failures propagate upward.',
-    features: [
-      'Binary proof tree (depth 2–5)',
-      'IVC chain with fold-by-fold stepping',
-      'Pasta curve cycle at each depth',
-      'Constant-size proofs (~288 bytes regardless of depth)',
-    ],
-  },
-  {
-    id: 'split-accumulation',
-    num: '05',
-    title: 'Split Accumulation',
-    tag: 'HALO RECURSION · MSM DEFERRAL · FOLDING',
-    body: 'Compare naive recursion against Halo-style accumulation side by side. Step through recursive claims, watch the accumulator absorb each fold, and see a single final MSM settle the whole chain.',
-    features: [
-      'Naive vs accumulated verifier panels',
-      'Step-by-step fold progression with autoplay',
-      'Live cost ratio and deferred-work tracking',
-      'Final settlement MSM highlight',
-    ],
-  },
-  {
-    id: 'rerandomization',
-    num: '06',
-    title: 'Proof Rerandomization',
-    tag: 'UNLINKABILITY · BLINDING · BYTE-LEVEL TRANSCRIPTS',
-    body: 'Watch an original proof and its rerandomized twin side by side. Every byte changes, yet the verifier still accepts the same statement. Then try to match shuffled rerandomized proofs back to their originals.',
-    features: [
-      'Byte-level proof component comparison',
-      'Repeated rerandomization of one statement',
-      'Live changed-byte counter',
-      'Matching game for unlinkability intuition',
-    ],
-  },
-  {
-    id: 'oblivious-sync',
-    num: '07',
-    title: 'Oblivious Sync',
-    tag: 'WALLET PRIVACY · BLINDED NULLIFIERS · DISJOINTNESS PROOFS',
-    body: 'Step through a wallet syncing against a remote spent-note service. The wallet blinds its nullifiers, the service proves disjointness, and both sides learn only the minimum necessary to complete sync.',
-    features: [
-      'Five protocol rounds with stepping',
-      'Wallet vs service knowledge tracking',
-      'Injectable spent-note collision',
-      'Blinded nullifier transcript view',
-    ],
-  },
-  {
-    id: 'elliptic',
-    num: '08',
-    title: 'Elliptic Curves',
-    tag: 'POINT ADDITION · DOUBLE-AND-ADD · PASTA CYCLE',
-    body: 'Plot discrete curve points over a finite field, pick two points to add, and step through scalar multiplication. The side panel bridges from toy arithmetic to the Pallas/Vesta cycle used in modern proof systems.',
-    features: [
-      'Finite-field point enumeration',
-      'Point addition and point doubling',
-      'Double-and-add scalar trace',
-      'Pasta cycle summary for recursion intuition',
-    ],
-  },
-  {
-    id: 'fiat-shamir',
-    num: '09',
-    title: 'Fiat-Shamir',
-    tag: 'TRANSCRIPTS · CHALLENGES · FORGERIES',
-    body: 'Compare a live interactive proof against correct and broken Fiat-Shamir transcript hashing. Watch challenge derivation change, then see a forged proof succeed only when the commitment is omitted from the hash.',
-    features: [
-      'Interactive vs hashed challenges',
-      'Correct vs broken transcript mode',
-      'Predictable-challenge forgery demo',
-      'Stepwise transcript visualization',
-    ],
-  },
-  {
-    id: 'circuit',
-    num: '10',
-    title: 'R1CS Circuits',
-    tag: 'ARITHMETIC GATES · WITNESSES · UNDERCONSTRAINTS',
-    body: 'Inspect a small arithmetic circuit for x² + y = z, compare the witness against the active constraints, and toggle a broken version where the output relation silently disappears.',
-    features: [
-      'Witness sliders for x, y, z',
-      'Constraint satisfaction panel',
-      'Exploit witness in broken mode',
-      'R1CS row preview for each relation',
-    ],
-  },
-  {
-    id: 'lookup',
-    num: '11',
-    title: 'Lookup Arguments',
-    tag: 'TABLES · MULTISETS · PERMUTATION CHECKS',
-    body: 'Edit a lookup table and queried wire values, then compare the sorted multisets to see when a lookup passes, when values are missing, and when multiplicities overflow the table.',
-    features: [
-      'Editable table and wire lists',
-      'Sorted multiset comparison',
-      'Missing-value detection',
-      'Multiplicity clash detection',
-    ],
-  },
-  {
-    id: 'pedersen',
-    num: '12',
-    title: 'Pedersen Commitments',
-    tag: 'HIDING · BINDING · HOMOMORPHIC ADDITION',
-    body: 'Compute C = g^v · h^r mod p over a small prime field. Toggle the blinding factor, then verify that the product of two commitments equals a direct commitment to their sum.',
-    features: [
-      'Single commitment with blinding toggle',
-      'Homomorphic addition verification',
-      'Flow-diagram canvas visualization',
-      'Small field (p=97) for full inspection',
-    ],
-  },
-  {
-    id: 'constraint-counter',
-    num: '13',
-    title: 'Pedersen vs Poseidon',
-    tag: 'MERKLE COSTS · R1CS · BOOTLE16',
-    body: 'Quantify why Poseidon replaced Pedersen for Merkle-heavy zk circuits. Compare one hash, a full authentication path, and even a whole tree build under both R1CS and Bootle16 cost models.',
-    features: [
-      'Per-hash Pedersen vs Poseidon counts',
-      'Depth-adjustable Merkle path comparison',
-      'Full-tree amplification with large counts',
-      'R1CS and Bootle16 side by side',
-    ],
-  },
-  {
-    id: 'groth16',
-    num: '14',
-    title: 'Groth16 zkSNARK',
-    tag: 'R1CS · QAP · PAIRING VERIFICATION',
-    body: 'Walk through the full Groth16 pipeline: R1CS encoding, QAP conversion, trusted setup, proof generation, and pairing-based verification for f(x) = x² + x + 5 over GF(101).',
-    features: [
-      '5-phase pipeline with auto-run',
-      'Trusted setup with toxic waste toggle',
-      'Fault injection on A, B, or C proof elements',
-      'Simulated pairing check with LHS/RHS display',
-    ],
-  },
-  {
-    id: 'plonk',
-    num: '15',
-    title: 'PLONK Arithmetization',
-    tag: 'GATE EQUATIONS · COPY CONSTRAINTS · SELECTORS',
-    body: 'Explore PLONK gate equations and copy constraints with a 3-gate arithmetic circuit. Edit wire values, break a copy constraint, and see exactly which equations fail.',
-    features: [
-      'Per-gate selector and wire display',
-      'Copy constraint bezier arrows',
-      'One-click constraint breaking',
-      'Gate satisfaction status per equation',
-    ],
-  },
-  {
-    id: 'pipeline',
-    num: '16',
-    title: 'Proof Pipeline',
-    tag: 'END-TO-END · FAULT INJECTION · LINKED STATE',
-    body: 'End-to-end walkthrough from witness to verification: R1CS encoding, Lagrange interpolation, simulated KZG, Fiat-Shamir challenge. Inject faults and watch corruption propagate through the pipeline.',
-    features: [
-      '7-stage proof system flow',
-      '4 attack modes with fault propagation',
-      'Cross-demo linked state handoff',
-      'Auto-play with speed control',
-    ],
-  },
-];
-
-const DEMO_COUNT_LABEL = String(DEMO_DATA.length).padStart(2, '0');
+const GITHUB_URL = "https://github.com/LucidSamuel/theora";
+const TWITTER_URL = "https://x.com/lucidzk";
 
 const TICKER_ITEMS = [
-  'MERKLE TREES', 'KZG COMMITMENTS', 'RSA ACCUMULATORS', 'RECURSIVE PROOFS',
-  'SPLIT ACCUMULATION', 'PROOF RERANDOMIZATION', 'OBLIVIOUS SYNC', 'ELLIPTIC CURVES', 'FIAT-SHAMIR', 'R1CS', 'LOOKUP ARGUMENTS',
-  'PEDERSEN COMMITMENTS', 'POSEIDON HASHING', 'GROTH16', 'PLONK', 'PROOF PIPELINE',
-  'HALO RECURSION', 'MSM DEFERRAL', 'PASTA CURVES', 'IVC CHAINS', 'PROOF COMPOSITION', 'ZERO KNOWLEDGE',
-  'SPRING PHYSICS', 'SHAREABLE STATE', 'STEP-THROUGH VERIFICATION', 'CANVAS RENDERING',
+  "MERKLE TREES",
+  "KZG COMMITMENTS",
+  "RSA ACCUMULATORS",
+  "RECURSIVE PROOFS",
+  "SPLIT ACCUMULATION",
+  "PROOF RERANDOMIZATION",
+  "OBLIVIOUS SYNC",
+  "ELLIPTIC CURVES",
+  "FIAT-SHAMIR",
+  "R1CS CIRCUITS",
+  "LOOKUP ARGUMENTS",
+  "PEDERSEN COMMITMENTS",
+  "HASH COST COMPARISON",
+  "GROTH16",
+  "PLONK",
+  "PROOF PIPELINE",
 ];
+
+const AUDIENCES: {
+  tag: string;
+  title: string;
+  body: string;
+  featured?: boolean;
+}[] = [
+  {
+    tag: "Audit",
+    title: "Security Auditors",
+    body: "Inject a bad witness into a Groth16 proof and watch it fail at the pairing check. Corrupt a Fiat-Shamir transcript and see the challenge become predictable. Break a copy constraint in PLONK and trace exactly which gate equation goes non-zero. Every failure mode is interactive, shareable, and reproducible via URL.",
+    featured: true,
+  },
+  {
+    tag: "Build",
+    title: "ZK Engineers",
+    body: "Step through the full proof pipeline — witness generation, R1CS, polynomial interpolation, KZG commitment, Fiat-Shamir challenge, opening, verification — with real computed values at every stage. Drill into any primitive from the pipeline with exact state handoff.",
+  },
+  {
+    tag: "Research",
+    title: "Researchers",
+    body: "Compare Groth16 vs PLONK arithmetization, IVC folding vs split accumulation, KZG vs Pedersen commitments. Every demo is parameterized — change the circuit, the field, the tree depth and see what shifts.",
+  },
+  {
+    tag: "Teach",
+    title: "Educators",
+    body: "Every demo state is a stable URL. Embed a Merkle proof mid-verification into lecture slides. Link a broken Fiat-Shamir transcript in a problem set. Students interact with the actual primitive, not a diagram of one.",
+  },
+];
+
+const DEMO_BY_ID = DEMOS.reduce<Record<DemoId, (typeof DEMOS)[number]>>(
+  (acc, demo) => {
+    acc[demo.id] = demo;
+    return acc;
+  },
+  {} as Record<DemoId, (typeof DEMOS)[number]>,
+);
 
 function useScrollY() {
   const [y, setY] = useState(0);
-  useEffect(() => {
-    const fn = () => setY(window.scrollY);
-    window.addEventListener('scroll', fn, { passive: true });
-    return () => window.removeEventListener('scroll', fn);
-  }, []);
-  return y;
-}
 
-function useInView(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e?.isIntersecting) { setInView(true); obs.disconnect(); }
-    }, { threshold });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, inView };
+    const handleScroll = () => setY(window.scrollY);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return y;
 }
 
 export function Landing() {
@@ -254,36 +82,87 @@ export function Landing() {
   const { theme, toggle } = useTheme();
   const scrollY = useScrollY();
   const navScrolled = scrollY > 40;
-  const aboutRef = useInView(0.05);
-  const demosRef = useInView(0.02);
-  const featuresRef = useInView(0.05);
+  const demoCount = DEMOS.length;
+  const appHref = "/app";
+  const origin = "https://www.theora.dev";
+  const embedSnippet = `<iframe src="${origin}/app?embed=merkle" width="960" height="540" style="border:0"></iframe>`;
 
   return (
-    <div className="lp min-h-screen w-full overflow-x-hidden" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-
+    <div
+      className="lp"
+      style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
+    >
       {/* ── NAV ── */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50"
+        className="lp-nav"
         style={{
-          borderBottom: navScrolled ? '1px solid var(--border)' : '1px solid transparent',
-          background: navScrolled ? 'color-mix(in srgb, var(--bg-primary) 90%, transparent)' : 'transparent',
-          backdropFilter: navScrolled ? 'blur(20px)' : 'none',
-          transition: 'border-color 300ms, background 300ms, backdrop-filter 300ms',
+          borderBottom: navScrolled
+            ? "1px solid var(--border)"
+            : "1px solid transparent",
+          background: navScrolled
+            ? "color-mix(in srgb, var(--bg-primary) 92%, transparent)"
+            : "transparent",
+          backdropFilter: navScrolled ? "blur(18px)" : "none",
         }}
       >
-        <div className="lp-container h-16 flex items-center justify-between">
-          <span className="lp-wordmark">
-            <span className="lp-wordmark-sym">∴</span> theora
-          </span>
-          <div className="flex items-center gap-3">
-            <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
-              className="lp-nav-link hidden sm:flex">
+        <div className="lp-shell lp-nav-inner">
+          <a href="/" className="lp-brand no-underline">
+            <span className="lp-brand-mark">∴</span>
+            <span>theora</span>
+          </a>
+          <div className="lp-nav-actions">
+            {/* Demos megamenu dropdown */}
+            <div className="lp-nav-dropdown">
+              <button
+                className="lp-nav-link lp-nav-dropdown-trigger"
+                type="button"
+              >
+                Demos <span className="lp-nav-caret" aria-hidden="true" />
+              </button>
+              <div className="lp-nav-dropdown-panel">
+                {DEMO_GROUPS.map((group) => (
+                  <div key={group.title} className="lp-nav-dropdown-group">
+                    <span className="lp-nav-dropdown-label">{group.title}</span>
+                    {group.demos.map((demoId) => {
+                      const demo = DEMO_BY_ID[demoId];
+                      return (
+                        <a
+                          key={demo.id}
+                          href={`/app#${demo.id}`}
+                          className="lp-nav-dropdown-item"
+                        >
+                          <DemoIcon
+                            id={demo.id}
+                            size={12}
+                            color={demo.accent}
+                          />
+                          <span>{demo.title}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lp-nav-link hidden sm:flex"
+            >
               GitHub ↗
             </a>
-            <button onClick={toggle} className="lp-icon-btn" aria-label="Toggle theme">
-              {theme === 'dark' ? '☀' : '☾'}
+            <button
+              onClick={toggle}
+              className="lp-icon-btn"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? "☀" : "☾"}
             </button>
-            <button onClick={() => navigate('/app')} className="lp-btn-primary">
+            <button
+              onClick={() => navigate(appHref)}
+              className="lp-btn-primary"
+            >
               Launch App
             </button>
           </div>
@@ -295,16 +174,26 @@ export function Landing() {
         <HeroAnimation />
 
         {/* Grid overlay */}
-        <div className="absolute inset-0 lp-grid-bg pointer-events-none" style={{ zIndex: 1 }} />
+        <div
+          className="absolute inset-0 lp-grid-bg pointer-events-none"
+          style={{ zIndex: 1 }}
+        />
 
         {/* Vignette */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          zIndex: 2,
-          background: 'radial-gradient(ellipse 90% 60% at 50% 100%, var(--bg-primary) 0%, transparent 60%)',
-        }} />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 2,
+            background:
+              "radial-gradient(ellipse 90% 60% at 50% 100%, var(--bg-primary) 0%, transparent 60%)",
+          }}
+        />
 
         {/* Ticker pinned to bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 lp-ticker" style={{ zIndex: 10 }}>
+        <div
+          className="absolute bottom-0 left-0 right-0 lp-ticker"
+          style={{ zIndex: 10 }}
+        >
           <div className="lp-ticker-track">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
               <span key={i} className="lp-ticker-item">
@@ -315,219 +204,306 @@ export function Landing() {
           </div>
         </div>
 
-        <div className="lp-container relative flex flex-col justify-center h-full py-16 sm:py-20 pb-24 sm:pb-28" style={{ zIndex: 10 }}>
+        <div
+          className="lp-shell lp-hero-split relative h-full py-12 sm:py-16 pb-16 sm:pb-20"
+          style={{ zIndex: 10 }}
+        >
+          {/* Left column — copy + CTAs */}
+          <div className="lp-hero-copy">
+            <div className="mb-10 sm:mb-12">
+              <span className="lp-mono-label">
+                ∴ UNDERSTAND ZK, NOT JUST READ ABOUT IT
+              </span>
+            </div>
 
-          {/* Top label row */}
-          <div className="flex items-center justify-between mb-8 sm:mb-10">
-            <span className="lp-mono-label">∴ cryptographic primitive visualizer</span>
-            <span className="lp-mono-label hidden sm:block">EST. 2025 · MIT LICENSE</span>
-          </div>
+            <h1 className="lp-hero-title mb-10 sm:mb-12">
+              Cryptography,
+              <br />
+              <span className="lp-hero-title-sub">made visible.</span>
+            </h1>
 
-          {/* Full-width heading */}
-          <h1 className="lp-hero-title mb-8 sm:mb-10">
-            Cryptography,<br />
-            <span className="lp-hero-title-dim">made</span>{' '}
-            <span className="lp-hero-title-accent">visible.</span>
-          </h1>
-
-          {/* Description + buttons row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-16">
-            <p className="lp-hero-sub sm:max-w-[480px]">
-              A unified visual lab for Merkle trees, KZG commitments, RSA accumulators, recursive proofs, elliptic curves, transcript hashing, circuit constraints, and lookup arguments.
+            <p className="lp-hero-sub sm:max-w-[520px]">
+              Build real intuition for cryptography, not by reading papers,
+              but by interacting with the actual primitives. Drag, click, break
+              things, watch math happen.
             </p>
-            <div className="flex flex-wrap gap-3 flex-shrink-0">
-              <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
+
+            <div className="flex flex-wrap gap-3 mt-10 sm:mt-12">
+              <button
+                onClick={() => navigate(appHref)}
+                className="lp-btn-primary lp-btn-lg"
+              >
                 Explore Demos →
               </button>
-              <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
-                className="lp-btn-ghost lp-btn-lg no-underline">
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-btn-ghost lp-btn-lg"
+              >
                 Source ↗
               </a>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="lp-stats-row mt-8">
-            {[
-              [DEMO_COUNT_LABEL, 'Interactive Demos'],
-              ['∞', 'Shareable States'],
-              ['0', 'Dependencies'],
-              ['60', 'FPS Canvas'],
-            ].map(([v, l]) => (
-              <div key={l} className="lp-stat">
-                <span className="lp-stat-val">{v}</span>
-                <span className="lp-stat-label">{l}</span>
+          {/* Right column — live demo teaser */}
+          <div className="lp-hero-teaser">
+            <div className="lp-teaser-frame">
+              <div className="lp-teaser-bar">
+                <span className="lp-teaser-dot" />
+                <span className="lp-teaser-dot" />
+                <span className="lp-teaser-dot" />
+                <span className="lp-teaser-label">
+                  Live Preview — Proof Pipeline
+                </span>
               </div>
-            ))}
+              <iframe
+                src={`${origin}/app?embed=pipeline`}
+                title="Theora demo preview"
+                className="lp-teaser-iframe"
+                loading="lazy"
+                tabIndex={-1}
+              />
+            </div>
+            <p className="lp-teaser-caption">
+              One of {demoCount} interactive demos. Each state is a shareable
+              URL.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ── ABOUT STRIP ── */}
-      <div
-        ref={aboutRef.ref}
-        className={`lp-section-reveal ${aboutRef.inView ? 'is-visible' : ''}`}
-      >
-        <div className="lp-container py-20 sm:py-28">
-          <div className="lp-about-grid">
-            <div>
-              <p className="lp-section-num">§ 00</p>
-              <h2 className="lp-section-heading mt-4">
-                The ZK visualization<br />
-                <span className="lp-dim">landscape is thin.</span>
-              </h2>
-            </div>
-            <div className="lp-about-body">
-              <p className="mt-4">Theora is a unified, interactive, animated tool that lets you poke at the actual cryptographic primitives and build intuition before you write a line of code.</p>
-              <div className="lp-audience-grid mt-8">
-                {['Engineers building ZK systems', 'Cryptographers & researchers', 'Security auditors', 'Educators & DevRel'].map((a) => (
-                  <div key={a} className="lp-audience-item">
-                    <span className="lp-audience-dot" />
-                    {a}
-                  </div>
-                ))}
+      {/* ── BODY SECTIONS (new layout) ── */}
+      <main>
+        <section id="demo-gallery" className="lp-section lp-section--tight">
+          <div className="lp-shell">
+            <div className="lp-section-head">
+              <div>
+                <p className="lp-overline">Demo gallery</p>
+                <h2 className="lp-section-title">
+                  Explore interactive primitives.
+                </h2>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* ── DEMOS ── */}
-      <div
-        ref={demosRef.ref}
-        className={`lp-section-reveal ${demosRef.inView ? 'is-visible' : ''}`}
-      >
-        <div className="lp-container">
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
-            <p className="lp-section-num">{`§ 01 – ${DEMO_COUNT_LABEL} · DEMO SUITE`}</p>
-          </div>
-
-          {DEMO_DATA.map((demo, i) => (
-            <button
-              key={demo.id}
-              onClick={() => navigate(`/app#${demo.id}`)}
-              className="lp-demo-row"
-              style={{ animationDelay: `${i * 80}ms` }}
-            >
-              <div className="lp-demo-left">
-                <span className="lp-demo-num">{demo.num}</span>
-                <h3 className="lp-demo-title">{demo.title}</h3>
-                <span className="lp-demo-tag">{demo.tag}</span>
-              </div>
-
-              <div className="lp-demo-right">
-                <p className="lp-demo-body">{demo.body}</p>
-                <ul className="lp-demo-features">
-                  {demo.features.map((f, j) => (
-                    <li key={j} className="lp-demo-feature-item">
-                      <span className="lp-demo-feature-num">{String(j + 1).padStart(2, '0')}</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="lp-demo-cta">
-                <span className="lp-demo-arrow">→</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── FEATURES ── */}
-      <div
-        ref={featuresRef.ref}
-        className={`lp-section-reveal ${featuresRef.inView ? 'is-visible' : ''}`}
-      >
-        <div className="lp-container py-20 sm:py-28">
-          <div style={{ borderTop: '1px solid var(--border)', paddingBottom: '3rem', paddingTop: '2rem' }}>
-            <p className="lp-section-num">§ 05 · PLATFORM</p>
-            <h2 className="lp-section-heading mt-4">
-              Tooling, not a showcase.
-            </h2>
-          </div>
-
-          <div className="lp-features-grid">
-            {[
-              {
-                num: '01',
-                title: 'State sharing & embedding',
-                body: 'Every demo serializes into the URL. Share a link, embed an iframe in docs, Notion and the recipient sees exactly what you see.',
-              },
-              {
-                num: '02',
-                title: 'Step-through verification',
-                body: 'Walk proof logic incrementally. Watch hashes, witnesses, and evaluations evolve at each verification stage.',
-              },
-              {
-                num: '03',
-                title: 'High-fidelity canvas rendering',
-                body: 'All diagrams on HTML5 canvas. Spring-physics node positioning, 60fps animation, HiDPI scaling, zero SVG or charting libraries.',
-              },
-              {
-                num: '04',
-                title: 'Dark & light themes',
-                body: 'System-aware with localStorage persistence. Every element responds via CSS custom properties, no dark: class overrides.',
-              },
-              {
-                num: '05',
-                title: 'Fault injection',
-                body: 'Inject bad proofs, wrong witnesses, and invalid inputs to watch verification fail in real time and trace the exact failure path.',
-              },
-              {
-                num: '06',
-                title: 'Composable architecture',
-                body: 'Clean logic + renderer + React pattern across all demos. Adding a new primitive is a matter of implementing one interface.',
-              },
-            ].map((f) => (
-              <div key={f.num} className="lp-feature-item">
-                <span className="lp-feature-num">{f.num}</span>
-                <h4 className="lp-feature-title">{f.title}</h4>
-                <p className="lp-feature-body">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── CTA ── */}
-      <div className="lp-container pb-40 sm:pb-56">
-        <div className="lp-cta-block">
-          <div className="lp-cta-inner">
-            <p className="lp-mono-label mb-5">§ 06 · START</p>
-            <h2 className="lp-cta-title">
-              Open the lab.<br />
-              Test your intuition.
-            </h2>
-            <p className="lp-cta-sub">
-              No installation. No account. No ceremony.<br />
-              Manipulate real cryptographic primitives in your browser.
+            <p className="lp-mobile-note-section">
+              Interactive demos are best experienced on desktop.
             </p>
-            <div className="flex flex-wrap gap-3 mt-10">
-              <button onClick={() => navigate('/app')} className="lp-btn-primary lp-btn-lg">
-                Launch Theora →
-              </button>
-              <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
-                className="lp-btn-ghost lp-btn-lg no-underline">
-                View Source ↗
-              </a>
+
+            <div className="lp-demo-groups">
+              {DEMO_GROUPS.map((group, groupIdx) => {
+                const showPreview = groupIdx > 0;
+                return (
+                  <section key={group.title} className="lp-demo-group">
+                    <div className="lp-demo-group-head">
+                      <div>
+                        <p className="lp-overline">{group.title}</p>
+                        <h3 className="lp-group-title">{group.description}</h3>
+                      </div>
+                    </div>
+                    <div
+                      className="lp-demo-grid"
+                      style={
+                        {
+                          "--col-count":
+                            group.demos.length % 3 === 0
+                              ? 3
+                              : group.demos.length % 2 === 0
+                                ? 2
+                                : 3,
+                        } as React.CSSProperties
+                      }
+                    >
+                      {group.demos.map((demoId) => {
+                        const demo = DEMO_BY_ID[demoId];
+
+                        return (
+                          <a
+                            key={demo.id}
+                            href={`/app#${demo.id}`}
+                            className={`lp-demo-card${showPreview ? "" : " lp-demo-card--compact"}`}
+                          >
+                            {showPreview && (
+                              <div className="lp-demo-card-preview">
+                                <iframe
+                                  src={`${origin}/app?embed=${demo.id}`}
+                                  title={`${demo.title} preview`}
+                                  className="lp-demo-card-iframe"
+                                  loading="lazy"
+                                  tabIndex={-1}
+                                />
+                              </div>
+                            )}
+                            <div className="lp-demo-card-content">
+                              <div className="lp-demo-card-top">
+                                <span className="lp-demo-route">
+                                  /{demo.id}
+                                </span>
+                                <span className="lp-demo-open">open →</span>
+                              </div>
+                              <div className="lp-demo-card-title">
+                                <DemoIcon
+                                  id={demo.id}
+                                  size={16}
+                                  color={demo.accent}
+                                />
+                                <h4>{demo.title}</h4>
+                              </div>
+                              <p className="lp-demo-card-body">
+                                {demo.subtitle}
+                              </p>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           </div>
-          <div className="lp-cta-mark" aria-hidden="true">∴</div>
-        </div>
-      </div>
+        </section>
+
+        <section className="lp-section lp-section--gap">
+          <div className="lp-shell">
+            <div className="lp-problem-frame">
+              <p className="lp-overline">Why Theora</p>
+              <h2 className="lp-section-title">
+                The ZK visualization landscape is thin.
+              </h2>
+              <p className="lp-problem-body">
+                There is no tool that lets you <em>see</em> a polynomial
+                commitment form, <em>break</em> a Fiat-Shamir transcript, or{" "}
+                <em>watch</em> a pairing check reject a corrupted proof — in the
+                browser, with real math, at 60fps. Theora fills that gap across{" "}
+                {demoCount} primitives.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="lp-section">
+          <div className="lp-shell">
+            <div className="lp-section-head">
+              <div>
+                <p className="lp-overline">Built for</p>
+                <h2 className="lp-section-title">
+                  People who already know the math and want to see it move.
+                </h2>
+              </div>
+            </div>
+
+            {/* Featured persona (Security Auditors) — always expanded */}
+            {AUDIENCES.filter((a) => a.featured).map((audience) => (
+              <article key={audience.title} className="lp-audience-featured">
+                <span className="lp-audience-tag">{audience.tag}</span>
+                <h3 className="lp-audience-featured-title">{audience.title}</h3>
+                <p className="lp-audience-featured-body">{audience.body}</p>
+              </article>
+            ))}
+
+            {/* Remaining personas — collapsible */}
+            <div className="lp-audience-grid">
+              {AUDIENCES.filter((a) => !a.featured).map((audience) => (
+                <details
+                  key={audience.title}
+                  className="lp-audience-card lp-audience-collapse"
+                >
+                  <summary className="lp-audience-summary">
+                    <span className="lp-audience-tag">{audience.tag}</span>
+                    <h3 className="lp-audience-title">{audience.title}</h3>
+                    <span className="lp-audience-chevron" aria-hidden="true" />
+                  </summary>
+                  <p className="lp-audience-body">{audience.body}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="lp-section">
+          <div className="lp-shell lp-embed-grid">
+            <div>
+              <p className="lp-overline">Embeddability</p>
+              <h2 className="lp-section-title">
+                Every state is a URL. Embed it in docs, posts, or slides.
+              </h2>
+              <p className="lp-section-copy">
+                Strip the UI, keep the demo. Share a living demo, not a frozen
+                image.
+              </p>
+              <div className="lp-code-block">
+                <code>{embedSnippet}</code>
+              </div>
+            </div>
+
+            <div className="lp-embed-preview">
+              <div className="lp-embed-browser">
+                <div className="lp-embed-browser-bar">
+                  <span />
+                  <span />
+                  <span />
+                  <code>
+                    {origin.replace(/^https?:\/\//, "")}/app?embed=merkle
+                  </code>
+                </div>
+                <div className="lp-embed-browser-body">
+                  <div className="lp-embed-node-strip">
+                    <span className="is-strong" />
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <div className="lp-embed-proof-path">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <p className="lp-embed-caption">
+                    Embeddable state stays aligned with the shared URL.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="lp-container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="lp-mono-label">∴ theora — open source cryptography visual tooling · MIT</span>
-          <div className="flex gap-6">
-            <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer"
-              className="lp-footer-link no-underline">GitHub</a>
-            <a href="https://x.com/lucidzk" target="_blank" rel="noopener noreferrer"
-              className="lp-footer-link no-underline">@lucidzk</a>
+      <footer className="lp-footer">
+        <div className="lp-shell lp-footer-inner">
+          <div className="lp-footer-left">
+            <a href="/" className="lp-brand no-underline">
+              <span className="lp-brand-mark">∴</span>
+              <span>theora</span>
+            </a>
+            <p className="lp-footer-tagline">
+              Open-source cryptography visual tooling
+            </p>
           </div>
+          <div className="lp-footer-links">
+            <a href={appHref} className="lp-nav-link">
+              Launch App
+            </a>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lp-nav-link"
+            >
+              GitHub ↗
+            </a>
+            <a
+              href={TWITTER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lp-nav-link"
+            >
+              @lucidzk ↗
+            </a>
+          </div>
+          <p className="lp-footer-legal">MIT License</p>
         </div>
       </footer>
     </div>

@@ -42,7 +42,7 @@ export const DEMOS: DemoMeta[] = [
   },
   {
     id: 'accumulator',
-    title: 'Accumulator',
+    title: 'RSA Accumulator',
     subtitle: 'Prove set membership without revealing the entire set.',
     description:
       'A cryptographic accumulator is a compact representation of a set that supports membership proofs. The RSA accumulator uses modular exponentiation: the accumulator value is g raised to the product of all set elements, mod n. Witnesses prove membership without revealing other elements, enabling privacy-preserving set operations.',

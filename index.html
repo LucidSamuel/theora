@@ -14,7 +14,7 @@
     <script>
       (function () {
         var stored = localStorage.getItem('theora-theme-v2');
-        var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+        var theme = (stored === 'light' || stored === 'dark') ? stored : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>

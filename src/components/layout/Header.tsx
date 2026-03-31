@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { DEMOS, type DemoId } from '@/types';
-import { DemoIcon } from '@/components/shared/DemoIcon';
 import { useGitHub } from '@/hooks/useGitHub';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Theme } from '@/lib/theme';
 
 function HeaderBtn({
@@ -15,7 +15,7 @@ function HeaderBtn({
   label: string;
   active?: boolean;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -38,8 +38,33 @@ function HeaderBtn({
   );
 }
 
-function ImportBtn({ onClick }: { onClick: () => void }) {
+function GitHubMark() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z"/>
+    </svg>
+  );
+}
+
+function ImportMark() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M7 2.25v6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M4.75 6.75 7 9l2.25-2.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2.5 10.75h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ImportBtn({ onClick, compact = false }: { onClick: () => void; compact?: boolean }) {
   const [hovered, setHovered] = useState(false);
+  if (compact) {
+    return (
+      <HeaderBtn onClick={onClick} label="Import from GitHub">
+        <ImportMark />
+      </HeaderBtn>
+    );
+  }
   return (
     <button
       onClick={onClick}
@@ -66,16 +91,21 @@ function ImportBtn({ onClick }: { onClick: () => void }) {
         marginRight: '4px',
       }}
     >
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-        <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z"/>
-      </svg>
+      <ImportMark />
       Import
     </button>
   );
 }
 
-function GitHubConnectBtn({ onClick }: { onClick: () => void }) {
+function GitHubConnectBtn({ onClick, compact = false }: { onClick: () => void; compact?: boolean }) {
   const [hovered, setHovered] = useState(false);
+  if (compact) {
+    return (
+      <HeaderBtn onClick={onClick} label="Connect GitHub">
+        <GitHubMark />
+      </HeaderBtn>
+    );
+  }
   return (
     <button
       onClick={onClick}
@@ -102,9 +132,7 @@ function GitHubConnectBtn({ onClick }: { onClick: () => void }) {
         marginRight: '4px',
       }}
     >
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-        <path d="M7 1C3.686 1 1 3.686 1 7c0 2.654 1.721 4.904 4.107 5.698.3.055.41-.13.41-.29 0-.142-.005-.519-.008-1.018-1.67.363-2.022-.804-2.022-.804-.273-.694-.666-.879-.666-.879-.545-.373.041-.365.041-.365.602.042.919.618.919.618.535.916 1.403.652 1.745.498.054-.387.209-.652.38-.802-1.332-.152-2.733-.666-2.733-2.963 0-.655.234-1.19.618-1.61-.062-.151-.268-.76.058-1.585 0 0 .504-.161 1.65.615A5.75 5.75 0 0 1 7 4.836c.51.002 1.023.069 1.502.202 1.145-.776 1.648-.615 1.648-.615.327.825.121 1.434.06 1.585.385.42.617.955.617 1.61 0 2.304-1.403 2.81-2.739 2.958.215.186.407.552.407 1.113 0 .804-.007 1.452-.007 1.65 0 .16.108.348.413.289C11.28 11.902 13 9.653 13 7c0-3.314-2.686-6-6-6z"/>
-      </svg>
+      <GitHubMark />
       Connect
     </button>
   );
@@ -116,12 +144,14 @@ function GitHubUserBtn({
   onOpenSaves,
   onOpenConnect,
   onOpenImport,
+  compact = false,
 }: {
   login: string;
   avatarUrl: string;
   onOpenSaves: () => void;
   onOpenConnect: () => void;
   onOpenImport: () => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -136,8 +166,8 @@ function GitHubUserBtn({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: '0 10px',
+          gap: compact ? '0' : '6px',
+          padding: compact ? '0 7px' : '0 10px',
           height: '26px',
           borderRadius: '6px',
           border: '1px solid',
@@ -157,7 +187,7 @@ function GitHubUserBtn({
           alt={login}
           style={{ width: 16, height: 16, borderRadius: '50%' }}
         />
-        {login}
+        {!compact && login}
       </button>
 
       {open && (
@@ -235,38 +265,75 @@ interface HeaderProps {
 export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenImport, infoOpen, navCollapsed, onToggleNav, onSwitchDemo }: HeaderProps) {
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
   const { status, user, setConnectOpen, setSavesOpen } = useGitHub();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   return (
     <header
-      className="flex items-center justify-between h-[52px] border-b"
+      className="flex items-center justify-between h-14 border-b"
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border)',
-        padding: '0 20px',
+        padding: isMobile ? '0 12px' : '0 20px',
+        minHeight: 56,
+        fontFamily: 'var(--font-sans)',
       }}
     >
-      <div className="flex items-center gap-3" style={{ paddingLeft: 4 }}>
-        {/* Mobile demo selector */}
-        <div className="flex md:hidden gap-0.5">
-          {DEMOS.map((d) => (
-            <button
-              key={d.id}
-              onClick={() => onSwitchDemo?.(d.id)}
-              className="w-7 h-7 flex items-center justify-center rounded-md"
-              style={{
-                backgroundColor: activeDemo === d.id ? 'var(--button-bg-strong)' : 'transparent',
-              }}
-              aria-label={d.title}
+      <div className="flex items-center gap-3 min-w-0">
+        {isMobile && (
+          <a
+            href="/"
+            className="no-underline flex items-center shrink-0"
+            aria-label="Go to landing page"
+          >
+            <span
+              className="text-[13px] font-semibold font-display"
+              style={{ color: 'var(--text-primary)', opacity: 0.35 }}
             >
-              <DemoIcon id={d.id} size={14} color={activeDemo === d.id ? 'var(--text-primary)' : 'var(--text-muted)'} />
-            </button>
-          ))}
-        </div>
-        <span className="text-[13px] leading-none font-medium font-display" style={{ color: 'var(--text-primary)' }}>
-          {demo.title}
-        </span>
+              ∴
+            </span>
+          </a>
+        )}
+
+        {isMobile ? (
+          <label className="min-w-0">
+            <span className="sr-only">Choose demo</span>
+            <select
+              value={activeDemo}
+              onChange={(e) => onSwitchDemo?.(e.target.value as DemoId)}
+              aria-label="Choose demo"
+              className="outline-none"
+              style={{
+                width: 'min(56vw, 240px)',
+                height: 38,
+                padding: '0 30px 0 12px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'var(--button-bg)',
+                color: 'var(--text-primary)',
+                fontSize: 14,
+                fontFamily: 'var(--font-mono)',
+                WebkitAppearance: 'none',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center',
+              }}
+            >
+              {DEMOS.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <span className="text-[13px] leading-none font-medium font-display truncate" style={{ color: 'var(--text-primary)' }}>
+            {demo.title}
+          </span>
+        )}
       </div>
-      <div className="flex items-center gap-0.5">
+
+      <div className="flex items-center gap-1">
         {status === 'connected' && user ? (
           <GitHubUserBtn
             login={user.login}
@@ -274,11 +341,12 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
             onOpenSaves={() => setSavesOpen(true)}
             onOpenConnect={() => setConnectOpen(true)}
             onOpenImport={onOpenImport}
+            compact={isMobile}
           />
         ) : (
           <>
-            <ImportBtn onClick={onOpenImport} />
-            <GitHubConnectBtn onClick={() => setConnectOpen(true)} />
+            <ImportBtn onClick={onOpenImport} compact={isMobile} />
+            <GitHubConnectBtn onClick={() => setConnectOpen(true)} compact={isMobile} />
           </>
         )}
         <HeaderBtn
@@ -295,7 +363,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
             )}
           </svg>
         </HeaderBtn>
-        <HeaderBtn onClick={onToggleInfo} label="Toggle info panel" active={infoOpen}>
+        <HeaderBtn onClick={onToggleInfo} label="Toggle info panel" active={infoOpen} className="hidden lg:flex">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
             <line x1="7" y1="6" x2="7" y2="10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>

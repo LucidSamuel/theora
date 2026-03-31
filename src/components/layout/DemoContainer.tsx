@@ -1,5 +1,8 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import type { DemoId } from '@/types';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { getSearchParam } from '@/lib/urlState';
+import { MobileDemoFallback } from './MobileDemoFallback';
 
 interface DemoContainerProps {
   activeDemo: DemoId;
@@ -7,6 +10,8 @@ interface DemoContainerProps {
 }
 
 export function DemoContainer({ activeDemo, children }: DemoContainerProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isEmbed = Boolean(getSearchParam('embed'));
   const [visible, setVisible] = useState(true);
   const [rendered, setRendered] = useState(activeDemo);
 
@@ -20,6 +25,14 @@ export function DemoContainer({ activeDemo, children }: DemoContainerProps) {
       return () => clearTimeout(timer);
     }
   }, [activeDemo, rendered]);
+
+  if (isMobile && !isEmbed) {
+    return (
+      <div className="flex-1 h-full overflow-y-auto">
+        <MobileDemoFallback activeDemo={activeDemo} />
+      </div>
+    );
+  }
 
   return (
     <div

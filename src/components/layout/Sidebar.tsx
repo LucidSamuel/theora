@@ -14,9 +14,10 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
       className="hidden md:flex flex-col h-full border-r"
       style={{
         borderColor: 'var(--border)',
-        width: collapsed ? 56 : 224,
+        width: collapsed ? 52 : 216,
         backgroundColor: 'var(--bg-primary)',
-        padding: collapsed ? '0 8px 24px' : '0 16px 24px',
+        padding: collapsed ? '0 8px 24px' : '0 14px 24px',
+        fontFamily: 'var(--font-sans)',
         transition: 'width 200ms ease, padding 200ms ease',
       }}
     >
@@ -24,9 +25,9 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
       <div
         className="flex items-center justify-between shrink-0"
         style={{
-          height: 52,
+          height: 56,
           borderBottom: '1px solid var(--border)',
-          marginBottom: 16,
+          marginBottom: 14,
         }}
       >
         {collapsed ? (
@@ -76,8 +77,8 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
               className="relative flex items-center rounded-lg transition-all text-left"
               style={{
                 gap: collapsed ? 0 : 10,
-                height: 38,
-                padding: collapsed ? '0' : '0 10px',
+                height: 40,
+                padding: collapsed ? '0' : '0 12px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 backgroundColor: isActive ? 'var(--button-bg-strong)' : 'transparent',
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -99,7 +100,7 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
               {!collapsed && (
                 <>
                   <span className="text-[12px] font-medium truncate">{demo.title}</span>
-                  {demo.id === 'merkle' && !isActive && (
+                  {demo.id === 'pipeline' && !isActive && (
                     <span
                       className="text-[9px] font-medium shrink-0 rounded-full"
                       style={{
@@ -110,7 +111,7 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
                         marginLeft: 'auto',
                       }}
                     >
-                      Start here
+                      Best first demo
                     </span>
                   )}
                 </>

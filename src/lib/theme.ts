@@ -9,6 +9,9 @@ export function getInitialTheme(): Theme {
   } catch {
     // localStorage blocked in cross-origin iframes
   }
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+    return 'light';
+  }
   return 'dark';
 }
 
