@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { Compass, Zap, Swords, Bug } from 'lucide-react';
 import { MODES, type ModeId } from './types';
 import { useMode } from './ModeProvider';
+import { useActiveDemo } from '@/hooks/useActiveDemo';
+import { hasPredictChallenges } from './predict/challenges';
+import { hasAttackScenario } from './attack/scenarios';
+import type { DemoId } from '@/types';
 
 const MODE_ICONS: Record<ModeId, typeof Compass> = {
   explore: Compass,
@@ -10,8 +14,16 @@ const MODE_ICONS: Record<ModeId, typeof Compass> = {
   debug: Bug,
 };
 
+/** Check if a mode is supported for the given demo. */
+function isModeSupported(modeId: ModeId, demoId: DemoId): boolean {
+  if (modeId === 'predict') return hasPredictChallenges(demoId);
+  if (modeId === 'attack') return hasAttackScenario(demoId);
+  return true; // explore and debug are always available
+}
+
 export function ModeBar() {
   const { mode, setMode } = useMode();
+  const { activeDemo } = useActiveDemo();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -19,13 +31,15 @@ export function ModeBar() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'CANVAS') return;
       const idx = parseInt(e.key, 10);
       if (idx >= 1 && idx <= MODES.length) {
+        const targetMode = MODES[idx - 1]!;
+        if (!isModeSupported(targetMode.id, activeDemo)) return;
         e.preventDefault();
-        setMode(MODES[idx - 1]!.id);
+        setMode(targetMode.id);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setMode]);
+  }, [setMode, activeDemo]);
 
   return (
     <div
@@ -40,14 +54,18 @@ export function ModeBar() {
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
       }}
     >
-      {MODES.map((m) => (
-        <ModeButton
-          key={m.id}
-          meta={m}
-          isActive={mode === m.id}
-          onClick={() => setMode(m.id)}
-        />
-      ))}
+      {MODES.map((m) => {
+        const supported = isModeSupported(m.id, activeDemo);
+        return (
+          <ModeButton
+            key={m.id}
+            meta={m}
+            isActive={mode === m.id}
+            supported={supported}
+            onClick={() => supported && setMode(m.id)}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -55,14 +73,20 @@ export function ModeBar() {
 function ModeButton({
   meta,
   isActive,
+  supported,
   onClick,
 }: {
   meta: typeof MODES[number];
   isActive: boolean;
+  supported: boolean;
   onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const Icon = MODE_ICONS[meta.id];
+
+  const title = supported
+    ? `${meta.label} — ${meta.description}`
+    : `${meta.label} mode not available for this demo`;
 
   return (
     <button
@@ -71,7 +95,8 @@ function ModeButton({
       onMouseLeave={() => setHovered(false)}
       aria-label={`${meta.label} mode (${meta.shortcut})`}
       aria-pressed={isActive}
-      title={`${meta.label} — ${meta.description}`}
+      aria-disabled={!supported}
+      title={title}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -80,14 +105,25 @@ function ModeButton({
         padding: isActive ? '0 10px' : '0 8px',
         borderRadius: 7,
         border: 'none',
-        background: isActive ? 'var(--button-bg-strong)' : hovered ? 'var(--button-bg)' : 'transparent',
-        color: isActive ? 'var(--text-primary)' : hovered ? 'var(--text-secondary)' : 'var(--text-muted)',
-        cursor: 'pointer',
+        background: isActive && supported
+          ? 'var(--button-bg-strong)'
+          : hovered && supported
+            ? 'var(--button-bg)'
+            : 'transparent',
+        color: !supported
+          ? 'var(--text-muted)'
+          : isActive
+            ? 'var(--text-primary)'
+            : hovered
+              ? 'var(--text-secondary)'
+              : 'var(--text-muted)',
+        opacity: supported ? 1 : 0.35,
+        cursor: supported ? 'pointer' : 'not-allowed',
         fontSize: 11,
         fontFamily: 'var(--font-display)',
         fontWeight: 500,
         letterSpacing: '0.02em',
-        transition: 'background 120ms ease, color 120ms ease',
+        transition: 'background 120ms ease, color 120ms ease, opacity 120ms ease',
       }}
     >
       <Icon size={13} strokeWidth={isActive ? 2 : 1.5} />

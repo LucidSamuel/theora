@@ -296,11 +296,20 @@ export function SumcheckDemo(): JSX.Element {
       : state.phase === 'complete'
         ? `Complete — ${state.verdict === 'honest' ? 'sum verified' : 'cheating detected'}`
         : `Round ${state.currentRound} of ${state.numVariables}`;
+    let body: string;
+    if (state.cheatMode && state.phase === 'complete') {
+      body = `Cheating detected: the prover claimed sum ${state.claimedSum} but the honest sum is ${state.honestSum}. `
+        + `The round-1 sum check caught the false claim (g(0)+g(1) \u2260 claimed sum). `
+        + `Note: the oracle check may still show \u2713 match — this is correct. The oracle compares the last round polynomial against f(r\u2081,\u2026,r\u2099) and the prover evaluated honestly. `
+        + `Detection relies on the round checks, not the oracle alone.`;
+    } else if (state.cheatMode) {
+      body = `Cheat mode: prover claims sum ${state.claimedSum} but honest sum is ${state.honestSum}. The verifier will catch the discrepancy in the round sum checks.`;
+    } else {
+      body = `Prover sends univariate polynomials each round. Verifier checks g_i(0)+g_i(1) equals the current expected sum, then sends a random challenge r_i.`;
+    }
     setEntry('sumcheck', {
       title: roundLabel,
-      body: state.cheatMode
-        ? `Cheat mode: prover claims sum ${state.claimedSum} but honest sum is ${state.honestSum}. The verifier will catch the discrepancy in the oracle check.`
-        : `Prover sends univariate polynomials each round. Verifier checks g_i(0)+g_i(1) equals the current expected sum, then sends a random challenge r_i.`,
+      body,
       nextSteps: [
         'Step through one round at a time',
         'Toggle cheat mode to see detection',
