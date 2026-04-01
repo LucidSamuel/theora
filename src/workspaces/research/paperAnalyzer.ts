@@ -1,7 +1,7 @@
 import type { Walkthrough, WalkthroughSection, WalkthroughDemo } from './types';
 import { isDemoId, type DemoId } from '@/types';
 
-const PAPER_ANALYSIS_SYSTEM_PROMPT = `You are analyzing a cryptography paper to create an interactive walkthrough using Theora, a cryptographic primitive visualizer. Theora has these interactive demos:
+const PAPER_ANALYSIS_SYSTEM_PROMPT = `You are analyzing a cryptography paper to create an interactive walkthrough using theora, a cryptographic primitive visualizer. theora has these interactive demos:
 
 DEMOS:
 - merkle: Merkle trees, inclusion proofs, hash cascading
@@ -20,7 +20,7 @@ DEMOS:
 - split-accumulation: Deferred IPA verification across recursive steps
 - rerandomization: Proof unlinkability via commitment rerandomization
 
-For each paper section that discusses a cryptographic primitive covered by a Theora demo, create a walkthrough section with:
+For each paper section that discusses a cryptographic primitive covered by a theora demo, create a walkthrough section with:
 - A 2-4 sentence summary in plain language
 - A key insight (one sentence)
 - A demo mapping with the demo ID and suggested interaction hints
@@ -53,7 +53,7 @@ Rules:
 - Only map sections to demos that genuinely match. Not every section needs a demo.
 - Summaries should explain the concept, not describe the paper's prose.
 - Interaction hints should tell the user what to DO in the demo, not what to read.
-- If a section discusses a primitive not in Theora, include it as a section with demo: null and a summary explaining the concept.
+- If a section discusses a primitive not in theora, include it as a section with demo: null and a summary explaining the concept.
 - Order sections as they appear in the paper.
 - Keep the total to 5-10 sections. Not every subsection needs its own entry.
 - Do NOT include any text outside the JSON object.`;
@@ -93,7 +93,7 @@ export async function analyzePaper(
             },
             {
               type: 'text',
-              text: 'Analyze this cryptography paper and create a walkthrough mapping its key sections to Theora demos. Return ONLY the JSON object as specified.',
+              text: 'Analyze this cryptography paper and create a walkthrough mapping its key sections to theora demos. Return ONLY the JSON object as specified.',
             },
           ],
         }],

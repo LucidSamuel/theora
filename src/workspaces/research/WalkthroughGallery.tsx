@@ -27,7 +27,7 @@ export function WalkthroughGallery({ walkthroughs, onSelect }: WalkthroughGaller
           lineHeight: 1.5,
         }}
       >
-        Hand-written mappings of landmark cryptography papers to interactive Theora demos.
+        Hand-written mappings of landmark cryptography papers to interactive theora demos.
       </p>
       <div
         style={{

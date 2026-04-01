@@ -43,7 +43,7 @@ export const PIPELINE_CHALLENGES: PredictChallenge[] = [
       { label: 'Because the commitment hash changes', rationale: 'With weak FS, the commitment can still be correct — the issue is elsewhere.' },
       { label: 'Because the polynomial coefficients are wrong', rationale: 'Weak FS doesn\'t corrupt the polynomial — it corrupts the challenge derivation.' },
       { label: 'Because the verifier independently derives the correct challenge and detects the mismatch', rationale: 'Correct — the verifier recomputes the challenge using the full transcript. If the prover used a weak derivation, the challenges won\'t match.' },
-      { label: 'The verification actually passes — that\'s the vulnerability', rationale: 'In Theora\'s pipeline, the verifier uses the correct derivation and catches the discrepancy.' },
+      { label: 'The verification actually passes — that\'s the vulnerability', rationale: 'In theora\'s pipeline, the verifier uses the correct derivation and catches the discrepancy.' },
     ],
     correctIndex: 2,
     explanation: 'The verifier independently re-derives the challenge from the full transcript (including the commitment). If the prover used a weak challenge that didn\'t include all transcript elements, the verifier\'s independently derived challenge will differ, causing verification failure.',

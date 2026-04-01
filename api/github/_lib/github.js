@@ -108,7 +108,7 @@ async function githubJson(token, url, init = {}) {
   return response;
 }
 
-// Note: fetches first 100 gists only. Users with many gists may not see all Theora saves.
+// Note: fetches first 100 gists only. Users with many gists may not see all theora saves.
 // TODO: implement pagination via Link headers if this becomes a real issue.
 export async function listUserGists(token) {
   const response = await githubJson(token, 'https://api.github.com/gists?per_page=100');
@@ -142,7 +142,7 @@ function isImportEnvelope(value) {
 
 export function validateImportEnvelope(payload) {
   if (!isImportEnvelope(payload)) {
-    throw new Error('Invalid Theora save payload');
+    throw new Error('Invalid theora save payload');
   }
   return payload;
 }
@@ -152,8 +152,8 @@ export function buildGistDescription(payload) {
     ? payload.state.scenarioName
     : null;
   return scenarioName
-    ? `Theora ${payload.demo} scenario: ${scenarioName}`
-    : `Theora ${payload.demo} save`;
+    ? `theora ${payload.demo} scenario: ${scenarioName}`
+    : `theora ${payload.demo} save`;
 }
 
 function buildGistFilename(saveName) {

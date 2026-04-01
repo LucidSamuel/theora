@@ -76,6 +76,7 @@ export function DebugPanel({ activeDemo }: { activeDemo: DemoId }) {
       satisfied: checks?.checks.every((check) => check.satisfied) ?? false,
       analysis: analysis ? {
         unconstrainedWires: analysis.unconstrainedWires,
+        weakInputWires: analysis.weakInputWires,
         overconstrainedWires: analysis.overconstrainedWires,
         degreesOfFreedom: analysis.degreesOfFreedom,
       } : undefined,

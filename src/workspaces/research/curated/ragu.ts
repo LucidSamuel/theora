@@ -1,13 +1,13 @@
 import type { Walkthrough } from '../types';
 
 export const raguWalkthrough: Walkthrough = {
-  id: 'ragu-tachyon',
+  id: 'ragu-2025',
   paper: {
-    title: 'Ragu: Proof-Carrying Data for Zcash Scalability',
-    authors: 'Tachyon',
+    title: 'Ragu: Proof-Carrying Data from Recursive Proof Composition',
+    authors: 'Ragu Authors',
     year: 2025,
     abstractSummary:
-      'Ragu extends Halo-style recursive proof composition into a proof-carrying data (PCD) system for Zcash. It combines Pasta curves, Poseidon hashing, Bootle16 constraint systems, and split accumulation to enable scalable transaction validation without trusted setup.',
+      'Ragu extends Halo-style recursive proof composition into a proof-carrying data (PCD) system. It combines Pasta curves, Poseidon hashing, Bootle16 constraint systems, and split accumulation to enable scalable transaction validation without trusted setup.',
   },
   sections: [
     {
@@ -102,7 +102,7 @@ export const raguWalkthrough: Walkthrough = {
         'Witness → Constraints → Polynomial → Commit → Challenge → Open → Verify — the complete pipeline.',
       demo: {
         demoId: 'pipeline',
-        state: { secretInput: 7, fault: 'none' },
+        state: { x: 7, fault: 'none' },
         caption: 'The full 7-stage proof pipeline from witness to verification',
         interactionHints: [
           'Inject a fault to see where detection happens',

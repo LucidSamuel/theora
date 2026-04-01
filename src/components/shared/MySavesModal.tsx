@@ -105,7 +105,7 @@ export function MySavesModal() {
               My Saves
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Your Theora states saved as unlisted GitHub Gists.
+              Your theora states saved as unlisted GitHub Gists.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 16 }}>

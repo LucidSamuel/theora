@@ -45,7 +45,7 @@ describe('Debug DSL Integration — Default Circuits', () => {
     expect(result.checks!.allSatisfied).toBe(true);
   });
 
-  it('free-input buggy circuit passes its own declared constraints', () => {
+  it('free-input buggy circuit passes its own declared constraints but flags t as weak', () => {
     const circuit = DEFAULT_CIRCUITS.find((c) => c.id === 'underconstrained')!;
     const result = runFullPipeline(circuit.source, circuit.defaultInputs);
     expect(result.success).toBe(true);
@@ -53,6 +53,7 @@ describe('Debug DSL Integration — Default Circuits', () => {
     // the prover can choose t=0 and make the circuit accept out=12 for x=7.
     expect(result.checks!.allSatisfied).toBe(true);
     expect(result.analysis!.unconstrainedWires).toHaveLength(0);
+    expect(result.analysis!.weakInputWires.some((wire) => wire.name === 't')).toBe(true);
   });
 
   it('poseidon-like circuit passes with correct inputs', () => {

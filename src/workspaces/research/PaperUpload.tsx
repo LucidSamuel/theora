@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { ApiKeyStore } from '@/modes/predict/ai/apiKeyStore';
 import { analyzePaper, fileToBase64 } from './paperAnalyzer';
 import type { Walkthrough } from './types';
+import { isPdfResponse, normalizePaperPdfUrl } from './urls';
 
 interface PaperUploadProps {
   onWalkthroughGenerated: (walkthrough: Walkthrough) => void;
@@ -47,19 +48,29 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
       if (file) {
         base64 = await fileToBase64(file);
       } else {
-        // Attempt to fetch eprint PDF
-        const url = eprintUrl.trim().match(/^\d{4}\/\d+$/)
-          ? `https://eprint.iacr.org/${eprintUrl.trim()}.pdf`
-          : eprintUrl.trim();
+        const url = normalizePaperPdfUrl(eprintUrl);
+        if (!url) {
+          setError('Upload a PDF or enter an eprint URL');
+          setLoading(false);
+          clearInterval(progressInterval.current);
+          return;
+        }
 
         try {
           const resp = await fetch(url);
           if (!resp.ok) throw new Error(`Failed to fetch: ${resp.status}`);
+          if (!isPdfResponse(url, resp.headers.get('content-type'))) {
+            throw new Error('Fetched URL did not return a PDF');
+          }
           const blob = await resp.blob();
           const f = new File([blob], 'paper.pdf', { type: 'application/pdf' });
           base64 = await fileToBase64(f);
-        } catch {
-          setError('Could not fetch the PDF. Download it and upload directly.');
+        } catch (err) {
+          setError(
+            err instanceof Error && err.message === 'Fetched URL did not return a PDF'
+              ? 'The URL did not return a PDF. Download it and upload directly.'
+              : 'Could not fetch the PDF. Download it and upload directly.',
+          );
           setLoading(false);
           clearInterval(progressInterval.current);
           return;
@@ -113,7 +124,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           lineHeight: 1.5,
         }}
       >
-        Upload a PDF or paste an eprint URL. Claude reads the paper and maps sections to interactive Theora demos.
+        Upload a PDF or paste an eprint URL. Claude reads the paper and maps sections to interactive theora demos.
       </p>
 
       {/* Upload area */}
@@ -227,7 +238,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
             lineHeight: 1.4,
           }}
         >
-          Your key is sent directly to Anthropic — it never touches Theora's servers.
+          Your key is sent directly to Anthropic — it never touches theora's servers.
         </div>
       </div>
 

@@ -132,7 +132,7 @@ describe('GitHub gist routes', () => {
     expect(requestBody.files['my-audit-trace.theora.json']!.content).toContain('"demo": "pipeline"');
   });
 
-  it('lists Theora saves even when the gist list omits inline file content', async () => {
+  it('lists theora saves even when the gist list omits inline file content', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -193,7 +193,7 @@ describe('GitHub gist routes', () => {
       saves: [
         {
           id: 'a1b2c3d4e5f6a1b2c3d4',
-          description: 'Theora pedersen save',
+          description: 'theora pedersen save',
           html_url: 'https://gist.github.com/user/a1b2c3d4e5f6a1b2c3d4',
           created_at: '2026-03-22T10:00:00Z',
           updated_at: '2026-03-22T11:00:00Z',

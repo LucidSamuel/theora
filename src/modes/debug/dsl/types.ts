@@ -207,6 +207,7 @@ export interface FailureTrace {
 
 export interface ConstraintAnalysis {
   unconstrainedWires: Wire[];
+  weakInputWires: Wire[];
   overconstrainedWires: Wire[];
   constraintCount: number;
   wireCount: number;

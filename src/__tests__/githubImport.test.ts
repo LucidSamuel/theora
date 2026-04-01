@@ -143,7 +143,7 @@ describe('same-demo import regression', () => {
 });
 
 describe('gist import', () => {
-  it('imports valid Theora payloads from gist files without a json extension', async () => {
+  it('imports valid theora payloads from gist files without a json extension', async () => {
     Object.defineProperty(globalThis, 'fetch', {
       value: vi.fn(async () => ({
         ok: true,

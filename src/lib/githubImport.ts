@@ -89,7 +89,7 @@ export async function fetchTheoraImport(sourceUrl: string): Promise<TheoraImport
       ?? files.find((file) => file.type === 'application/json')
       ?? files.find((file) => file.filename?.endsWith('.json'))
       ?? files.find((file) => {
-        // Fallback: try any file whose content parses as valid Theora JSON
+        // Fallback: try any file whose content parses as valid theora JSON
         if (!file.content) return false;
         try { const p = JSON.parse(file.content); return p && typeof p === 'object' && 'demo' in p && 'state' in p; } catch { return false; }
       });

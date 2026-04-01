@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { CURATED_WALKTHROUGHS, getCuratedWalkthrough } from '../workspaces/research/curated';
 import { generateDemoState } from '../workspaces/research/stateGenerator';
+import { buildWalkthroughDemoUrl, normalizePaperPdfUrl } from '../workspaces/research/urls';
 import { DEMO_IDS, isDemoId } from '../types';
+import { decodeState } from '../lib/urlState';
 
 describe('curated walkthroughs', () => {
   it('all walkthroughs have unique IDs', () => {
@@ -93,14 +95,27 @@ describe('stateGenerator', () => {
     expect(state.depth).toBe(3);
   });
 
-  it('pipeline state includes secretInput', () => {
+  it('pipeline state includes x', () => {
     const state = generateDemoState('pipeline');
-    expect(state.secretInput).toBe(7);
+    expect(state.x).toBe(7);
   });
 
   it('circuit state includes x', () => {
     const state = generateDemoState('circuit');
     expect(state.x).toBe(7);
+  });
+
+  it('pedersen state uses the demo URL schema', () => {
+    const state = generateDemoState('pedersen');
+    expect(state.v).toBe(42);
+    expect(state.r).toBe(17);
+    expect(state.showBlinding).toBe(true);
+  });
+
+  it('groth16 state uses showToxic instead of the stale key', () => {
+    const state = generateDemoState('groth16');
+    expect(state.showToxic).toBe(false);
+    expect(state).not.toHaveProperty('showToxicWaste');
   });
 });
 
@@ -112,5 +127,83 @@ describe('walkthrough type structure', () => {
     expect(demoSection!.demo!.demoId).toBeTruthy();
     expect(demoSection!.demo!.caption).toBeTruthy();
     expect(Array.isArray(demoSection!.demo!.interactionHints)).toBe(true);
+  });
+});
+
+describe('research URL helpers', () => {
+  it('builds full demo URLs that preserve walkthrough state', () => {
+    const walkthrough = getCuratedWalkthrough('halo-2019')!;
+    const demo = walkthrough.sections.find((section) => section.id === 'accumulation')!.demo!;
+    const url = new URL(buildWalkthroughDemoUrl(demo, { origin: 'https://theora.test' }));
+
+    expect(url.pathname).toBe('/app');
+    expect(url.hash).toBe('#recursive');
+    expect(url.searchParams.get('embed')).toBeNull();
+
+    const payload = decodeState<Record<string, unknown>>(url.searchParams.get('r'));
+    expect(payload).toMatchObject({
+      mode: 'ivc',
+      ivcLength: 8,
+      showPasta: true,
+      showProofSize: true,
+    });
+  });
+
+  it('builds embed demo URLs that target the isolated app shell', () => {
+    const walkthrough = getCuratedWalkthrough('groth16-2016')!;
+    const demo = walkthrough.sections.find((section) => section.id === 'trusted-setup')!.demo!;
+    const url = new URL(buildWalkthroughDemoUrl(demo, { origin: 'https://theora.test', embed: true }));
+
+    expect(url.pathname).toBe('/app');
+    expect(url.hash).toBe('');
+    expect(url.searchParams.get('embed')).toBe('groth16');
+
+    const payload = decodeState<Record<string, unknown>>(url.searchParams.get('g16'));
+    expect(payload).toMatchObject({
+      x: 7,
+      phase: 'setup',
+      showToxic: true,
+    });
+  });
+
+  it('normalizes bare eprint ids and page URLs to PDF URLs', () => {
+    expect(normalizePaperPdfUrl('2019/1021')).toBe('https://eprint.iacr.org/2019/1021.pdf');
+    expect(normalizePaperPdfUrl('https://eprint.iacr.org/2019/1021')).toBe('https://eprint.iacr.org/2019/1021.pdf');
+    expect(normalizePaperPdfUrl('https://eprint.iacr.org/2019/1021.pdf')).toBe('https://eprint.iacr.org/2019/1021.pdf');
+  });
+});
+
+describe('curated research state schema', () => {
+  it('uses current demo URL keys for recursive, groth16, and pipeline walkthroughs', () => {
+    const halo = getCuratedWalkthrough('halo-2019')!;
+    const accumulation = halo.sections.find((section) => section.id === 'accumulation')!.demo!;
+    const noTrustedSetup = halo.sections.find((section) => section.id === 'no-trusted-setup')!.demo!;
+    const groth16 = getCuratedWalkthrough('groth16-2016')!;
+    const trustedSetup = groth16.sections.find((section) => section.id === 'trusted-setup')!.demo!;
+    const ragu = getCuratedWalkthrough('ragu-2025')!;
+    const pipeline = ragu.sections.find((section) => section.id === 'proof-pipeline')!.demo!;
+
+    expect(accumulation.state).toMatchObject({ ivcLength: 8 });
+    expect(accumulation.state).not.toHaveProperty('ivcSteps');
+    expect(noTrustedSetup.state).toMatchObject({ phase: 'setup', showToxic: true });
+    expect(noTrustedSetup.state).not.toHaveProperty('showToxicWaste');
+    expect(trustedSetup.state).toMatchObject({ phase: 'setup', showToxic: true });
+    expect(trustedSetup.state).not.toHaveProperty('showToxicWaste');
+    expect(pipeline.state).toMatchObject({ x: 7, fault: 'none' });
+    expect(pipeline.state).not.toHaveProperty('secretInput');
+  });
+
+  it('uses the Pedersen demo URL schema in Bulletproofs walkthroughs', () => {
+    const bulletproofs = getCuratedWalkthrough('bulletproofs-2018')!;
+    const commitment = bulletproofs.sections.find((section) => section.id === 'pedersen-commitments')!.demo!;
+    const homomorphic = bulletproofs.sections.find((section) => section.id === 'homomorphic-addition')!.demo!;
+
+    expect(commitment.state).toMatchObject({ v: 42, r: 17, showBlinding: true });
+    expect(commitment.state).not.toHaveProperty('mode');
+    expect(commitment.state).not.toHaveProperty('value');
+    expect(commitment.state).not.toHaveProperty('randomness');
+
+    expect(homomorphic.state).toMatchObject({ v: 12, r: 7, v2: 30, r2: 11 });
+    expect(homomorphic.state).not.toHaveProperty('mode');
   });
 });

@@ -66,7 +66,7 @@ export function registerPrompts(server: McpServer) {
           role: "user",
           content: {
             type: "text",
-            text: `Explain the "${primitive}" cryptographic primitive at the ${level} level.\n\nHere is context to ground your explanation:\n\n${explanation}\n\nUse this as a foundation. You may expand with examples, analogies, or connections to other primitives. If the user has follow-up questions, use the Theora MCP tools to demonstrate concepts with concrete values.`,
+            text: `Explain the "${primitive}" cryptographic primitive at the ${level} level.\n\nHere is context to ground your explanation:\n\n${explanation}\n\nUse this as a foundation. You may expand with examples, analogies, or connections to other primitives. If the user has follow-up questions, use the theora MCP tools to demonstrate concepts with concrete values.`,
           },
         }],
       };
@@ -92,7 +92,7 @@ export function registerPrompts(server: McpServer) {
 
   server.prompt(
     "generate_test_vectors",
-    "Generate test vectors for a specific Theora demo",
+    "Generate test vectors for a specific theora demo",
     {
       demo: z.enum(["merkle", "polynomial", "accumulator", "recursive", "elliptic", "fiat-shamir", "circuit", "lookup", "pipeline"]).describe("Which demo to generate test vectors for"),
       count: z.number().int().min(1).max(20).default(5).describe("Number of test vectors to generate"),
@@ -102,7 +102,7 @@ export function registerPrompts(server: McpServer) {
         role: "user",
         content: {
           type: "text",
-          text: `Generate ${count} test vectors for the Theora "${demo}" demo. Each test vector should include:\n\n1. **Input** — the exact parameters to pass to the demo's MCP tools\n2. **Expected output** — what the tools should return\n3. **What it tests** — which property or edge case this vector exercises\n\nUse the actual Theora MCP tools to compute the expected outputs — do not guess. Cover both happy paths and edge cases (empty inputs, boundary values, invalid inputs that should error gracefully).`,
+          text: `Generate ${count} test vectors for the theora "${demo}" demo. Each test vector should include:\n\n1. **Input** — the exact parameters to pass to the demo's MCP tools\n2. **Expected output** — what the tools should return\n3. **What it tests** — which property or edge case this vector exercises\n\nUse the actual theora MCP tools to compute the expected outputs — do not guess. Cover both happy paths and edge cases (empty inputs, boundary values, invalid inputs that should error gracefully).`,
         },
       }],
     })

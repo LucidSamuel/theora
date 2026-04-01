@@ -22,7 +22,7 @@ async function toTheoraSave(token, gist) {
 
     return {
       id: gist.id,
-      description: gist.description || `Theora ${envelope.demo} save`,
+      description: gist.description || `theora ${envelope.demo} save`,
       html_url: gist.html_url,
       created_at: gist.created_at,
       updated_at: gist.updated_at,
@@ -100,7 +100,7 @@ export default async function handler(request) {
       if (error && typeof error === 'object' && 'status' in error && (error.status === 401 || error.status === 403)) {
         return expireSessionResponse(request, auth.sessionId);
       }
-      const status = error instanceof Error && error.message === 'Invalid Theora save payload'
+      const status = error instanceof Error && error.message === 'Invalid theora save payload'
         ? 400
         : error && typeof error === 'object' && 'status' in error && typeof error.status === 'number'
           ? error.status

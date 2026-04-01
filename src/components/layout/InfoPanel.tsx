@@ -217,7 +217,7 @@ export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label
     ],
     resources: [
       { label: 'Bowe, Gabizon, Green – A Formal Treatment of Rerandomized Proofs', url: 'https://eprint.iacr.org/' },
-      { label: 'Zcash Halo 2 Book – Transcript and commitments', url: 'https://zcash.github.io/halo2/' },
+      { label: 'Halo 2 Book – Transcript and commitments', url: 'https://zcash.github.io/halo2/' },
     ],
   },
   'oblivious-sync': {
@@ -227,8 +227,7 @@ export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label
       'This is a privacy-preserving sync pattern: the wallet learns whether any note is spent without revealing which notes it owns.',
     ],
     resources: [
-      { label: 'Tachyon overview – Oblivious synchronization', url: 'https://electriccoin.co/' },
-      { label: 'Zcash protocol concepts – Nullifiers and spends', url: 'https://zips.z.cash/protocol/protocol.pdf' },
+      { label: 'Privacy-preserving sync – Oblivious transfer foundations', url: 'https://eprint.iacr.org/' },
     ],
   },
   'constraint-counter': {
@@ -239,7 +238,7 @@ export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label
     ],
     resources: [
       { label: 'Poseidon hash paper (IACR)', url: 'https://eprint.iacr.org/2019/458' },
-      { label: 'Halo 2 gadget notes – Why Poseidon replaced Pedersen for Merkle paths', url: 'https://zcash.github.io/halo2/' },
+      { label: 'Halo 2 gadgets – Why Poseidon replaced Pedersen for Merkle paths', url: 'https://zcash.github.io/halo2/' },
     ],
   },
 };

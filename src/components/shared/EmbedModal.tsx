@@ -16,7 +16,7 @@ export function EmbedModal({ isOpen, onClose, embedUrl, demoName }: EmbedModalPr
 
   if (!isOpen) return null;
 
-  const iframeCode = `<iframe\n  src="${embedUrl}"\n  width="${width}"\n  height="${height}"\n  style="border:0;border-radius:16px;overflow:hidden;"\n  title="${demoName} — Theora"\n  loading="lazy"\n  allow="clipboard-write"\n></iframe>`;
+  const iframeCode = `<iframe\n  src="${embedUrl}"\n  width="${width}"\n  height="${height}"\n  style="border:0;border-radius:16px;overflow:hidden;"\n  title="${demoName} — theora"\n  loading="lazy"\n  allow="clipboard-write"\n></iframe>`;
 
   const handleCopy = () => {
     copyToClipboard(iframeCode);

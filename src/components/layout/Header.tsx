@@ -335,8 +335,17 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
       </div>
 
       {!isMobile && (
-        <div className="hidden md:flex">
+        <div className="hidden md:flex items-center gap-4">
           <ModeBar />
+          <a
+            href="/research"
+            className="text-[11px] font-display font-medium no-underline"
+            style={{ color: 'var(--text-muted)', letterSpacing: '0.03em' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            Research
+          </a>
         </div>
       )}
 

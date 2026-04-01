@@ -66,7 +66,7 @@ export const haloWalkthrough: Walkthrough = {
         'Accumulation lets each recursive step pay only a constant cost, deferring the expensive MSM to the final verifier.',
       demo: {
         demoId: 'recursive',
-        state: { mode: 'ivc', ivcSteps: 8, showPasta: true, showProofSize: true },
+        state: { mode: 'ivc', ivcLength: 8, showPasta: true, showProofSize: true },
         caption: 'Each IVC step accumulates rather than fully verifying',
         interactionHints: [
           'Watch the proof size stay constant across folds',
@@ -101,7 +101,7 @@ export const haloWalkthrough: Walkthrough = {
         'IPA avoids the toxic waste problem of KZG trusted setup entirely.',
       demo: {
         demoId: 'groth16',
-        state: { x: 7, showToxicWaste: true },
+        state: { x: 7, phase: 'setup', showToxic: true },
         caption: 'Groth16\'s trusted setup generates toxic waste — Halo eliminates this requirement',
         interactionHints: [
           'Toggle "Show toxic waste" to see the secret parameters',

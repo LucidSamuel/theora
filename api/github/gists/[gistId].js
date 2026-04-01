@@ -34,14 +34,14 @@ export default async function handler(request, context) {
       const file = findEnvelopeFile(gist.files);
       const raw = typeof file?.content === 'string' ? file.content : null;
       if (!raw) {
-        return jsonResponse({ error: 'Gist does not contain a Theora JSON file' }, 404, {
+        return jsonResponse({ error: 'Gist does not contain a theora JSON file' }, 404, {
           Vary: 'Cookie',
         });
       }
 
       const envelope = parseEnvelope(raw);
       if (!envelope) {
-        return jsonResponse({ error: 'Invalid Theora save payload' }, 422, {
+        return jsonResponse({ error: 'Invalid theora save payload' }, 422, {
           Vary: 'Cookie',
         });
       }

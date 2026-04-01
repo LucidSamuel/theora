@@ -24,6 +24,11 @@ export const DEMO_GROUPS: DemoGroup[] = [
     description: 'Transcript hashing, curve arithmetic, arithmetization, and table checks.',
     demos: ['fiat-shamir', 'elliptic', 'circuit', 'lookup'],
   },
+  {
+    title: 'Privacy Primitives',
+    description: 'Privacy-preserving protocols, rerandomization, and circuit-friendly primitives.',
+    demos: ['oblivious-sync', 'rerandomization', 'constraint-counter'],
+  },
 ];
 
 export const DEMO_CATEGORY_BY_ID: Record<DemoId, string> = {

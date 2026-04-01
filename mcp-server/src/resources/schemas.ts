@@ -31,7 +31,7 @@ const THEORA_JSON_SCHEMA = {
     state: { type: "object", description: "Demo-specific state payload" },
   },
   required: ["demo", "state"],
-  description: "Theora import/export envelope for sharing demo states",
+  description: "theora import/export envelope for sharing demo states",
 };
 
 export function registerResources(server: McpServer) {

@@ -1,7 +1,7 @@
 {
   "name": "@theora/mcp-server",
   "version": "0.1.0",
-  "description": "MCP server exposing Theora's cryptographic primitives as tools for AI agents",
+  "description": "MCP server exposing theora's cryptographic primitives as tools for AI agents",
   "type": "module",
   "bin": {
     "theora-mcp": "./build/index.js"

@@ -69,7 +69,7 @@ export function ResearchPage() {
       <header className="research-header">
         <div className="research-header__left">
           <a href="/" className="research-header__link" style={{ fontWeight: 600, fontSize: 14 }}>
-            Theora
+            theora
           </a>
         </div>
         <div className="research-header__right">
@@ -116,8 +116,6 @@ export function ResearchPage() {
       {/* Footer */}
       <footer className="research-footer">
         <a href="https://github.com/LucidSamuel/theora" target="_blank" rel="noopener noreferrer">GitHub</a>
-        ·
-        <a href="https://tachyon.xyz" target="_blank" rel="noopener noreferrer">Tachyon</a>
         · MIT License
       </footer>
     </div>

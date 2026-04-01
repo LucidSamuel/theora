@@ -40,7 +40,7 @@ export const groth16Walkthrough: Walkthrough = {
         'R1CS matrices become polynomials — constraint satisfaction reduces to polynomial divisibility.',
       demo: {
         demoId: 'groth16',
-        state: { x: 7, autoRun: false, phase: 'qap' },
+        state: { x: 7, phase: 'qap' },
         caption: 'The QAP phase converts R1CS matrices into A(x), B(x), C(x) polynomials',
         interactionHints: [
           'Step through the pipeline to reach the QAP phase',
@@ -58,7 +58,7 @@ export const groth16Walkthrough: Walkthrough = {
         'α, β, γ, δ are the toxic waste — if leaked, proofs can be forged.',
       demo: {
         demoId: 'groth16',
-        state: { x: 7, autoRun: false, showToxicWaste: true, phase: 'setup' },
+        state: { x: 7, showToxic: true, phase: 'setup' },
         caption: 'The setup phase generates toxic waste parameters',
         interactionHints: [
           'Toggle "Show toxic waste" to see the secret parameters',
@@ -76,7 +76,7 @@ export const groth16Walkthrough: Walkthrough = {
         'The entire proof is just 3 group elements — the smallest known for pairing-based SNARKs.',
       demo: {
         demoId: 'groth16',
-        state: { x: 7, autoRun: false, phase: 'prove' },
+        state: { x: 7, phase: 'prove' },
         caption: 'π = (A, B, C) computed from QAP evaluations at the secret point',
         interactionHints: [
           'Step to the prove phase to see the proof elements',
@@ -94,7 +94,7 @@ export const groth16Walkthrough: Walkthrough = {
         'One pairing equation checks everything: QAP satisfaction, SRS binding, and public inputs.',
       demo: {
         demoId: 'groth16',
-        state: { x: 7, autoRun: false, phase: 'verify' },
+        state: { x: 7, phase: 'verify' },
         caption: 'e(A,B) = e(α,β) · e(pub,γ) · e(C,δ) — the complete verification equation',
         interactionHints: [
           'Corrupt a proof element to see the pairing mismatch',

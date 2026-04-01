@@ -17,6 +17,7 @@ describe('Debug DSL Constraint Analyzer', () => {
     const source = `input x\npublic out\nwire t = x * x\nassert t == out`;
     const { analysis } = analyze(source);
     expect(analysis.unconstrainedWires).toHaveLength(0);
+    expect(analysis.weakInputWires).toHaveLength(0);
   });
 
   it('does not treat assert-only usage as a defining constraint', () => {
@@ -60,6 +61,13 @@ describe('Debug DSL Constraint Analyzer', () => {
     expect(analysis.unconstrainedWires).toHaveLength(0);
   });
 
+  it('flags free inputs that never reach a multiplication constraint', () => {
+    const source = `input x\ninput t\npublic out\nwire u = t + x + 5\nassert u == out`;
+    const { analysis } = analyze(source);
+    const names = analysis.weakInputWires.map((wire) => wire.name);
+    expect(names).toContain('t');
+  });
+
   it('reports correct wire and constraint counts', () => {
     const source = `input a\ninput b\nwire t = a * b`;
     const { analysis } = analyze(source);
@@ -85,5 +93,6 @@ describe('Debug DSL Constraint Analyzer', () => {
     const source = `input a\ninput b\ninput c\npublic result\nwire ab = a * b\nwire abc = ab * c\nassert abc == result`;
     const { analysis } = analyze(source);
     expect(analysis.unconstrainedWires).toHaveLength(0);
+    expect(analysis.weakInputWires).toHaveLength(0);
   });
 });

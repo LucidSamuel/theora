@@ -203,7 +203,7 @@ export function GitHubConnectModal() {
                     lineHeight: 1.6,
                   }}
                 >
-                  Theora only requests <code className="font-mono" style={{ fontSize: 10 }}>gist</code> access. For sensitive data, prefer Download JSON instead of saving to GitHub.
+                  theora only requests <code className="font-mono" style={{ fontSize: 10 }}>gist</code> access. For sensitive data, prefer Download JSON instead of saving to GitHub.
                 </div>
               </>
             ) : (

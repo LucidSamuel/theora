@@ -17,7 +17,7 @@ export function generateDemoState(demoId: DemoId): Record<string, unknown> {
     case 'merkle':
       return { leaves: ['tx_0', 'tx_1', 'tx_2', 'tx_3'], hashMode: 'fnv1a' };
     case 'pipeline':
-      return { secretInput: 7, fault: 'none' };
+      return { x: 7, fault: 'none' };
     case 'accumulator':
       return { elements: [3, 7, 11, 13], showHistory: true };
     case 'elliptic':
@@ -25,9 +25,9 @@ export function generateDemoState(demoId: DemoId): Record<string, unknown> {
     case 'lookup':
       return {};
     case 'pedersen':
-      return { mode: 'single', value: 42, randomness: 17 };
+      return { v: 42, r: 17, showBlinding: true };
     case 'groth16':
-      return { x: 7, autoRun: false, showToxicWaste: false };
+      return { x: 7, showToxic: false };
     case 'plonk':
       return {};
     case 'split-accumulation':

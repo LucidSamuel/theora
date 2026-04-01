@@ -15,46 +15,14 @@ const TICKER_ITEMS = [
   "RSA ACCUMULATORS",
   "RECURSIVE PROOFS",
   "SPLIT ACCUMULATION",
-  "PROOF RERANDOMIZATION",
-  "OBLIVIOUS SYNC",
   "ELLIPTIC CURVES",
   "FIAT-SHAMIR",
   "R1CS CIRCUITS",
   "LOOKUP ARGUMENTS",
   "PEDERSEN COMMITMENTS",
-  "HASH COST COMPARISON",
   "GROTH16",
   "PLONK",
   "PROOF PIPELINE",
-];
-
-const AUDIENCES: {
-  tag: string;
-  title: string;
-  body: string;
-  featured?: boolean;
-}[] = [
-  {
-    tag: "Audit",
-    title: "Security Auditors",
-    body: "Inject a bad witness into a Groth16 proof and watch it fail at the pairing check. Corrupt a Fiat-Shamir transcript and see the challenge become predictable. Break a copy constraint in PLONK and trace exactly which gate equation goes non-zero. Every failure mode is interactive, shareable, and reproducible via URL.",
-    featured: true,
-  },
-  {
-    tag: "Build",
-    title: "ZK Engineers",
-    body: "Step through the full proof pipeline — witness generation, R1CS, polynomial interpolation, KZG commitment, Fiat-Shamir challenge, opening, verification — with real computed values at every stage. Drill into any primitive from the pipeline with exact state handoff.",
-  },
-  {
-    tag: "Research",
-    title: "Researchers",
-    body: "Compare Groth16 vs PLONK arithmetization, IVC folding vs split accumulation, KZG vs Pedersen commitments. Every demo is parameterized — change the circuit, the field, the tree depth and see what shifts.",
-  },
-  {
-    tag: "Teach",
-    title: "Educators",
-    body: "Every demo state is a stable URL. Embed a Merkle proof mid-verification into lecture slides. Link a broken Fiat-Shamir transcript in a problem set. Students interact with the actual primitive, not a diagram of one.",
-  },
 ];
 
 const DEMO_BY_ID = DEMOS.reduce<Record<DemoId, (typeof DEMOS)[number]>>(
@@ -82,7 +50,9 @@ export function Landing() {
   const { theme, toggle } = useTheme();
   const scrollY = useScrollY();
   const navScrolled = scrollY > 40;
-  const demoCount = DEMOS.length;
+  const publicGroups = DEMO_GROUPS.filter(g => g.title !== 'Privacy Primitives');
+  const publicDemoIds = new Set(publicGroups.flatMap(g => g.demos));
+  const demoCount = publicDemoIds.size;
   const appHref = "/app";
   const origin = "https://www.theora.dev";
   const embedSnippet = `<iframe src="${origin}/app?embed=merkle" width="960" height="540" style="border:0"></iframe>`;
@@ -120,7 +90,7 @@ export function Landing() {
                 Demos <span className="lp-nav-caret" aria-hidden="true" />
               </button>
               <div className="lp-nav-dropdown-panel">
-                {DEMO_GROUPS.map((group) => (
+                {publicGroups.map((group) => (
                   <div key={group.title} className="lp-nav-dropdown-group">
                     <span className="lp-nav-dropdown-label">{group.title}</span>
                     {group.demos.map((demoId) => {
@@ -144,6 +114,12 @@ export function Landing() {
                 ))}
               </div>
             </div>
+            <a
+              href="/research"
+              className="lp-nav-link hidden sm:flex"
+            >
+              Research
+            </a>
             <a
               href={GITHUB_URL}
               target="_blank"
@@ -223,25 +199,24 @@ export function Landing() {
             </h1>
 
             <p className="lp-hero-sub sm:max-w-[520px]">
-              Build real intuition for cryptography, not by reading papers,
-              but by interacting with the actual primitives. Drag, click, break
-              things, watch math happen.
+              {demoCount} interactive demos. 4 modes of interaction. Upload a
+              paper, get interactive diagrams. Build real intuition for
+              cryptographic primitives — not by reading, but by breaking things
+              and watching math happen.
             </p>
 
             <div className="flex flex-wrap gap-3 mt-10 sm:mt-12">
               <button
-                onClick={() => navigate(appHref)}
+                onClick={() => navigate("/app#pipeline")}
                 className="lp-btn-primary lp-btn-lg"
               >
                 Explore Demos →
               </button>
               <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/research"
                 className="lp-btn-ghost lp-btn-lg"
               >
-                Source ↗
+                Explore a paper →
               </a>
             </div>
           </div>
@@ -259,7 +234,7 @@ export function Landing() {
               </div>
               <iframe
                 src={`${origin}/app?embed=pipeline`}
-                title="Theora demo preview"
+                title="theora demo preview"
                 className="lp-teaser-iframe"
                 loading="lazy"
                 tabIndex={-1}
@@ -273,8 +248,9 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ── BODY SECTIONS (new layout) ── */}
+      {/* ── BODY SECTIONS ── */}
       <main>
+        {/* Demo Gallery */}
         <section id="demo-gallery" className="lp-section lp-section--tight">
           <div className="lp-shell">
             <div className="lp-section-head">
@@ -291,7 +267,7 @@ export function Landing() {
             </p>
 
             <div className="lp-demo-groups">
-              {DEMO_GROUPS.map((group, groupIdx) => {
+              {publicGroups.map((group, groupIdx) => {
                 const showPreview = groupIdx > 0;
                 return (
                   <section key={group.title} className="lp-demo-group">
@@ -364,10 +340,96 @@ export function Landing() {
           </div>
         </section>
 
+        {/* How You Interact — Modes */}
+        <section className="lp-section">
+          <div className="lp-shell">
+            <div className="lp-section-head lp-section-head--stack">
+              <p className="lp-overline">How you interact</p>
+              <h2 className="lp-section-title">
+                Three ways to learn the same primitive.
+              </h2>
+            </div>
+
+            <div className="lp-audience-grid" style={{ marginTop: 32 }}>
+              <a href="/app#pipeline" className="lp-mode-card" style={modeCardStyle}>
+                <span className="lp-audience-tag">Explore</span>
+                <h3 className="lp-audience-title">Full control</h3>
+                <p className="lp-audience-body">
+                  Drag sliders, inject faults, break things, watch math happen.
+                </p>
+              </a>
+              <a href="/app?mode=predict#pipeline" className="lp-mode-card" style={modeCardStyle}>
+                <span className="lp-audience-tag">Predict</span>
+                <h3 className="lp-audience-title">Test your intuition</h3>
+                <p className="lp-audience-body">
+                  Guess what happens next, then watch the math play out.
+                  Randomized parameters mean you can't memorize — you have to
+                  understand.
+                </p>
+              </a>
+              <a href="/app?mode=attack#fiat-shamir" className="lp-mode-card" style={modeCardStyle}>
+                <span className="lp-audience-tag">Attack</span>
+                <h3 className="lp-audience-title">Think like an adversary</h3>
+                <p className="lp-audience-body">
+                  Forge proofs, exploit missing constraints, break Fiat-Shamir
+                  transcripts. 5 guided scenarios across 5 demos.
+                </p>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Beyond the Sandbox — Workspaces */}
+        <section className="lp-section lp-section--gap">
+          <div className="lp-shell">
+            <div className="lp-section-head lp-section-head--stack">
+              <p className="lp-overline">Beyond the sandbox</p>
+              <h2 className="lp-section-title">
+                From demos to workflows.
+              </h2>
+            </div>
+
+            <div className="lp-audience-grid" style={{ marginTop: 32 }}>
+              <a href="/research" className="lp-mode-card" style={modeCardStyle}>
+                <span className="lp-audience-tag">Research</span>
+                <h3 className="lp-audience-title">Paper-to-Proof</h3>
+                <p className="lp-audience-body">
+                  Upload a cryptography paper. Get an interactive walkthrough
+                  with live demos mapped to each section. 5 curated walkthroughs
+                  included.
+                </p>
+              </a>
+              <div className="lp-mode-card" style={{ ...modeCardStyle, opacity: 0.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="lp-audience-tag">Audit</span>
+                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coming soon</span>
+                </div>
+                <h3 className="lp-audience-title">Protocol Reviews</h3>
+                <p className="lp-audience-body">
+                  Document protocol reviews with live proof states. Write notes
+                  alongside interactive demos.
+                </p>
+              </div>
+              <div className="lp-mode-card" style={{ ...modeCardStyle, opacity: 0.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="lp-audience-tag">Compose</span>
+                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coming soon</span>
+                </div>
+                <h3 className="lp-audience-title">Build Your Own</h3>
+                <p className="lp-audience-body">
+                  Combine primitives into custom proof systems. Pick your
+                  commitment scheme, constraint system, and hash function.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why theora */}
         <section className="lp-section lp-section--gap">
           <div className="lp-shell">
             <div className="lp-problem-frame">
-              <p className="lp-overline">Why Theora</p>
+              <p className="lp-overline">Why theora</p>
               <h2 className="lp-section-title">
                 The ZK visualization landscape is thin.
               </h2>
@@ -375,52 +437,61 @@ export function Landing() {
                 There is no tool that lets you <em>see</em> a polynomial
                 commitment form, <em>break</em> a Fiat-Shamir transcript, or{" "}
                 <em>watch</em> a pairing check reject a corrupted proof — in the
-                browser, with real math, at 60fps. Theora fills that gap across{" "}
+                browser, with real math, at 60fps. theora fills that gap across{" "}
                 {demoCount} primitives.
               </p>
             </div>
           </div>
         </section>
 
+        {/* Who Is This For */}
         <section className="lp-section">
           <div className="lp-shell">
-            <div className="lp-section-head">
-              <div>
-                <p className="lp-overline">Built for</p>
-                <h2 className="lp-section-title">
-                  People who already know the math and want to see it move.
-                </h2>
-              </div>
+            <div className="lp-section-head lp-section-head--stack">
+              <p className="lp-overline">Who is this for</p>
+              <h2 className="lp-section-title">
+                People who already know the math and want to see it move.
+              </h2>
             </div>
 
-            {/* Featured persona (Security Auditors) — always expanded */}
-            {AUDIENCES.filter((a) => a.featured).map((audience) => (
-              <article key={audience.title} className="lp-audience-featured">
-                <span className="lp-audience-tag">{audience.tag}</span>
-                <h3 className="lp-audience-featured-title">{audience.title}</h3>
-                <p className="lp-audience-featured-body">{audience.body}</p>
-              </article>
-            ))}
-
-            {/* Remaining personas — collapsible */}
-            <div className="lp-audience-grid">
-              {AUDIENCES.filter((a) => !a.featured).map((audience) => (
-                <details
-                  key={audience.title}
-                  className="lp-audience-card lp-audience-collapse"
-                >
-                  <summary className="lp-audience-summary">
-                    <span className="lp-audience-tag">{audience.tag}</span>
-                    <h3 className="lp-audience-title">{audience.title}</h3>
-                    <span className="lp-audience-chevron" aria-hidden="true" />
-                  </summary>
-                  <p className="lp-audience-body">{audience.body}</p>
-                </details>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginTop: 32 }}>
+              <div style={audienceCardStyle}>
+                <span className="lp-audience-tag">Build</span>
+                <h3 className="lp-audience-title">ZK Engineers</h3>
+                <p className="lp-audience-body">
+                  Debug circuits visually, trace constraint failures, find
+                  underconstrained wires before auditors do.
+                </p>
+              </div>
+              <div style={audienceCardStyle}>
+                <span className="lp-audience-tag">Audit</span>
+                <h3 className="lp-audience-title">Security Auditors</h3>
+                <p className="lp-audience-body">
+                  Inject faults, play the adversary, see exactly where soundness
+                  breaks in 5 guided attack scenarios.
+                </p>
+              </div>
+              <div style={audienceCardStyle}>
+                <span className="lp-audience-tag">Research</span>
+                <h3 className="lp-audience-title">Researchers</h3>
+                <p className="lp-audience-body">
+                  Upload papers and get interactive diagrams. Compare
+                  constructions side-by-side. Cite shareable demo states.
+                </p>
+              </div>
+              <div style={audienceCardStyle}>
+                <span className="lp-audience-tag">Teach</span>
+                <h3 className="lp-audience-title">Educators</h3>
+                <p className="lp-audience-body">
+                  Embed interactive demos in slides, blog posts, and course
+                  materials. Every state is a URL.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
+        {/* Embeddability */}
         <section className="lp-section">
           <div className="lp-shell lp-embed-grid">
             <div>
@@ -479,12 +550,15 @@ export function Landing() {
               <span>theora</span>
             </a>
             <p className="lp-footer-tagline">
-              Open-source cryptography visual tooling
+              Interactive zero-knowledge proof visualizer.
             </p>
           </div>
           <div className="lp-footer-links">
             <a href={appHref} className="lp-nav-link">
               Launch App
+            </a>
+            <a href="/research" className="lp-nav-link">
+              Research
             </a>
             <a
               href={GITHUB_URL}
@@ -503,9 +577,31 @@ export function Landing() {
               @lucidzk ↗
             </a>
           </div>
-          <p className="lp-footer-legal">MIT License</p>
+          <p className="lp-footer-legal">v1.0.0 · MIT License · By LucidSamuel</p>
         </div>
       </footer>
     </div>
   );
 }
+
+const modeCardStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  padding: '20px 18px',
+  borderRadius: 12,
+  border: '1px solid var(--border)',
+  background: 'var(--surface-element)',
+  textDecoration: 'none',
+  color: 'inherit',
+};
+
+const audienceCardStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  padding: '20px 18px',
+  borderRadius: 12,
+  border: '1px solid var(--border)',
+  background: 'var(--surface-element)',
+};

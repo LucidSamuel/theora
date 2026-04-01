@@ -32,7 +32,7 @@ export function renderCircuit(
   drawGrid(ctx, width, height, 40, isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)');
 
   // ── Circuit nodes ─────────────────────────────────────────────────────────
-  // Colors follow Theora's zinc-based palette:
+  // Colors follow theora's zinc-based palette:
   //   Inputs x, y → zinc-200 / zinc-400 (data tones)
   //   Gate        → zinc-600 (neutral computation)
   //   Output      → green (pass) / red (fail) — semantic only

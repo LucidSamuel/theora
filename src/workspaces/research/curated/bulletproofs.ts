@@ -22,9 +22,10 @@ export const bulletproofsWalkthrough: Walkthrough = {
         'C = g^v · h^r — computationally binding, perfectly hiding.',
       demo: {
         demoId: 'pedersen',
-        state: { mode: 'single', value: 42, randomness: 17 },
+        state: { v: 42, r: 17, showBlinding: true },
         caption: 'A single Pedersen commitment with explicit value and blinding factor',
         interactionHints: [
+          'Click "Commit" to compute the commitment',
           'Change the value and notice the commitment changes',
           'Toggle the blinding factor visibility to see r\'s role',
         ],
@@ -40,9 +41,10 @@ export const bulletproofsWalkthrough: Walkthrough = {
         'C₁ · C₂ = commit(v₁+v₂, r₁+r₂) without revealing the individual values.',
       demo: {
         demoId: 'pedersen',
-        state: { mode: 'homomorphic' },
-        caption: 'Two commitments merge homomorphically — the result equals a direct commitment to the sum',
+        state: { v: 12, r: 7, v2: 30, r2: 11, showBlinding: true },
+        caption: 'Set up two commitments, then add them to see the homomorphic merge',
         interactionHints: [
+          'Click "Add Commitments" to compute the merged commitment',
           'Adjust values in both commitment columns',
           'Verify that C₁·C₂ matches commit(v₁+v₂, r₁+r₂)',
         ],

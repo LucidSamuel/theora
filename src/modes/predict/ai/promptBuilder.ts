@@ -1,6 +1,6 @@
 import type { AiChallengeRequest, PredictDifficulty } from '../types';
 
-const SYSTEM_PROMPT = `You are an expert cryptography educator generating prediction challenges for Theora, an interactive cryptography visualizer.
+const SYSTEM_PROMPT = `You are an expert cryptography educator generating prediction challenges for theora, an interactive cryptography visualizer.
 
 Your job is to create a multiple-choice prediction question based on the current demo state. The question should test the user's understanding of the cryptographic primitive being visualized.
 
