@@ -51,8 +51,6 @@ export function Landing() {
   const scrollY = useScrollY();
   const navScrolled = scrollY > 40;
   const publicGroups = DEMO_GROUPS.filter(g => g.title !== 'Privacy Primitives');
-  const publicDemoIds = new Set(publicGroups.flatMap(g => g.demos));
-  const demoCount = publicDemoIds.size;
   const appHref = "/app";
   const origin = "https://www.theora.dev";
   const embedSnippet = `<iframe src="${origin}/app?embed=merkle" width="960" height="540" style="border:0"></iframe>`;
@@ -199,7 +197,7 @@ export function Landing() {
             </h1>
 
             <p className="lp-hero-sub sm:max-w-[520px]">
-              {demoCount} interactive demos. 4 modes of interaction. Upload a
+              Interactive demos. Multiple modes of interaction. Upload a
               paper, get interactive diagrams. Build real intuition for
               cryptographic primitives — not by reading, but by breaking things
               and watching math happen.
@@ -241,8 +239,7 @@ export function Landing() {
               />
             </div>
             <p className="lp-teaser-caption">
-              One of {demoCount} interactive demos. Each state is a shareable
-              URL.
+              Every demo state is a shareable URL.
             </p>
           </div>
         </div>
@@ -372,7 +369,7 @@ export function Landing() {
                 <h3 className="lp-audience-title">Think like an adversary</h3>
                 <p className="lp-audience-body">
                   Forge proofs, exploit missing constraints, break Fiat-Shamir
-                  transcripts. 5 guided scenarios across 5 demos.
+                  transcripts. Guided scenarios across multiple demos.
                 </p>
               </a>
             </div>
@@ -438,7 +435,7 @@ export function Landing() {
                 commitment form, <em>break</em> a Fiat-Shamir transcript, or{" "}
                 <em>watch</em> a pairing check reject a corrupted proof — in the
                 browser, with real math, at 60fps. theora fills that gap across{" "}
-                {demoCount} primitives.
+                every primitive we cover.
               </p>
             </div>
           </div>

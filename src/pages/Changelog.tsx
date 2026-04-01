@@ -3,7 +3,7 @@ const ENTRIES = [
     version: '1.0.0',
     date: '2026-04-01',
     changes: [
-      '16 interactive demos across 4 categories: Proof Systems, Commitment Schemes, Protocol Primitives, Privacy Primitives',
+      'Interactive demos across 4 categories: Proof Systems, Commitment Schemes, Protocol Primitives, Privacy Primitives',
       'New demos: Pedersen Commitments, Groth16 zkSNARK, PLONK Arithmetization, Oblivious Sync, Rerandomization, Constraint Counter',
       'Mode system: Explore, Predict, Attack, Debug — each with URL-serialized state',
       'Paper-to-Proof Research Workspace: 5 curated walkthroughs + AI-powered paper analysis',

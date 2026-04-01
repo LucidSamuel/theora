@@ -1,6 +1,6 @@
 # theora
 
-Interactive zero-knowledge proof visualizer. 16 demos across 4 categories, 3 interaction modes, and a paper-to-proof research workspace.
+Interactive zero-knowledge proof visualizer. Demos across 4 categories, multiple interaction modes, and a paper-to-proof research workspace.
 
 **Live at [www.theora.dev](https://www.theora.dev)**
 
