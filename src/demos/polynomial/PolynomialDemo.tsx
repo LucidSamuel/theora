@@ -435,7 +435,15 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
     case 'SET_KZG_STATE':
       return {
         ...state,
-        kzg: action.kzg,
+        kzg: {
+          commitment: action.kzg.commitment ?? null,
+          challengeZ: action.kzg.challengeZ ?? null,
+          revealedValue: action.kzg.revealedValue ?? null,
+          quotientPoly: action.kzg.quotientPoly ?? null,
+          proofHash: action.kzg.proofHash ?? null,
+          verified: action.kzg.verified ?? null,
+          currentStep: action.kzg.currentStep ?? 0,
+        },
       };
 
     case 'SET_NTT_COEFFICIENTS': {
@@ -1110,7 +1118,7 @@ export function PolynomialDemo() {
                 ? ['Verify the proof']
         : ['Reset to try another polynomial'],
     });
-  }, [hoverInfo, state.mode, state.lagrangePoints.length, state.kzg.currentStep, state.kzg.verified, state.ntt, setEntry]);
+  }, [hoverInfo, state.mode, state.lagrangePoints.length, state.kzg.currentStep, state.kzg.verified, state.ntt, state.ipa, state.batch, setEntry]);
 
   const handleResetToDefaults = useCallback((showFeedback = false) => {
     dispatch({ type: 'RESET' });

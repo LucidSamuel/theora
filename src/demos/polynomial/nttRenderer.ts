@@ -295,7 +295,17 @@ export function renderNTT(
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText(`Layer ${col}`, midX, labelY);
+
+    // Draw background pill behind label for visual separation
+    const labelText = `Layer ${col}`;
+    const labelW = ctx.measureText(labelText).width + 16;
+    const labelH = 20;
+    ctx.fillStyle = hexToRgba(isDark ? '#18181b' : '#f4f4f5', 0.7);
+    drawRoundedRect(ctx, midX - labelW / 2, labelY - labelH + 4, labelW, labelH, 4);
+    ctx.fill();
+
+    ctx.fillStyle = hexToRgba(layerColor, isActive ? 0.9 : 0.3);
+    ctx.fillText(labelText, midX, labelY);
   }
 
   // ── Screen-space elements (fixed position) ────────────────────────

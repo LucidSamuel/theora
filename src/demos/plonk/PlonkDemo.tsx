@@ -650,7 +650,7 @@ export function PlonkDemo(): JSX.Element {
                 onChange={(v) => setGamma(BigInt(v))}
               />
               <ControlNote>
-                Random challenges \u03b2, \u03b3 bind the grand product to actual wire values.
+                Random challenges β, γ bind the grand product to actual wire values.
               </ControlNote>
             </ControlGroup>
 
@@ -737,25 +737,25 @@ export function PlonkDemo(): JSX.Element {
                 onChange={(v) => setChallengePoint(BigInt(v))}
               />
               <ControlNote>
-                Random evaluation point \u03b6 is chosen by the verifier after seeing the commitment.
+                Random evaluation point ζ is chosen by the verifier after seeing the commitment.
               </ControlNote>
             </ControlGroup>
 
             <ControlGroup label="Wire Evaluations at \u03b6">
               <ControlCard>
-                <span className="control-kicker">a(\u03b6)</span>
+                <span className="control-kicker">a(ζ)</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
                   {String(linResult.wireEvals.a)}
                 </div>
               </ControlCard>
               <ControlCard>
-                <span className="control-kicker">b(\u03b6)</span>
+                <span className="control-kicker">b(ζ)</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
                   {String(linResult.wireEvals.b)}
                 </div>
               </ControlCard>
               <ControlCard>
-                <span className="control-kicker">c(\u03b6)</span>
+                <span className="control-kicker">c(ζ)</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
                   {String(linResult.wireEvals.c)}
                 </div>
@@ -779,12 +779,12 @@ export function PlonkDemo(): JSX.Element {
 
             <ControlGroup label="Consistency Check">
               <ControlCard tone={linResult.consistent ? 'success' : 'error'}>
-                <span className="control-kicker">C(\u03b6) vs r(\u03b6)</span>
+                <span className="control-kicker">C(ζ) vs r(ζ)</span>
                 <div className="control-caption" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  C(\u03b6) = {String(linResult.fullCheckValue)}
+                  C(ζ) = {String(linResult.fullCheckValue)}
                 </div>
                 <div className="control-caption" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  r(\u03b6) = {String(linResult.linearizedCheckValue)}
+                  r(ζ) = {String(linResult.linearizedCheckValue)}
                 </div>
                 <div
                   className="control-caption"
