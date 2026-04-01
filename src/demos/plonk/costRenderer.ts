@@ -270,7 +270,8 @@ export function renderCost(
 
   const badgeText = `Constraint Cost \u2014 ${comparison.circuitDescription} across ${systems.length} proof systems`;
   ctx.font = '11px monospace';
-  const bw = ctx.measureText(badgeText).width + 32;
+  const maxBadgeW = Math.max(1, width - (width > 320 ? 180 : 24));
+  const bw = Math.min(ctx.measureText(badgeText).width + 32, maxBadgeW);
   const bx = width / 2 - bw / 2;
   const by = 16;
 
@@ -285,7 +286,7 @@ export function renderCost(
   ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(badgeText, width / 2, by + 15);
+  ctx.fillText(badgeText, width / 2, by + 15, Math.max(1, bw - 16));
 
   ctx.restore();
 

@@ -283,23 +283,25 @@ export function renderNTT(
   }
 
   // ── Layer labels (below butterfly) ────────────────────────────────
+  const compactLayerLabels = colSpacing < 52;
   for (let col = 0; col < logn; col++) {
     const colNodes = nodePositions[col]!;
     const nextColNodes = nodePositions[col + 1]!;
     const midX = (colNodes[0]!.x + nextColNodes[0]!.x) / 2;
-    const labelY = panelBoxY(n - 1, startY) + BOX_H + 24;
+    const labelText = compactLayerLabels ? `L${col}` : `Layer ${col}`;
+    const labelH = compactLayerLabels ? 18 : 20;
+    const labelY = panelBoxY(n - 1, startY) + BOX_H + 24 + (compactLayerLabels && col % 2 === 1 ? 12 : 0);
 
     const isActive = state.activeLayer === -1 || state.activeLayer === col;
     const layerColor = LAYER_COLORS[col % LAYER_COLORS.length]!;
     ctx.fillStyle = hexToRgba(layerColor, isActive ? 0.9 : 0.3);
-    ctx.font = 'bold 10px monospace';
+    ctx.font = compactLayerLabels ? 'bold 9px monospace' : 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
 
-    // Draw background pill behind label for visual separation
-    const labelText = `Layer ${col}`;
+    // Collapse the label text and stagger rows when columns get tight so
+    // narrow embeds do not draw overlapping pills.
     const labelW = ctx.measureText(labelText).width + 16;
-    const labelH = 20;
     ctx.fillStyle = hexToRgba(isDark ? '#18181b' : '#f4f4f5', 0.7);
     drawRoundedRect(ctx, midX - labelW / 2, labelY - labelH + 4, labelW, labelH, 4);
     ctx.fill();

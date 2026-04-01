@@ -427,8 +427,8 @@ export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   plonk: ['Inspect gate selectors', 'Trace the copy constraints', 'Add a custom gate'],
   groth16: ['Step through the QAP encoding', 'Inspect the trusted setup output', 'Verify the pairing equation'],
   sumcheck: ['Run all rounds to see the full protocol', 'Toggle cheat mode to see detection', 'Change the number of variables'],
-  fri: ['Run the commit phase to see domain folding', 'Inspect query consistency checks', 'Try different domain sizes'],
-  nova: ['Fold one step to see the cross-term', 'Run all steps to see the full IVC chain', 'Check that each folded instance is satisfied'],
+  fri: ['Run the commit phase to see domain folding', 'Inspect query consistency checks', 'Try different domain sizes', 'See how FRI relates to Polynomial Commitments'],
+  nova: ['Fold one step to see the cross-term', 'Run all steps to see the full IVC chain', 'Check that each folded instance is satisfied', 'See full recursive proof trees in Recursive Proofs'],
   mle: ['Edit hypercube values and evaluate at a non-boolean point', 'Use partial evaluation to see dimension reduction', 'Compare the eq-basis weights at different points'],
   gkr: ['Prove to see layer-by-layer reduction', 'Step through to watch each sumcheck', 'Change input values and re-prove'],
 };
