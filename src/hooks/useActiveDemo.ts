@@ -25,6 +25,11 @@ const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
   ['cc', 'constraint-counter'],
   ['plk', 'plonk'],
   ['g16', 'groth16'],
+  ['sc', 'sumcheck'],
+  ['fri', 'fri'],
+  ['nova', 'nova'],
+  ['mle', 'mle'],
+  ['gkr', 'gkr'],
 ];
 
 export function getActiveDemoLocation(): ActiveDemoLocation {

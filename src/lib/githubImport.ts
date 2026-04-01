@@ -41,11 +41,16 @@ const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   'constraint-counter': 'cc',
   plonk: 'plk',
   groth16: 'g16',
+  sumcheck: 'sc',
+  fri: 'fri',
+  nova: 'nova',
+  mle: 'mle',
+  gkr: 'gkr',
 };
 
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
-  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, sa: null, rr: null, os: null, fs: null, c: null, e: null, l: null, ped: null, cc: null, plk: null, g16: null };
+  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, sa: null, rr: null, os: null, fs: null, c: null, e: null, l: null, ped: null, cc: null, plk: null, g16: null, sc: null, fri: null, nova: null, mle: null, gkr: null };
   updates[DEMO_QUERY_KEYS[demo]] = encodeState(payload.state);
   setSearchParams(updates);
   window.location.hash = `${demo}|${encodeStatePlain(payload.state)}`;

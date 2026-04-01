@@ -12,17 +12,17 @@ export const DEMO_GROUPS: DemoGroup[] = [
   {
     title: 'Proof Systems',
     description: 'End-to-end proof flows, recursive verification, and verifier cost tradeoffs.',
-    demos: ['pipeline', 'recursive', 'split-accumulation', 'groth16', 'plonk'],
+    demos: ['pipeline', 'recursive', 'split-accumulation', 'groth16', 'nova', 'plonk'],
   },
   {
     title: 'Commitment Schemes',
     description: 'Hash trees, polynomial commitments, hiding commitments, and set accumulators.',
-    demos: ['polynomial', 'pedersen', 'merkle', 'accumulator'],
+    demos: ['polynomial', 'fri', 'pedersen', 'merkle', 'accumulator'],
   },
   {
     title: 'Protocol Primitives',
     description: 'Transcript hashing, curve arithmetic, arithmetization, and table checks.',
-    demos: ['fiat-shamir', 'elliptic', 'circuit', 'lookup'],
+    demos: ['fiat-shamir', 'elliptic', 'circuit', 'lookup', 'sumcheck', 'mle', 'gkr'],
   },
   {
     title: 'Privacy Primitives',
@@ -36,8 +36,10 @@ export const DEMO_CATEGORY_BY_ID: Record<DemoId, string> = {
   recursive: 'Proof Systems',
   'split-accumulation': 'Proof Systems',
   groth16: 'Proof Systems',
+  nova: 'Proof Systems',
   plonk: 'Proof Systems',
   polynomial: 'Commitment Schemes',
+  fri: 'Commitment Schemes',
   pedersen: 'Commitment Schemes',
   merkle: 'Commitment Schemes',
   accumulator: 'Commitment Schemes',
@@ -48,4 +50,7 @@ export const DEMO_CATEGORY_BY_ID: Record<DemoId, string> = {
   rerandomization: 'Protocol Primitives',
   'oblivious-sync': 'Protocol Primitives',
   'constraint-counter': 'Protocol Primitives',
+  sumcheck: 'Protocol Primitives',
+  mle: 'Protocol Primitives',
+  gkr: 'Protocol Primitives',
 };

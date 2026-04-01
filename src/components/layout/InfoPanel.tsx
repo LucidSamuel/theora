@@ -241,6 +241,60 @@ export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label
       { label: 'Halo 2 gadgets – Why Poseidon replaced Pedersen for Merkle paths', url: 'https://zcash.github.io/halo2/' },
     ],
   },
+  sumcheck: {
+    concepts: [
+      'The sumcheck protocol reduces checking a sum over 2^n hypercube points to a single oracle evaluation, using n rounds with one univariate polynomial each.',
+      'At each round i, the prover sends g_i(x) and the verifier checks g_i(0)+g_i(1) equals the running expected sum before issuing a fresh challenge r_i.',
+      'If the prover lies about the sum, the oracle query at the end will disagree with the final round polynomial with overwhelming probability (by Schwartz-Zippel).',
+    ],
+    resources: [
+      { label: 'Proofs, Arguments, and Zero-Knowledge (Ch. 4) – Justin Thaler', url: 'https://people.cs.georgetown.edu/jthaler/ProofsArgsAndZK.pdf' },
+      { label: 'Sumcheck protocol – ZKProof Community Reference', url: 'https://zkproof.org/2020/03/16/introduction-into-sum-check-protocol/' },
+    ],
+  },
+  fri: {
+    concepts: [
+      'FRI proves a function is close to a low-degree polynomial by halving the evaluation domain in each round.',
+      'Each round uses a random challenge alpha to fold f(x) into f_even(x\u00b2) + alpha\u00b7f_odd(x\u00b2), halving the degree.',
+      'After log\u2082(n) rounds, only a constant remains. Query phase verifies folding consistency at random positions.',
+    ],
+    resources: [
+      { label: 'STARK Math \u2014 Anatomy of a STARK, Part 3 (Starkware)', url: 'https://starkware.co/stark-math/' },
+      { label: 'FRI-based Polynomial Commitments (Ulrich Hab\u00f6ck)', url: 'https://eprint.iacr.org/2022/1216' },
+    ],
+  },
+  nova: {
+    concepts: [
+      'Relaxed R1CS extends standard R1CS with a scalar u and error vector E: Az \u2218 Bz = u\u00B7Cz + E.',
+      'Folding compresses two instances into one using a random challenge r: W\u2019 = W\u2081 + r\u00B7W\u2082, E\u2019 = E\u2081 + r\u00B7T + r\u00B2\u00B7E\u2082.',
+      'The cross-term T captures the "interaction" between instances \u2014 it makes folding algebraically sound.',
+    ],
+    resources: [
+      { label: 'Nova: Recursive Zero-Knowledge Arguments from Folding Schemes (Kothapalli et al.)', url: 'https://eprint.iacr.org/2021/370' },
+      { label: 'Nova and beyond \u2014 Microsoft Research', url: 'https://www.microsoft.com/en-us/research/blog/nova/' },
+    ],
+  },
+  mle: {
+    concepts: [
+      'A multilinear extension uniquely extends f:{0,1}^n \u2192 F to a degree-1-per-variable polynomial over F^n.',
+      'The eq basis eq(r,v) = \u03A0_i (v_i\u00B7r_i + (1-v_i)\u00B7(1-r_i)) is the multilinear Lagrange basis.',
+      'Partial evaluation fixes variables one at a time, reducing the hypercube dimension \u2014 this is exactly what sumcheck does.',
+    ],
+    resources: [
+      { label: 'Proofs, Arguments, and Zero-Knowledge \u2014 Ch. 4 (Justin Thaler)', url: 'https://people.cs.georgetown.edu/jthaler/ProofsArgsAndZK.html' },
+    ],
+  },
+  gkr: {
+    concepts: [
+      'GKR reduces verifying a layered circuit output to checking input values, one layer at a time via sumcheck.',
+      'At each layer, the verifier checks V_i(r) = \u03A3 add_i(r,x,y)\u00B7(V_{i+1}(x)+V_{i+1}(y)) + mul_i(r,x,y)\u00B7V_{i+1}(x)\u00B7V_{i+1}(y).',
+      'The prover does O(S\u00B7log(S)) work per layer; the verifier does O(n\u00B7log(n)) total \u2014 exponentially faster than re-executing.',
+    ],
+    resources: [
+      { label: 'Proofs, Arguments, and Zero-Knowledge \u2014 Ch. 4.6 (Justin Thaler)', url: 'https://people.cs.georgetown.edu/jthaler/ProofsArgsAndZK.html' },
+      { label: 'Delegating Computation (Goldwasser, Kalai, Rothblum)', url: 'https://eprint.iacr.org/2018/601' },
+    ],
+  },
 };
 
 export const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
@@ -324,6 +378,35 @@ export const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[
     { term: 'Merkle path', definition: 'The sequence of hashes from one leaf up to the root.' },
     { term: 'Arithmetization-friendly hash', definition: 'A hash designed to minimize circuit cost, such as Poseidon.' },
   ],
+  sumcheck: [
+    { term: 'Boolean hypercube', definition: '{0,1}^n — the set of all binary assignments to n variables.' },
+    { term: 'Round polynomial', definition: 'g_i(x): univariate polynomial the prover sends in round i.' },
+    { term: 'Oracle query', definition: 'The final verifier call to evaluate f at (r_1,…,r_n) to confirm the last round.' },
+  ],
+  fri: [
+    { term: 'Evaluation domain', definition: 'Powers of a root of unity \u03c9 \u2014 the points where the polynomial is evaluated.' },
+    { term: 'Fold challenge', definition: 'Random \u03b1 from the verifier: f\u2032(x) = f_even(x) + \u03b1\u00b7f_odd(x).' },
+    { term: 'Query consistency', definition: 'Checking that f(x), f(-x), and the folded value agree at random positions.' },
+    { term: 'IOPP', definition: 'Interactive Oracle Proof of Proximity \u2014 FRI proves closeness to RS codes.' },
+  ],
+  nova: [
+    { term: 'Relaxed R1CS', definition: 'Az \u2218 Bz = u\u00B7Cz + E \u2014 generalizes standard R1CS (u=1, E=0).' },
+    { term: 'Cross-term T', definition: 'Az\u2081\u2218Bz\u2082 + Az\u2082\u2218Bz\u2081 \u2212 u\u2081\u00B7Cz\u2082 \u2212 u\u2082\u00B7Cz\u2081 \u2014 captures interaction.' },
+    { term: 'Folding challenge', definition: 'Random r from the verifier: z\u2019 = z\u2081 + r\u00B7z\u2082.' },
+    { term: 'IVC', definition: 'Incrementally Verifiable Computation \u2014 each step proves all prior steps.' },
+  ],
+  mle: [
+    { term: 'Boolean hypercube', definition: '{0,1}^n \u2014 the 2^n binary points where f is defined.' },
+    { term: 'eq basis', definition: 'eq(r,v) = \u03A0_i (v_i\u00B7r_i + (1-v_i)(1-r_i)) \u2014 multilinear Lagrange basis.' },
+    { term: 'Multilinear', definition: 'Degree at most 1 in each variable individually.' },
+    { term: 'Partial evaluation', definition: 'Fix some variables to field values, reducing the dimension.' },
+  ],
+  gkr: [
+    { term: 'Layered circuit', definition: 'Circuit where gates at layer i only take inputs from layer i+1.' },
+    { term: 'Wiring predicate', definition: 'add_i(g,x,y) / mul_i(g,x,y) \u2014 encodes circuit structure as MLEs.' },
+    { term: 'Layer reduction', definition: 'Sumcheck reduces a claim about V_i to a claim about V_{i+1}.' },
+    { term: 'Oracle query', definition: 'Final check: evaluate input MLE at the reduced point.' },
+  ],
 };
 
 export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
@@ -343,6 +426,11 @@ export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   'constraint-counter': ['Raise the tree depth', 'Compare path cost against full-tree cost', 'Use the ratio to explain why Poseidon wins in Merkle circuits'],
   plonk: ['Inspect gate selectors', 'Trace the copy constraints', 'Add a custom gate'],
   groth16: ['Step through the QAP encoding', 'Inspect the trusted setup output', 'Verify the pairing equation'],
+  sumcheck: ['Run all rounds to see the full protocol', 'Toggle cheat mode to see detection', 'Change the number of variables'],
+  fri: ['Run the commit phase to see domain folding', 'Inspect query consistency checks', 'Try different domain sizes'],
+  nova: ['Fold one step to see the cross-term', 'Run all steps to see the full IVC chain', 'Check that each folded instance is satisfied'],
+  mle: ['Edit hypercube values and evaluate at a non-boolean point', 'Use partial evaluation to see dimension reduction', 'Compare the eq-basis weights at different points'],
+  gkr: ['Prove to see layer-by-layer reduction', 'Step through to watch each sumcheck', 'Change input values and re-prove'],
 };
 
 export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {

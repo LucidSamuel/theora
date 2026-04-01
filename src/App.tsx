@@ -26,6 +26,11 @@ import { ConstraintCounterDemo } from '@/demos/constraint-counter/ConstraintCoun
 import { ObliviousSyncDemo } from '@/demos/oblivious-sync/ObliviousSyncDemo';
 import { RerandomizationDemo } from '@/demos/rerandomization/RerandomizationDemo';
 import { SplitAccumulationDemo } from '@/demos/split-accumulation/SplitAccumulationDemo';
+import { SumcheckDemo } from '@/demos/sumcheck/SumcheckDemo';
+import { FRIDemo } from '@/demos/fri/FRIDemo';
+import { NovaDemo } from '@/demos/nova/NovaDemo';
+import { MLEDemo } from '@/demos/mle/MLEDemo';
+import { GKRDemo } from '@/demos/gkr/GKRDemo';
 import { DEMOS, type DemoId } from '@/types';
 
 const DEMO_NAMES = {
@@ -45,6 +50,11 @@ const DEMO_NAMES = {
   'constraint-counter': 'Pedersen vs Poseidon',
   plonk: 'PLONK Arithmetization',
   groth16: 'Groth16 zkSNARK',
+  sumcheck: 'Sumcheck Protocol',
+  fri: 'FRI Protocol',
+  nova: 'Nova Folding',
+  mle: 'Multilinear Extensions',
+  gkr: 'GKR Protocol',
 } as const;
 
 export default function App() {
@@ -110,6 +120,16 @@ export default function App() {
         return <PlonkDemo />;
       case 'groth16':
         return <Groth16Demo />;
+      case 'sumcheck':
+        return <SumcheckDemo />;
+      case 'fri':
+        return <FRIDemo />;
+      case 'nova':
+        return <NovaDemo />;
+      case 'mle':
+        return <MLEDemo />;
+      case 'gkr':
+        return <GKRDemo />;
       case 'pipeline':
         return <PipelineDemo />;
     }

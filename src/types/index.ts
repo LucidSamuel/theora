@@ -14,6 +14,11 @@ export const DEMO_IDS = [
   'constraint-counter',
   'plonk',
   'groth16',
+  'sumcheck',
+  'fri',
+  'nova',
+  'mle',
+  'gkr',
   'pipeline',
 ] as const;
 
@@ -151,6 +156,46 @@ export const DEMOS: DemoMeta[] = [
     description:
       'Groth16 is the most efficient zkSNARK in practice. A computation is encoded as an R1CS, transformed to a QAP, and a trusted setup generates a common reference string. The prover computes three elliptic-curve elements (A, B, C) from the witness and trapdoor evaluations; the verifier checks a single pairing equation without learning the private witness.',
     accent: '#fb923c',
+  },
+  {
+    id: 'sumcheck',
+    title: 'Sumcheck Protocol',
+    subtitle: 'Watch the prover send univariate round polynomials and the verifier check each one.',
+    description:
+      'The sumcheck protocol lets a verifier check the sum of a multilinear polynomial over the boolean hypercube {0,1}^n in O(n) rounds, each exchanging one univariate polynomial and one random challenge. The verifier only needs a single oracle query at the end, making it the backbone of many interactive and non-interactive proof systems including GKR, STARK arithmetization, and lookup arguments.',
+    accent: '#38bdf8',
+  },
+  {
+    id: 'fri',
+    title: 'FRI Protocol',
+    subtitle: 'Watch polynomial degree fold down through interactive oracle proofs.',
+    description:
+      'FRI (Fast Reed-Solomon Interactive Oracle Proof of Proximity) proves that a function is close to a low-degree polynomial by repeatedly folding the evaluation domain. Each round halves the domain and degree using a random verifier challenge, until a constant remains. FRI is the commitment scheme powering STARKs and transparent proof systems.',
+    accent: '#06b6d4',
+  },
+  {
+    id: 'nova',
+    title: 'Nova Folding',
+    subtitle: 'Fold relaxed R1CS instances into a running accumulator for IVC.',
+    description:
+      'Nova is an IVC (Incrementally Verifiable Computation) folding scheme that compresses two R1CS instances into one without full SNARK proving. The key insight is relaxed R1CS: Az \u2218 Bz = u\u00B7Cz + E, where u is a scalar and E is an error vector. Two instances fold via a random challenge into a single accumulated instance that is valid if and only if both originals were.',
+    accent: '#f59e0b',
+  },
+  {
+    id: 'mle',
+    title: 'Multilinear Extensions',
+    subtitle: 'Explore how functions on {0,1}^n extend to multilinear polynomials.',
+    description:
+      'A multilinear extension (MLE) uniquely extends a function f: {0,1}^n \u2192 F_p to a multilinear polynomial over the entire field. The extension uses the eq basis: f\u0303(r) = \u03A3_v f(v) \u00B7 eq(r,v). MLEs are the foundation of sumcheck-based proof systems, GKR, and many modern SNARKs. Partial evaluation\u2014fixing variables one at a time\u2014is the key operation in the sumcheck protocol.',
+    accent: '#8b5cf6',
+  },
+  {
+    id: 'gkr',
+    title: 'GKR Protocol',
+    subtitle: 'Verify layered circuit output through sumcheck-based layer reduction.',
+    description:
+      'The GKR protocol lets a verifier check the output of a layered arithmetic circuit without re-executing it. Starting from a claim about the output, each layer reduces the claim to the next layer down via a sumcheck argument. After d layers the verifier makes a single query to the input. GKR is the backbone of delegated computation and many SNARK constructions.',
+    accent: '#ec4899',
   },
   {
     id: 'pipeline',

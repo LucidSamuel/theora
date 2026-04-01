@@ -19,6 +19,11 @@ export const RESEARCH_DEMO_PARAM_KEYS: Record<DemoId, string> = {
   'constraint-counter': 'cc',
   plonk: 'plk',
   groth16: 'g16',
+  sumcheck: 'sc',
+  fri: 'fri',
+  nova: 'nova',
+  mle: 'mle',
+  gkr: 'gkr',
 };
 
 interface BuildWalkthroughDemoUrlOptions {

@@ -1,5 +1,5 @@
 import type { DemoId } from '@/types';
-import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties, Workflow, Lock, LayoutGrid, Fingerprint, Split, Shuffle, Radar, BarChart3 } from 'lucide-react';
+import { TreePine, Orbit, Sigma, Repeat, Hexagon, ShieldCheck, CircuitBoard, TableProperties, Workflow, Lock, LayoutGrid, Fingerprint, Split, Shuffle, Radar, BarChart3, Variable, Layers, Combine, Box, Network } from 'lucide-react';
 
 const ICONS = {
   pipeline: Workflow,
@@ -18,6 +18,11 @@ const ICONS = {
   'constraint-counter': BarChart3,
   plonk: LayoutGrid,
   groth16: Fingerprint,
+  sumcheck: Variable,
+  fri: Layers,
+  nova: Combine,
+  mle: Box,
+  gkr: Network,
 } as const;
 
 interface DemoIconProps {

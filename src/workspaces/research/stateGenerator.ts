@@ -38,5 +38,15 @@ export function generateDemoState(demoId: DemoId): Record<string, unknown> {
       return {};
     case 'constraint-counter':
       return {};
+    case 'sumcheck':
+      return { numVariables: 2, fieldSize: 101, cheatMode: false };
+    case 'fri':
+      return { degree: 4, fieldSize: 257 };
+    case 'nova':
+      return { numSteps: 3, fieldSize: 101 };
+    case 'mle':
+      return { numVars: 2, fieldSize: 101 };
+    case 'gkr':
+      return { inputs: [3, 5, 7, 11], fieldSize: 101 };
   }
 }
