@@ -74,7 +74,7 @@ export function renderNova(
   const stepCount = state.steps.length;
   const headerText = `Nova IVC \u2014 ${stepCount} folding step${stepCount !== 1 ? 's' : ''} over GF(${state.fieldSize})`;
   ctx.font = '11px monospace';
-  const maxBadgeW = width - 180;
+  const maxBadgeW = Math.max(1, width - (width > 320 ? 180 : 24));
   const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
@@ -94,7 +94,7 @@ export function renderNova(
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, Math.max(1, headerW - 24));
 
   // Sub-label
   ctx.fillStyle = hexToRgba(isDark ? ZINC_400 : ZINC_500, 0.8);

@@ -552,7 +552,7 @@ export function renderFRI(
   const domainSize = state.layers[0]?.domain.length ?? '?';
   const headerText = `FRI Protocol \u2014 degree ${degree}, domain ${domainSize}, GF(${bstr(state.fieldSize)})`;
   ctx.font = '11px monospace';
-  const maxBadgeW = width - 180;
+  const maxBadgeW = Math.max(1, width - (width > 320 ? 180 : 24));
   const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
@@ -570,7 +570,7 @@ export function renderFRI(
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, Math.max(1, headerW - 24));
 
   // Layer progress sub-label
   const progressText = state.phase === 'setup'

@@ -60,24 +60,6 @@ function bstr(v: bigint): string {
   return v.toString();
 }
 
-/** Compute gate positions for a single layer row, centered horizontally. */
-function layerGatePositions(
-  numGates: number,
-  centerX: number,
-  y: number,
-): { x: number; y: number }[] {
-  const totalW = numGates * GATE_W + (numGates - 1) * GATE_HGAP;
-  const startX = centerX - totalW / 2;
-  const positions: { x: number; y: number }[] = [];
-  for (let i = 0; i < numGates; i++) {
-    positions.push({
-      x: startX + i * (GATE_W + GATE_HGAP),
-      y,
-    });
-  }
-  return positions;
-}
-
 /* ── Drawing primitives ──────────────────────────────────────────────── */
 
 function drawGateBox(
@@ -221,13 +203,14 @@ function drawClaimCard(
   isActive: boolean,
   isDark: boolean,
   t: number,
+  cardW = CLAIM_CARD_W,
 ): void {
   const cardH = CLAIM_CARD_H + Math.max(0, (rows.length - 2) * ROW_H);
   const borderAlpha = isActive ? 0.7 + 0.3 * Math.sin(t * 2.8) : 0.25;
 
   // Background
   ctx.fillStyle = hexToRgba(isDark ? ZINC_700 : '#f4f4f5', isDark ? 0.6 : 0.85);
-  drawRoundedRect(ctx, x, y, CLAIM_CARD_W, cardH, CLAIM_CARD_RADIUS);
+  drawRoundedRect(ctx, x, y, cardW, cardH, CLAIM_CARD_RADIUS);
   ctx.fill();
 
   // Border
@@ -235,7 +218,7 @@ function drawClaimCard(
     ? hexToRgba(COLOR_ACTIVE_BORDER, borderAlpha)
     : hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.35);
   ctx.lineWidth = isActive ? 1.5 : 1;
-  drawRoundedRect(ctx, x, y, CLAIM_CARD_W, cardH, CLAIM_CARD_RADIUS);
+  drawRoundedRect(ctx, x, y, cardW, cardH, CLAIM_CARD_RADIUS);
   ctx.stroke();
 
   // Header
@@ -243,9 +226,9 @@ function drawClaimCard(
   ctx.fillStyle = hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.35);
   ctx.beginPath();
   ctx.moveTo(x + CLAIM_CARD_RADIUS, y);
-  ctx.lineTo(x + CLAIM_CARD_W - CLAIM_CARD_RADIUS, y);
-  ctx.quadraticCurveTo(x + CLAIM_CARD_W, y, x + CLAIM_CARD_W, y + CLAIM_CARD_RADIUS);
-  ctx.lineTo(x + CLAIM_CARD_W, y + headerH);
+  ctx.lineTo(x + cardW - CLAIM_CARD_RADIUS, y);
+  ctx.quadraticCurveTo(x + cardW, y, x + cardW, y + CLAIM_CARD_RADIUS);
+  ctx.lineTo(x + cardW, y + headerH);
   ctx.lineTo(x, y + headerH);
   ctx.lineTo(x, y + CLAIM_CARD_RADIUS);
   ctx.quadraticCurveTo(x, y, x + CLAIM_CARD_RADIUS, y);
@@ -266,7 +249,7 @@ function drawClaimCard(
         ? hexToRgba(COLOR_SUCCESS, 0.08)
         : hexToRgba(COLOR_ERROR, 0.08);
       ctx.fillStyle = bg;
-      ctx.fillRect(x + 2, rowY, CLAIM_CARD_W - 4, ROW_H);
+      ctx.fillRect(x + 2, rowY, cardW - 4, ROW_H);
     }
 
     // Label
@@ -286,7 +269,7 @@ function drawClaimCard(
     }
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(row.value, x + CLAIM_CARD_W - ROW_PAD_X, rowY + ROW_H / 2);
+    ctx.fillText(row.value, x + cardW - ROW_PAD_X, rowY + ROW_H / 2);
 
     rowY += ROW_H;
   }
@@ -369,7 +352,8 @@ export function renderGKR(
   // ── Compute layout ────────────────────────────────────────────────
   // Layers are drawn bottom-to-top: input (layer 0) at bottom, output at top.
   // We split canvas into left (circuit diagram) and right (claim reduction).
-  const circuitAreaW = proof ? width * 0.55 : width;
+  const stackedProofPanel = Boolean(proof) && width < 760;
+  const circuitAreaW = proof && !stackedProofPanel ? width * 0.55 : width;
   const circuitCenterX = circuitAreaW / 2;
 
   // Scale gate dimensions to fit available width
@@ -390,6 +374,13 @@ export function renderGKR(
 
   const totalCircuitH = (numLayers - 1) * layerSpacing;
   const circuitTopY = topPad + (availH - totalCircuitH) / 2;
+  const circuitBottomY = circuitTopY + totalCircuitH + scaledGateH;
+  const claimCardW = proof
+    ? stackedProofPanel
+      ? Math.max(140, Math.min(CLAIM_CARD_W, width - 48))
+      : Math.min(CLAIM_CARD_W, Math.max(140, width - circuitAreaW - 40))
+    : CLAIM_CARD_W;
+  const claimCardGap = stackedProofPanel ? 16 : CLAIM_CARD_GAP;
 
   // Helper: compute scaled gate positions for a row
   function scaledGatePositions(numGates: number, cx: number, y: number): { x: number; y: number }[] {
@@ -508,17 +499,19 @@ export function renderGKR(
 
   // ── Claim reduction panel (right side) ────────────────────────────
   if (proof) {
-    const claimX = circuitAreaW + 40;
-    let claimY = topPad + 20;
+    const claimX = stackedProofPanel
+      ? (width - claimCardW) / 2
+      : circuitAreaW + Math.max(20, (width - circuitAreaW - claimCardW) / 2);
+    let claimY = stackedProofPanel ? circuitBottomY + 40 : topPad + 20;
 
     // Output claim card
     const outputRows: { label: string; value: string; highlight?: 'pass' | 'fail' | null }[] = [
       { label: 'V_out(r)', value: bstr(proof.outputClaim) },
       { label: 'point', value: `[${proof.outputPoint.map(bstr).join(',')}]` },
     ];
-    drawClaimCard(ctx, claimX, claimY, 'Output Claim', outputRows, currentStep === 0, isDark, t);
+    drawClaimCard(ctx, claimX, claimY, 'Output Claim', outputRows, currentStep === 0, isDark, t, claimCardW);
     const outputCardBottom = claimY + CLAIM_CARD_H + (outputRows.length - 2) * ROW_H;
-    claimY = outputCardBottom + CLAIM_CARD_GAP;
+    claimY = outputCardBottom + claimCardGap;
 
     // Layer proof cards
     for (let i = 0; i < proof.layerProofs.length; i++) {
@@ -528,8 +521,8 @@ export function renderGKR(
       // Draw arrow from previous card
       drawVertArrow(
         ctx,
-        claimX + CLAIM_CARD_W / 2,
-        claimY - CLAIM_CARD_GAP + 2,
+        claimX + claimCardW / 2,
+        claimY - claimCardGap + 2,
         claimY - 2,
         hexToRgba(isDark ? ZINC_400 : ZINC_500, 0.5),
         'sumcheck',
@@ -554,17 +547,17 @@ export function renderGKR(
       }
 
       const title = `Layer ${lp.layerIndex} Reduction`;
-      drawClaimCard(ctx, claimX, claimY, title, rows, isActive, isDark, t);
+      drawClaimCard(ctx, claimX, claimY, title, rows, isActive, isDark, t, claimCardW);
 
       const cardH = CLAIM_CARD_H + Math.max(0, (rows.length - 2) * ROW_H);
-      claimY += cardH + CLAIM_CARD_GAP;
+      claimY += cardH + claimCardGap;
     }
 
     // Input evaluation card
     drawVertArrow(
       ctx,
-      claimX + CLAIM_CARD_W / 2,
-      claimY - CLAIM_CARD_GAP + 2,
+      claimX + claimCardW / 2,
+      claimY - claimCardGap + 2,
       claimY - 2,
       hexToRgba(isDark ? ZINC_400 : ZINC_500, 0.5),
       'oracle',
@@ -583,7 +576,7 @@ export function renderGKR(
       }
     }
     const isInputActive = currentStep === proof.layerProofs.length - 1 || phase === 'complete';
-    drawClaimCard(ctx, claimX, claimY, 'Input Check', inputRows, isInputActive, isDark, t);
+    drawClaimCard(ctx, claimX, claimY, 'Input Check', inputRows, isInputActive, isDark, t, claimCardW);
   }
 
   // ── Screen-space overlays ─────────────────────────────────────────
@@ -596,7 +589,7 @@ export function renderGKR(
   const p = circuit.fieldSize;
   const headerText = `GKR Protocol \u2014 ${d} layers, ${n} inputs, GF(${bstr(p)})`;
   ctx.font = '11px monospace';
-  const maxBadgeW = width - 180;
+  const maxBadgeW = Math.max(1, width - (width > 320 ? 180 : 24));
   const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
@@ -614,7 +607,7 @@ export function renderGKR(
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, Math.max(1, headerW - 24));
 
   // ── Verdict badge ─────────────────────────────────────────────────
   if (verification !== null && phase === 'complete') {
