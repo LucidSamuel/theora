@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { getSearchParam } from '@/lib/urlState';
+import { useMode } from '@/modes/ModeProvider';
 import { Settings, Play, Pause, X, RotateCcw, Maximize2, SlidersHorizontal } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileControlsSheet } from './MobileControlsSheet';
@@ -124,6 +125,10 @@ export function DemoLayout({ children, onEmbedPlay, embedPlaying, onEmbedReset, 
 
 export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) {
   const { isEmbed, panelsVisible, isMobile, mobileSheetOpen, setMobileSheetOpen } = useEmbedContext();
+  const { mode } = useMode();
+
+  // Attack/Predict/Debug mode: hide demo sidebar — their panels provide their own
+  if (mode === 'attack' || mode === 'predict' || mode === 'debug') return null;
 
   // Embed: hide entirely when collapsed
   if (isEmbed && !panelsVisible) return null;

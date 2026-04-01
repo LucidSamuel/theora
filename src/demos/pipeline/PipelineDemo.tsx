@@ -2,6 +2,8 @@ import { useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'r
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   ControlGroup,
   SliderControl,
@@ -159,6 +161,12 @@ export function PipelineDemo() {
   const [linkBusy, setLinkBusy] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
+
+  // Attack mode bridge
+  const { currentDemoAction } = useAttack();
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_FAULT: (payload) => dispatch({ type: 'SET_FAULT', fault: payload as FaultType }),
+  }), []));
 
   const activeStage = STAGES[state.activeStageIdx]!;
   const linkedDescriptor = useMemo(() => getLinkedDemoDescriptor(activeStage), [activeStage]);

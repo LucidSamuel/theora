@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const MERKLE_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'merkle-leaf-change',
+    demoId: 'merkle',
+    difficulty: 'beginner',
+    question: 'If you change one leaf in a Merkle tree with 8 leaves, how many nodes change in total (including the leaf)?',
+    hint: 'Think about the path from the changed leaf to the root.',
+    choices: [
+      { label: '1 (just the leaf)', rationale: 'The parent hash depends on the leaf, so it changes too.' },
+      { label: '4 (leaf + 3 ancestors)', rationale: 'Correct — the leaf, its parent, grandparent, and the root all recompute.' },
+      { label: '8 (all leaves)', rationale: 'Only the changed leaf and its ancestors are affected, not sibling branches.' },
+      { label: '15 (all nodes)', rationale: 'Nodes outside the path to root are unaffected.' },
+    ],
+    correctIndex: 1,
+    explanation: 'In a binary tree with 8 leaves (depth 3), changing one leaf recomputes: the leaf itself, its parent, grandparent, and root — 4 nodes total. This is O(log n).',
+    category: 'structure',
+  },
+  {
+    id: 'merkle-proof-size',
+    demoId: 'merkle',
+    difficulty: 'beginner',
+    question: 'A Merkle tree has 16 leaves. How many sibling hashes does an inclusion proof need?',
+    hint: 'The proof must provide one sibling at each level of the tree.',
+    choices: [
+      { label: '4 sibling hashes', rationale: 'Correct — log₂(16) = 4 levels, one sibling per level.' },
+      { label: '8 sibling hashes', rationale: 'That would be half the leaves, but the proof only needs one sibling per level.' },
+      { label: '15 sibling hashes', rationale: 'That would be every other node in the tree — far more than needed.' },
+      { label: '16 sibling hashes', rationale: 'The proof is logarithmic, not linear in the number of leaves.' },
+    ],
+    correctIndex: 0,
+    explanation: 'A Merkle inclusion proof provides one sibling hash per tree level. With 16 leaves, depth = log₂(16) = 4, so the proof is 4 hashes.',
+    category: 'proofs',
+  },
+  {
+    id: 'merkle-root-determinism',
+    demoId: 'merkle',
+    difficulty: 'intermediate',
+    question: 'Two Merkle trees have the same leaves in the same order but use different hash functions (SHA-256 vs FNV-1a). Will their roots be the same?',
+    hint: 'The root depends on the hash function, not just the data.',
+    choices: [
+      { label: 'Yes, the root only depends on the leaves', rationale: 'The hash function is part of the computation — different functions produce different hashes.' },
+      { label: 'No, different hash functions produce different roots', rationale: 'Correct — the root is determined by both the leaf data and the hash function.' },
+      { label: 'Yes, if the leaves are the same the tree is the same', rationale: 'The tree structure is the same, but the hash values differ.' },
+      { label: 'It depends on the leaf count', rationale: 'Leaf count affects tree depth but not whether different hash functions produce different outputs.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The Merkle root is a function of both the input data and the hash function used. SHA-256 and FNV-1a produce completely different outputs, so the roots will differ.',
+    category: 'hashing',
+  },
+  {
+    id: 'merkle-forgery',
+    demoId: 'merkle',
+    difficulty: 'advanced',
+    question: 'An attacker wants to forge a Merkle inclusion proof for a leaf that is NOT in the tree. What must they produce?',
+    hint: 'Think about what the verifier checks.',
+    choices: [
+      { label: 'A valid proof path that hashes to the known root', rationale: 'Correct — but finding sibling hashes that reconstruct the root without knowing the tree is as hard as inverting the hash function.' },
+      { label: 'Just the fake leaf — the verifier only checks the leaf', rationale: 'The verifier recomputes the root from the leaf + proof and compares to the known root.' },
+      { label: 'A new root hash that includes the fake leaf', rationale: 'The verifier already has the correct root — the attacker cannot change it.' },
+      { label: 'The private key of the tree owner', rationale: 'Merkle trees don\'t use private keys — security comes from hash collision resistance.' },
+    ],
+    correctIndex: 0,
+    explanation: 'To forge a proof, the attacker must provide sibling hashes that, when combined with the fake leaf, hash all the way up to the correct root. This requires finding a hash preimage or collision, which is computationally infeasible with a secure hash function.',
+    category: 'security',
+  },
+];

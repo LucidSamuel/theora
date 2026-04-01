@@ -3,6 +3,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GitHubProvider } from '@/hooks/useGitHub';
+import { ModeProvider, useMode, PlaceholderMode, AttackMode, PredictMode, DebugMode } from '@/modes';
 import { Layout } from '@/components/layout/Layout';
 import { DemoContainer } from '@/components/layout/DemoContainer';
 import { DemoErrorBoundary } from '@/components/shared/DemoErrorBoundary';
@@ -25,7 +26,7 @@ import { ConstraintCounterDemo } from '@/demos/constraint-counter/ConstraintCoun
 import { ObliviousSyncDemo } from '@/demos/oblivious-sync/ObliviousSyncDemo';
 import { RerandomizationDemo } from '@/demos/rerandomization/RerandomizationDemo';
 import { SplitAccumulationDemo } from '@/demos/split-accumulation/SplitAccumulationDemo';
-import { DEMOS } from '@/types';
+import { DEMOS, type DemoId } from '@/types';
 
 const DEMO_NAMES = {
   pipeline: 'Proof Pipeline',
@@ -115,23 +116,79 @@ export default function App() {
   };
 
   return (
-    <GitHubProvider>
-      <Layout
-        activeDemo={activeDemo}
-        onSwitchDemo={switchDemo}
-        theme={theme}
-        onToggleTheme={toggle}
-        onOpenImport={() => setImportOpen(true)}
-      >
-        <DemoContainer activeDemo={activeDemo}>
-          <DemoErrorBoundary key={activeLocationKey} demoName={DEMO_NAMES[activeDemo]}>
-            {renderDemo()}
-          </DemoErrorBoundary>
-        </DemoContainer>
-      </Layout>
-      <GitHubImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} activeDemo={activeDemo} />
-      <GitHubConnectModal />
-      <MySavesModal />
-    </GitHubProvider>
+    <ModeProvider>
+      <GitHubProvider>
+        <Layout
+          activeDemo={activeDemo}
+          onSwitchDemo={switchDemo}
+          theme={theme}
+          onToggleTheme={toggle}
+          onOpenImport={() => setImportOpen(true)}
+        >
+          <AppContent
+            activeDemo={activeDemo}
+            activeLocationKey={activeLocationKey}
+            renderDemo={renderDemo}
+          />
+        </Layout>
+        <GitHubImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} activeDemo={activeDemo} />
+        <GitHubConnectModal />
+        <MySavesModal />
+      </GitHubProvider>
+    </ModeProvider>
+  );
+}
+
+function AppContent({
+  activeDemo,
+  activeLocationKey,
+  renderDemo,
+}: {
+  activeDemo: DemoId;
+  activeLocationKey: string;
+  renderDemo: () => JSX.Element;
+}) {
+  const { mode } = useMode();
+
+  if (mode === 'attack') {
+    return (
+      <AttackMode activeDemo={activeDemo}>
+        <DemoErrorBoundary key={`${activeLocationKey}-attack`} demoName={DEMO_NAMES[activeDemo]}>
+          {renderDemo()}
+        </DemoErrorBoundary>
+      </AttackMode>
+    );
+  }
+
+  if (mode === 'predict') {
+    return (
+      <PredictMode activeDemo={activeDemo}>
+        <DemoErrorBoundary key={`${activeLocationKey}-predict`} demoName={DEMO_NAMES[activeDemo]}>
+          {renderDemo()}
+        </DemoErrorBoundary>
+      </PredictMode>
+    );
+  }
+
+  if (mode === 'debug') {
+    return (
+      <DebugMode activeDemo={activeDemo}>
+        <DemoErrorBoundary key={`${activeLocationKey}-debug`} demoName={DEMO_NAMES[activeDemo]}>
+          {renderDemo()}
+        </DemoErrorBoundary>
+      </DebugMode>
+    );
+  }
+
+  if (mode !== 'explore') {
+    return <PlaceholderMode modeId={mode} />;
+  }
+
+  return (
+    <DemoContainer activeDemo={activeDemo}>
+      <DemoErrorBoundary key={activeLocationKey} demoName={DEMO_NAMES[activeDemo]}>
+        {renderDemo()}
+      </DemoErrorBoundary>
+    </DemoContainer>
   );
 }

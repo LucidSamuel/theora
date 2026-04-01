@@ -1,8 +1,10 @@
-import { useReducer, useCallback, useState, useRef, useEffect } from 'react';
+import { useReducer, useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import type { PolynomialState, EvalPoint } from '@/types/polynomial';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   ControlGroup,
   SliderControl,
@@ -270,6 +272,31 @@ export function PolynomialDemo() {
 
   // Canvas size ref for coordinate transforms
   const canvasSizeRef = useRef({ width: 800, height: 600 });
+
+  // Attack mode bridge
+  const { currentDemoAction } = useAttack();
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    KZG_RESET: () => dispatch({ type: 'KZG_RESET' }),
+    TOGGLE_COMPARE: () => dispatch({ type: 'TOGGLE_COMPARE' }),
+    KZG_RUN_COMMIT: () => {
+      simulateKzgCommit(state.coefficients).then((commitment) => {
+        dispatch({ type: 'KZG_COMMIT', commitment });
+      });
+    },
+    KZG_RUN_OPEN: () => {
+      if (state.kzg.challengeZ == null) {
+        const challengeZ = simulateKzgChallenge();
+        dispatch({ type: 'KZG_CHALLENGE', challengeZ });
+        simulateKzgProof(state.coefficients, challengeZ).then(({ revealedValue, quotientPoly, proofHash }) => {
+          dispatch({ type: 'KZG_REVEAL', revealedValue, quotientPoly, proofHash });
+        });
+      } else {
+        simulateKzgProof(state.coefficients, state.kzg.challengeZ).then(({ revealedValue, quotientPoly, proofHash }) => {
+          dispatch({ type: 'KZG_REVEAL', revealedValue, quotientPoly, proofHash });
+        });
+      }
+    },
+  }), [state.coefficients, state.kzg.challengeZ]));
 
   // Canvas interaction
   const handleCanvasClick = useCallback(

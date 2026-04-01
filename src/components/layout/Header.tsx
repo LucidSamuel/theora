@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { DEMOS, type DemoId } from '@/types';
 import { useGitHub } from '@/hooks/useGitHub';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { ModeBar } from '@/modes';
 import type { Theme } from '@/lib/theme';
 
 function HeaderBtn({
@@ -332,6 +333,12 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
           </span>
         )}
       </div>
+
+      {!isMobile && (
+        <div className="hidden md:flex">
+          <ModeBar />
+        </div>
+      )}
 
       <div className="flex items-center gap-1">
         {status === 'connected' && user ? (

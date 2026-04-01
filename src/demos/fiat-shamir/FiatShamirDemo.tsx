@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -34,6 +36,12 @@ export function FiatShamirDemo(): JSX.Element {
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const statement = simulateStatement(secret);
+
+  // Attack mode bridge
+  const { currentDemoAction } = useAttack();
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_MODE: (payload) => setMode(payload as FiatShamirMode),
+  }), [setMode]));
 
   useEffect(() => {
     const hashState = getHashState();

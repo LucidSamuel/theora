@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const FIAT_SHAMIR_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'fs-purpose',
+    demoId: 'fiat-shamir',
+    difficulty: 'beginner',
+    question: 'What does the Fiat-Shamir transform do?',
+    hint: 'Think about who generates the challenge in an interactive vs non-interactive protocol.',
+    choices: [
+      { label: 'Encrypts the proof so only the verifier can read it', rationale: 'Fiat-Shamir is about making proofs non-interactive, not about encryption.' },
+      { label: 'Replaces the interactive verifier with a hash function', rationale: 'Correct — the prover hashes the transcript to derive the challenge instead of waiting for the verifier.' },
+      { label: 'Makes the proof shorter', rationale: 'FS doesn\'t reduce proof size — it removes the need for back-and-forth communication.' },
+      { label: 'Adds a digital signature to the proof', rationale: 'FS derives challenges from transcript hashes, not from signatures.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The Fiat-Shamir transform converts an interactive protocol into a non-interactive one by having the prover hash the transcript so far to derive the verifier\'s challenge. No interaction needed.',
+    category: 'fundamentals',
+  },
+  {
+    id: 'fs-broken-omits',
+    demoId: 'fiat-shamir',
+    difficulty: 'intermediate',
+    question: 'In the "broken" Fiat-Shamir mode, the hash omits the commitment. What attack does this enable?',
+    hint: 'If the challenge doesn\'t depend on the commitment, the prover knows the challenge before committing.',
+    choices: [
+      { label: 'The verifier can be impersonated', rationale: 'The vulnerability is on the prover side — they can forge, not impersonate.' },
+      { label: 'The prover can compute the challenge first, then work backward to forge a valid commitment', rationale: 'Correct — this is the "Frozen Heart" attack. The prover picks a response, derives the challenge, and computes a commitment that fits.' },
+      { label: 'The hash function can be inverted', rationale: 'Hash security isn\'t the issue — the input to the hash is too weak.' },
+      { label: 'Multiple valid proofs exist for each statement', rationale: 'Multiple valid proofs always exist — the issue is that forgeries become easy.' },
+    ],
+    correctIndex: 1,
+    explanation: 'When the commitment is excluded from the hash, the challenge only depends on (statement, publicKey) — both known before committing. The attacker computes the challenge first, then works backward to produce a consistent commitment and response.',
+    category: 'attacks',
+  },
+  {
+    id: 'fs-transcript-binding',
+    demoId: 'fiat-shamir',
+    difficulty: 'intermediate',
+    question: 'Correct Fiat-Shamir hashes: statement | publicKey | commitment. Why must the commitment be included?',
+    hint: 'What property breaks if the challenge can be predicted before the commitment is chosen?',
+    choices: [
+      { label: 'To make the hash longer and harder to brute-force', rationale: 'Hash length isn\'t the security property at stake here.' },
+      { label: 'To ensure the challenge depends on the prover\'s commitment, preventing forgery', rationale: 'Correct — this is what binds the challenge to the specific proof attempt.' },
+      { label: 'To verify the prover knows the secret key', rationale: 'Knowledge of the secret is proven by the response, not by including the commitment in the hash.' },
+      { label: 'To allow the verifier to reconstruct the commitment', rationale: 'The verifier already has the commitment — it\'s sent as part of the proof.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Including the commitment in the hash makes the challenge unpredictable until after the commitment is fixed. This prevents the prover from choosing a convenient commitment after seeing the challenge.',
+    category: 'security',
+  },
+  {
+    id: 'fs-forgery-steps',
+    demoId: 'fiat-shamir',
+    difficulty: 'advanced',
+    question: 'In a Frozen Heart forgery, the attacker: (1) picks a random response r, (2) computes challenge c = H(stmt|pk), (3) computes commitment = g^r · pk^(-c). Why does this work?',
+    hint: 'Trace the verification equation: g^r should equal commitment · pk^c.',
+    choices: [
+      { label: 'Because the hash function has a collision', rationale: 'No collision needed — the hash is computed honestly, just with insufficient inputs.' },
+      { label: 'Because the verification equation g^r = commitment · pk^c is satisfied by construction', rationale: 'Correct — commitment = g^r · pk^(-c), so commitment · pk^c = g^r · pk^(-c) · pk^c = g^r.' },
+      { label: 'Because the attacker knows the secret key', rationale: 'The attack works WITHOUT knowing the secret — that\'s what makes it dangerous.' },
+      { label: 'Because the modulus is too small', rationale: 'The attack works regardless of modulus size — it\'s a protocol flaw, not a parameter weakness.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The attacker constructs commitment = g^r · pk^(-c) specifically so that the verification equation holds: commitment · pk^c = g^r · pk^(-c+c) = g^r. The forgery is algebraically valid because the challenge didn\'t depend on the commitment.',
+    category: 'attacks',
+  },
+];

@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const POLYNOMIAL_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'poly-evaluation',
+    demoId: 'polynomial',
+    difficulty: 'beginner',
+    question: 'The polynomial p(x) = 2x² + 3x + 1. What is p(2)?',
+    hint: 'Substitute x=2 into each term and add.',
+    choices: [
+      { label: 'p(2) = 11', rationale: 'Check your arithmetic: 2(4) + 3(2) + 1 = 15, not 11.' },
+      { label: 'p(2) = 15', rationale: 'Correct — 2(4) + 3(2) + 1 = 8 + 6 + 1 = 15.' },
+      { label: 'p(2) = 12', rationale: 'That would be 2(4) + 3(2) - 2 — check the constant term.' },
+      { label: 'p(2) = 9', rationale: 'Possible arithmetic error — evaluate each term carefully.' },
+    ],
+    correctIndex: 1,
+    explanation: 'p(2) = 2(2²) + 3(2) + 1 = 2(4) + 6 + 1 = 8 + 6 + 1 = 15.',
+    category: 'evaluation',
+  },
+  {
+    id: 'poly-kzg-binding',
+    demoId: 'polynomial',
+    difficulty: 'intermediate',
+    question: 'After committing to polynomial p(x) via KZG, the prover claims p(3) = 7. What does the verifier check?',
+    hint: 'The verifier needs to confirm the opening without seeing the full polynomial.',
+    choices: [
+      { label: 'That the commitment matches hash(p(3))', rationale: 'KZG verification uses pairing checks, not simple hash comparisons.' },
+      { label: 'That the commitment, challenge point, revealed value, and proof are consistent via a pairing equation', rationale: 'Correct — KZG verification checks e(C - [v]₁, [1]₂) = e(π, [s-z]₂) using elliptic curve pairings.' },
+      { label: 'That p(3) = 7 by re-evaluating the polynomial', rationale: 'The verifier doesn\'t have the polynomial — that\'s the whole point of the commitment.' },
+      { label: 'That the proof hash matches the commitment hash', rationale: 'KZG uses algebraic structure (pairings), not hash comparisons.' },
+    ],
+    correctIndex: 1,
+    explanation: 'KZG verification uses bilinear pairings to check that the commitment, evaluation point, claimed value, and proof are mutually consistent — without the verifier ever seeing the polynomial.',
+    category: 'kzg',
+  },
+  {
+    id: 'poly-lagrange',
+    demoId: 'polynomial',
+    difficulty: 'intermediate',
+    question: 'You have 3 points: (0,1), (1,3), (2,7). What degree polynomial passes through all of them?',
+    hint: 'n points determine a polynomial of degree at most n-1.',
+    choices: [
+      { label: 'Degree 1 (linear)', rationale: 'Three non-collinear points need at least degree 2.' },
+      { label: 'Degree 2 (quadratic)', rationale: 'Correct — 3 points uniquely determine a degree-2 polynomial via Lagrange interpolation.' },
+      { label: 'Degree 3 (cubic)', rationale: 'Three points only require degree 2 — higher degrees are possible but not determined.' },
+      { label: 'No polynomial can pass through all 3', rationale: 'Lagrange interpolation guarantees a unique polynomial of degree ≤ 2 through any 3 points.' },
+    ],
+    correctIndex: 1,
+    explanation: 'By Lagrange interpolation, n points uniquely determine a polynomial of degree at most n-1. Three points → degree 2. In this case: p(x) = x² + x + 1.',
+    category: 'interpolation',
+  },
+  {
+    id: 'poly-comparison',
+    demoId: 'polynomial',
+    difficulty: 'advanced',
+    question: 'Two polynomials of degree d agree at d+1 points. What can you conclude?',
+    hint: 'Think about the Schwartz-Zippel lemma.',
+    choices: [
+      { label: 'They are likely the same polynomial but might differ elsewhere', rationale: 'With d+1 agreements, they must be identical — a degree-d polynomial is uniquely determined by d+1 points.' },
+      { label: 'They are identical polynomials', rationale: 'Correct — a degree-d polynomial is uniquely determined by d+1 points. If they agree everywhere in the evaluation domain, they must be the same polynomial.' },
+      { label: 'They differ by a constant', rationale: 'If they agreed at d+1 points, their difference would be a degree-d polynomial with d+1 roots — which must be zero.' },
+      { label: 'Nothing — polynomials can agree at many points and still differ', rationale: 'True for fewer than d+1 points, but d+1 agreements uniquely pin a degree-d polynomial.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A degree-d polynomial is uniquely determined by d+1 evaluation points. If p(x) and q(x) both have degree ≤ d and agree at d+1 points, their difference p(x)-q(x) has degree ≤ d but d+1 roots — so it must be the zero polynomial.',
+    category: 'theory',
+  },
+];

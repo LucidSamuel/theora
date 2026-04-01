@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const CIRCUIT_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'circuit-witness-valid',
+    demoId: 'circuit',
+    difficulty: 'beginner',
+    question: 'The circuit computes z = x² + y. If x=3 and y=4, what value of z satisfies the circuit?',
+    hint: 'Evaluate the formula directly.',
+    choices: [
+      { label: 'z = 7', rationale: 'That\'s x + y, not x² + y.' },
+      { label: 'z = 12', rationale: 'That\'s x * y, not x² + y.' },
+      { label: 'z = 13', rationale: 'Correct — 3² + 4 = 9 + 4 = 13.' },
+      { label: 'z = 16', rationale: 'That\'s (x + y)² / something — not the right formula.' },
+    ],
+    correctIndex: 2,
+    explanation: 'The R1CS circuit encodes z = x² + y. With x=3, y=4: t = x² = 9, z = t + y = 9 + 4 = 13.',
+    category: 'witness',
+  },
+  {
+    id: 'circuit-underconstrained',
+    demoId: 'circuit',
+    difficulty: 'intermediate',
+    question: 'In "broken" mode, the constraint z = t + y is removed. What can an attacker do?',
+    hint: 'Think about what the remaining constraint still enforces.',
+    choices: [
+      { label: 'Nothing — the first constraint t = x² still protects everything', rationale: 'The first constraint only binds t to x. Without the second constraint, z is free.' },
+      { label: 'Set z to any value while t = x² still passes', rationale: 'Correct — with only t = x² enforced, z is unconstrained and can be anything.' },
+      { label: 'Change x without affecting the proof', rationale: 'x is still constrained by t = x². Changing x would violate that.' },
+      { label: 'Make the proof invalid', rationale: 'The remaining constraint still passes — the circuit is underconstrained, not broken.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Removing the output constraint makes the circuit underconstrained. The witness still satisfies t = x², but z can be any value — the prover can claim any output while the proof verifies.',
+    category: 'security',
+  },
+  {
+    id: 'circuit-r1cs-rows',
+    demoId: 'circuit',
+    difficulty: 'intermediate',
+    question: 'The fully constrained circuit has 2 R1CS rows. What do they encode?',
+    hint: 'One handles the multiplication, one handles the addition.',
+    choices: [
+      { label: 'Both encode z = x² + y', rationale: 'R1CS decomposes the computation into individual gates — each row is one gate.' },
+      { label: 'Row 1: t = x·x, Row 2: z - t - y = 0', rationale: 'Correct — the multiplication gate and the linear output relation are separate R1CS rows.' },
+      { label: 'Row 1: x + y, Row 2: x * y', rationale: 'The circuit computes x² + y, not x + y and x * y.' },
+      { label: 'Row 1: z = x², Row 2: z = y', rationale: 'That would require z to equal both x² and y simultaneously.' },
+    ],
+    correctIndex: 1,
+    explanation: 'R1CS can only encode one multiplication per row. So z = x² + y is split: (1) the multiplication t = x·x, and (2) the linear relation z - t - y = 0.',
+    category: 'representation',
+  },
+  {
+    id: 'circuit-bootle16',
+    demoId: 'circuit',
+    difficulty: 'advanced',
+    question: 'In Bootle16 representation, what separates it from standard R1CS?',
+    hint: 'Think about how multiplicative and linear constraints are organized.',
+    choices: [
+      { label: 'Bootle16 uses a different hash function', rationale: 'Bootle16 is a constraint format, not a hash construction.' },
+      { label: 'Bootle16 separates multiplicative gates into a dedicated matrix and linear relations into another', rationale: 'Correct — multiplicative gates (left · right = output) are separate from linear coefficient rows.' },
+      { label: 'Bootle16 can encode more constraints per row', rationale: 'Both formats have one multiplication per row — the difference is organizational.' },
+      { label: 'Bootle16 is more secure than R1CS', rationale: 'Both encode the same constraints — security comes from the proof system, not the representation.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Bootle16 separates the multiplicative gate (x·x = t) from the linear output relation (z - t - y = 0) into distinct matrices. This is closer to what Ragu actually proves.',
+    category: 'representation',
+  },
+];

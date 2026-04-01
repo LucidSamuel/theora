@@ -1,7 +1,9 @@
-import { useReducer, useEffect, useRef, useState } from 'react';
+import { useReducer, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   ControlGroup,
   ButtonControl,
@@ -253,6 +255,34 @@ export function MerkleDemo() {
   const canvasRef = useRef<{ width: number; height: number }>({ width: 800, height: 600 });
   const buildAbortRef = useRef<AbortController | null>(null);
   const pendingUrlRef = useRef<{ leafIndex: number; proofStep: number } | null>(null);
+
+  // Attack mode bridge
+  const { currentDemoAction } = useAttack();
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    BUILD_DEFAULT_TREE: () => {
+      dispatch({ type: 'SET_LEAVES', leaves: ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Heidi'] });
+    },
+    GENERATE_PROOF: (payload) => {
+      if (state.tree) dispatch({ type: 'GENERATE_PROOF', leafIndex: (payload as number) ?? 0 });
+    },
+    ATTEMPT_FORGERY: () => {
+      // Construct a fake proof with random sibling hashes and attempt verification
+      if (state.tree && state.tree.root) {
+        const depth = Math.ceil(Math.log2(state.leaves.length));
+        const fakeSiblings = Array.from({ length: depth }, () => ({
+          hash: Math.random().toString(36).substring(2, 10),
+          position: (Math.random() > 0.5 ? 'right' : 'left') as 'left' | 'right',
+        }));
+        const fakeProof = {
+          leafIndex: 0,
+          leafHash: 'fake_' + Math.random().toString(36).substring(2, 8),
+          siblings: fakeSiblings,
+          root: state.tree.root.hash,
+        };
+        dispatch({ type: 'SET_PROOF_FROM_URL', proof: fakeProof, leafIndex: 0, proofStep: 0 });
+      }
+    },
+  }), [state.tree, state.leaves.length]));
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   // Auto-switch to fnv1a for large trees

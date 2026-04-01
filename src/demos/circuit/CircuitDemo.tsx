@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -35,12 +37,19 @@ export function CircuitDemo(): JSX.Element {
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Attack mode bridge
+  const { currentDemoAction } = useAttack();
+  const exploit = useMemo(() => getExploitWitness(x, y), [x, y]);
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_BROKEN: (payload) => setBroken(payload as boolean),
+    LOAD_EXPLOIT: () => { setTOverride(null); setZ(exploit.z); },
+  }), [exploit.z, setBroken, setZ, setTOverride]));
+
   const witness = useMemo(() => (
     tOverride === null ? buildWitness(x, y, z) : { x, y, z, t: tOverride }
   ), [tOverride, x, y, z]);
   const constraints = useMemo(() => evaluateCircuit(witness, broken), [broken, witness]);
   const valid = useMemo(() => witnessSatisfiesAll(witness, broken), [broken, witness]);
-  const exploit = useMemo(() => getExploitWitness(x, y), [x, y]);
   const rows = useMemo(() => getR1CSRows(broken), [broken]);
   const bootle16 = useMemo(() => getBootle16Breakdown(witness, broken), [broken, witness]);
 

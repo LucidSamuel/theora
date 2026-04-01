@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const PIPELINE_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'pipeline-stages',
+    demoId: 'pipeline',
+    difficulty: 'beginner',
+    question: 'The proof pipeline has 7 stages. What is the correct order?',
+    hint: 'The prover starts by encoding the computation, then commits, then responds to a challenge.',
+    choices: [
+      { label: 'Witness → Constraints → Polynomial → Commit → Challenge → Open → Verify', rationale: 'Correct — this is the standard zkSNARK proof pipeline.' },
+      { label: 'Challenge → Witness → Commit → Polynomial → Open → Verify → Constraints', rationale: 'The challenge comes after the commitment, not before the witness.' },
+      { label: 'Polynomial → Commit → Witness → Challenge → Constraints → Open → Verify', rationale: 'The polynomial is derived from the constraints, which come from the witness.' },
+      { label: 'Commit → Challenge → Open → Witness → Constraints → Polynomial → Verify', rationale: 'You must compute the witness and polynomial before you can commit.' },
+    ],
+    correctIndex: 0,
+    explanation: 'The pipeline flows: encode computation as a Witness, express it as Constraints, interpolate into a Polynomial, Commit to it, receive a Challenge, Open at the challenge point, and Verify the proof.',
+    category: 'structure',
+  },
+  {
+    id: 'pipeline-fault-propagation',
+    demoId: 'pipeline',
+    difficulty: 'intermediate',
+    question: 'If the polynomial stage is corrupted (bad coefficients), which later stages are affected?',
+    hint: 'The commitment is computed from the polynomial. Everything downstream depends on it.',
+    choices: [
+      { label: 'Only the Commit stage', rationale: 'The opening and verification also depend on the polynomial — corruption propagates further.' },
+      { label: 'Commit, Open, and Verify', rationale: 'Correct — the commitment, opening proof, and verification all derive from the polynomial. Challenge is also affected since it hashes the commitment.' },
+      { label: 'All stages including Witness and Constraints', rationale: 'Earlier stages are already computed — corruption doesn\'t propagate backward.' },
+      { label: 'No later stages — each stage is independent', rationale: 'Stages are a pipeline — each depends on the output of the previous one.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A corrupted polynomial produces a wrong commitment, which means the challenge (derived from the commitment hash) changes, the opening proof is based on wrong values, and verification fails. Everything downstream is tainted.',
+    category: 'fault-propagation',
+  },
+  {
+    id: 'pipeline-weak-fs',
+    demoId: 'pipeline',
+    difficulty: 'intermediate',
+    question: 'The "weak Fiat-Shamir" fault makes the challenge predictable. Why does the final verification still fail?',
+    hint: 'Even though the prover can predict the challenge, the opening must still be consistent.',
+    choices: [
+      { label: 'Because the commitment hash changes', rationale: 'With weak FS, the commitment can still be correct — the issue is elsewhere.' },
+      { label: 'Because the polynomial coefficients are wrong', rationale: 'Weak FS doesn\'t corrupt the polynomial — it corrupts the challenge derivation.' },
+      { label: 'Because the verifier independently derives the correct challenge and detects the mismatch', rationale: 'Correct — the verifier recomputes the challenge using the full transcript. If the prover used a weak derivation, the challenges won\'t match.' },
+      { label: 'The verification actually passes — that\'s the vulnerability', rationale: 'In Theora\'s pipeline, the verifier uses the correct derivation and catches the discrepancy.' },
+    ],
+    correctIndex: 2,
+    explanation: 'The verifier independently re-derives the challenge from the full transcript (including the commitment). If the prover used a weak challenge that didn\'t include all transcript elements, the verifier\'s independently derived challenge will differ, causing verification failure.',
+    category: 'fiat-shamir',
+  },
+  {
+    id: 'pipeline-bad-witness',
+    demoId: 'pipeline',
+    difficulty: 'advanced',
+    question: 'With a "bad witness" fault (wrong computation), at which stage does the error first become detectable?',
+    hint: 'The constraints are supposed to be satisfied by the witness.',
+    choices: [
+      { label: 'Witness stage — the values look wrong immediately', rationale: 'The values might look plausible — detection requires checking them against constraints.' },
+      { label: 'Constraints stage — the R1CS check fails', rationale: 'Correct — the constraints encode the relation the witness must satisfy. A bad witness violates at least one constraint row.' },
+      { label: 'Polynomial stage — the interpolation diverges', rationale: 'The polynomial interpolation works on any values — it doesn\'t know about correctness.' },
+      { label: 'Verify stage — only the final check catches it', rationale: 'The constraint check catches it earlier, though verification would also fail.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The R1CS constraints encode the computation\'s correctness requirements. A bad witness (wrong intermediate or output values) will fail the constraint satisfaction check: A·w ⊙ B·w ≠ C·w for at least one row.',
+    category: 'fault-propagation',
+  },
+];
