@@ -2,7 +2,7 @@ import { StrictMode, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
-import { NotFound } from '@/pages/NotFound';
+import { Navigate } from 'react-router-dom';
 
 const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
 const App = lazy(() => import('./App'));
@@ -47,7 +47,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/audit" element={<Audit />} />
           <Route path="/compose" element={<Compose />} />
           <Route path="/changelog" element={<Changelog />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
