@@ -67,20 +67,41 @@ export function renderNova(
   drawGrid(ctx, width, height, 40, isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)');
 
   // ── Screen-space title badge ────────────────────────────────────────────
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = isDark ? '#fafafa' : ZINC_900;
-  ctx.font = 'bold 13px monospace';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   const stepCount = state.steps.length;
-  ctx.fillText(
-    `Nova IVC \u2014 ${stepCount} folding step${stepCount !== 1 ? 's' : ''} over GF(${state.fieldSize})`,
-    24, 20,
-  );
+  const headerText = `Nova IVC \u2014 ${stepCount} folding step${stepCount !== 1 ? 's' : ''} over GF(${state.fieldSize})`;
   ctx.font = '11px monospace';
-  ctx.fillStyle = isDark ? ZINC_400 : ZINC_400;
-  ctx.fillText('Relaxed R1CS folding scheme', 24, 40);
+  const maxBadgeW = width - 180;
+  const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
+  const headerX = width / 2 - headerW / 2;
+  const headerY = 16;
+  const BADGE_H = 30;
+  const BADGE_RADIUS = 8;
+
+  ctx.fillStyle = hexToRgba(isDark ? ZINC_700 : '#e4e4e7', isDark ? 0.85 : 0.9);
+  drawRoundedRect(ctx, headerX, headerY, headerW, BADGE_H, BADGE_RADIUS);
+  ctx.fill();
+
+  ctx.strokeStyle = hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.5);
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, headerX, headerY, headerW, BADGE_H, BADGE_RADIUS);
+  ctx.stroke();
+
+  ctx.fillStyle = isDark ? ZINC_300 : ZINC_500;
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
+
+  // Sub-label
+  ctx.fillStyle = hexToRgba(isDark ? ZINC_400 : ZINC_500, 0.8);
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Relaxed R1CS folding scheme', width / 2, headerY + BADGE_H + 10);
+
   ctx.restore();
 
   // ── Decide what to draw ─────────────────────────────────────────────────

@@ -538,7 +538,8 @@ export function renderSumcheck(
   // ── Header badge ─────────────────────────────────────────────────
   const headerText = `Sumcheck Protocol \u2014 ${n} variable${n !== 1 ? 's' : ''} over GF(${bstr(state.fieldSize)})`;
   ctx.font = '11px monospace';
-  const headerW = ctx.measureText(headerText).width + 40;
+  const maxBadgeW = width - 180;
+  const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
 
@@ -555,7 +556,7 @@ export function renderSumcheck(
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2);
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
 
   // Claimed sum sub-label
   ctx.fillStyle = hexToRgba(isDark ? ZINC_400 : ZINC_500, 0.8);

@@ -499,13 +499,13 @@ export function NovaDemo(): JSX.Element {
 
           {state.result && (
             <ControlCard>
-              <span className="control-kicker">Folds completed</span>
-              <span className="control-value">
+              <div className="control-kicker">Folds completed</div>
+              <div className="control-value">
                 {state.result.steps.length} / {state.numSteps - 1}
-              </span>
-              <span className="control-caption">
+              </div>
+              <div className="control-caption">
                 {state.phase === 'complete' ? 'IVC chain complete' : 'In progress'}
-              </span>
+              </div>
             </ControlCard>
           )}
         </ControlGroup>

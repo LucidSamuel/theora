@@ -90,12 +90,15 @@ function drawGateBox(
   isDark: boolean,
   accentColor: string,
   t: number,
+  gw = GATE_W,
+  gh = GATE_H,
+  gr = GATE_RADIUS,
 ): void {
   const borderAlpha = isHighlighted ? 0.7 + 0.3 * Math.sin(t * 2.8) : 0.3;
 
   // Background
   ctx.fillStyle = hexToRgba(isDark ? ZINC_700 : '#f4f4f5', isDark ? 0.7 : 0.9);
-  drawRoundedRect(ctx, x, y, GATE_W, GATE_H, GATE_RADIUS);
+  drawRoundedRect(ctx, x, y, gw, gh, gr);
   ctx.fill();
 
   // Border
@@ -103,7 +106,7 @@ function drawGateBox(
     ? hexToRgba(accentColor, borderAlpha)
     : hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.5);
   ctx.lineWidth = isHighlighted ? 2 : 1;
-  drawRoundedRect(ctx, x, y, GATE_W, GATE_H, GATE_RADIUS);
+  drawRoundedRect(ctx, x, y, gw, gh, gr);
   ctx.stroke();
 
   // Gate type label (top-left)
@@ -111,14 +114,14 @@ function drawGateBox(
   ctx.font = 'bold 10px monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, x + 10, y + 15);
+  ctx.fillText(label, x + 10, y + gh * 0.34);
 
   // Value (bottom-center)
   ctx.fillStyle = isDark ? ZINC_100 : ZINC_900;
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(value, x + GATE_W / 2, y + 32);
+  ctx.fillText(value, x + gw / 2, y + gh * 0.73);
 }
 
 function drawInputBox(
@@ -130,18 +133,21 @@ function drawInputBox(
   isHighlighted: boolean,
   isDark: boolean,
   t: number,
+  gw = GATE_W,
+  gh = GATE_H,
+  gr = GATE_RADIUS,
 ): void {
   const borderAlpha = isHighlighted ? 0.7 + 0.3 * Math.sin(t * 2.8) : 0.3;
 
   ctx.fillStyle = hexToRgba(isDark ? ZINC_700 : '#f4f4f5', isDark ? 0.7 : 0.9);
-  drawRoundedRect(ctx, x, y, GATE_W, GATE_H, GATE_RADIUS);
+  drawRoundedRect(ctx, x, y, gw, gh, gr);
   ctx.fill();
 
   ctx.strokeStyle = isHighlighted
     ? hexToRgba(COLOR_ACTIVE_BORDER, borderAlpha)
     : hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.5);
   ctx.lineWidth = isHighlighted ? 2 : 1;
-  drawRoundedRect(ctx, x, y, GATE_W, GATE_H, GATE_RADIUS);
+  drawRoundedRect(ctx, x, y, gw, gh, gr);
   ctx.stroke();
 
   // "input[i]" label
@@ -149,14 +155,14 @@ function drawInputBox(
   ctx.font = '10px monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`x[${index}]`, x + 10, y + 15);
+  ctx.fillText(`x[${index}]`, x + 10, y + gh * 0.34);
 
   // Value
   ctx.fillStyle = isDark ? ZINC_100 : ZINC_900;
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(bstr(value), x + GATE_W / 2, y + 32);
+  ctx.fillText(bstr(value), x + gw / 2, y + gh * 0.73);
 }
 
 /** Draw a connection line from a gate in layer below to a gate above. */
@@ -193,6 +199,7 @@ function drawLayerLabel(
   label: string,
   isDark: boolean,
   isHighlighted: boolean,
+  gh = GATE_H,
 ): void {
   ctx.fillStyle = isHighlighted
     ? COLOR_ACTIVE_BORDER
@@ -200,7 +207,7 @@ function drawLayerLabel(
   ctx.font = isHighlighted ? 'bold 11px monospace' : '10px monospace';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, x, y + GATE_H / 2);
+  ctx.fillText(label, x, y + gh / 2);
 }
 
 /* ── Claim reduction panel ───────────────────────────────────────────── */
@@ -365,6 +372,17 @@ export function renderGKR(
   const circuitAreaW = proof ? width * 0.55 : width;
   const circuitCenterX = circuitAreaW / 2;
 
+  // Scale gate dimensions to fit available width
+  const maxGatesPerRow = Math.max(...circuit.layers.map(l => l.values.length));
+  const rawWidth = maxGatesPerRow * GATE_W + (maxGatesPerRow - 1) * GATE_HGAP;
+  const circuitPad = 80; // padding on each side for labels
+  const availCircuitW = circuitAreaW - circuitPad;
+  const gateScale = rawWidth > availCircuitW ? availCircuitW / rawWidth : 1;
+  const scaledGateW = Math.round(GATE_W * gateScale);
+  const scaledGateH = Math.round(GATE_H * gateScale);
+  const scaledGateHGap = Math.round(GATE_HGAP * gateScale);
+  const scaledGateRadius = Math.round(GATE_RADIUS * gateScale);
+
   const topPad = 70;
   const bottomPad = 70;
   const availH = height - topPad - bottomPad;
@@ -373,6 +391,17 @@ export function renderGKR(
   const totalCircuitH = (numLayers - 1) * layerSpacing;
   const circuitTopY = topPad + (availH - totalCircuitH) / 2;
 
+  // Helper: compute scaled gate positions for a row
+  function scaledGatePositions(numGates: number, cx: number, y: number): { x: number; y: number }[] {
+    const totalW = numGates * scaledGateW + (numGates - 1) * scaledGateHGap;
+    const startX = cx - totalW / 2;
+    const positions: { x: number; y: number }[] = [];
+    for (let i = 0; i < numGates; i++) {
+      positions.push({ x: startX + i * (scaledGateW + scaledGateHGap), y });
+    }
+    return positions;
+  }
+
   // Precompute gate positions for each layer (output at top, input at bottom)
   const layerPositions: { x: number; y: number }[][] = [];
   for (let li = 0; li < numLayers; li++) {
@@ -380,7 +409,7 @@ export function renderGKR(
     const numGates = layer.values.length;
     // Layer 0 (input) at bottom → y increases downward
     const layerY = circuitTopY + (numLayers - 1 - li) * layerSpacing;
-    const positions = layerGatePositions(numGates, circuitCenterX, layerY);
+    const positions = scaledGatePositions(numGates, circuitCenterX, layerY);
     layerPositions.push(positions);
   }
 
@@ -408,19 +437,19 @@ export function renderGKR(
       // Wire from left input (top of lower box) to gate (bottom of upper box)
       drawWire(
         ctx,
-        leftPos.x + GATE_W / 2,
-        leftPos.y,          // top of lower gate
-        gatePos.x + GATE_W * 0.35,
-        gatePos.y + GATE_H,  // bottom of upper gate
+        leftPos.x + scaledGateW / 2,
+        leftPos.y,
+        gatePos.x + scaledGateW * 0.35,
+        gatePos.y + scaledGateH,
         isDark,
         isLayerActive,
       );
       drawWire(
         ctx,
-        rightPos.x + GATE_W / 2,
+        rightPos.x + scaledGateW / 2,
         rightPos.y,
-        gatePos.x + GATE_W * 0.65,
-        gatePos.y + GATE_H,
+        gatePos.x + scaledGateW * 0.65,
+        gatePos.y + scaledGateH,
         isDark,
         isLayerActive,
       );
@@ -448,6 +477,7 @@ export function renderGKR(
       labelText,
       isDark,
       isLayerActive || isInputHighlighted,
+      scaledGateH,
     );
 
     if (li === 0) {
@@ -457,6 +487,7 @@ export function renderGKR(
         drawInputBox(
           ctx, pos.x, pos.y, gi, layer.values[gi]!,
           isInputHighlighted, isDark, t,
+          scaledGateW, scaledGateH, scaledGateRadius,
         );
       }
     } else {
@@ -469,6 +500,7 @@ export function renderGKR(
         drawGateBox(
           ctx, pos.x, pos.y, gateLabel, bstr(layer.values[gi]!),
           isLayerActive, isDark, accentColor, t,
+          scaledGateW, scaledGateH, scaledGateRadius,
         );
       }
     }
@@ -564,7 +596,8 @@ export function renderGKR(
   const p = circuit.fieldSize;
   const headerText = `GKR Protocol \u2014 ${d} layers, ${n} inputs, GF(${bstr(p)})`;
   ctx.font = '11px monospace';
-  const headerW = ctx.measureText(headerText).width + 40;
+  const maxBadgeW = width - 180;
+  const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
 
@@ -581,7 +614,7 @@ export function renderGKR(
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2);
+  ctx.fillText(headerText, width / 2, headerY + BADGE_H / 2, headerW - 24);
 
   // ── Verdict badge ─────────────────────────────────────────────────
   if (verification !== null && phase === 'complete') {

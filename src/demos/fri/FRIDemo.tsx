@@ -491,7 +491,7 @@ export function FRIDemo(): JSX.Element {
             </div>
           </ControlCard>
           <ControlCard>
-            <span className="control-kicker">Root of unity \u03c9</span>
+            <span className="control-kicker">Root of unity ω</span>
             <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
               {String(state.omega)}
             </div>
