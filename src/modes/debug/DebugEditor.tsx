@@ -91,6 +91,7 @@ export function DebugEditor({ source, onChange, errors, fieldSize, onFieldSizeCh
 
       {/* Editor */}
       <div
+        className="debug-editor-wrap"
         style={{
           position: 'relative',
           borderRadius: 8,
@@ -107,9 +108,11 @@ export function DebugEditor({ source, onChange, errors, fieldSize, onFieldSizeCh
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
+          className="debug-editor-textarea"
           style={{
             width: '100%',
-            minHeight: 160,
+            boxSizing: 'border-box',
+            minHeight: 200,
             maxHeight: '40vh',
             resize: 'vertical',
             background: 'var(--input-bg)',
@@ -128,15 +131,22 @@ export function DebugEditor({ source, onChange, errors, fieldSize, onFieldSizeCh
 
       {/* Errors */}
       {errors.length > 0 && (
-        <div className="flex flex-col gap-1 mt-2">
+        <div className="flex flex-col gap-1.5 mt-2">
           {errors.slice(0, 5).map((err, i) => (
             <div
               key={i}
-              className="text-[10px]"
-              style={{ color: 'var(--status-error)', lineHeight: 1.4 }}
+              className="text-[11px]"
+              style={{
+                color: 'var(--status-error)',
+                background: 'var(--status-error-bg)',
+                borderRadius: 8,
+                padding: '8px 12px',
+                lineHeight: 1.5,
+                fontFamily: 'var(--font-mono)',
+              }}
             >
-              <span style={{ fontFamily: 'var(--font-mono)' }}>L{err.line}:{err.column}</span>
-              {' '}{err.message}
+              <span style={{ fontWeight: 600 }}>L{err.line}:{err.column}</span>
+              {'  '}{err.message}
               {err.hint && (
                 <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
                   {' — '}{err.hint}

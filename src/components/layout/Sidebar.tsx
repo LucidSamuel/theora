@@ -102,9 +102,12 @@ export function Sidebar({ activeDemo, onSwitch, collapsed, onToggleCollapse }: S
                   <span className="text-[12px] font-medium truncate">{demo.title}</span>
                   {demo.id === 'pipeline' && !isActive && (
                     <span
-                      className="text-[9px] font-medium shrink-0 rounded-full"
+                      className="shrink-0"
                       style={{
-                        padding: '1px 6px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '2px 10px',
+                        borderRadius: 9999,
                         backgroundColor: 'var(--surface-element)',
                         color: 'var(--text-muted)',
                         border: '1px solid var(--border)',

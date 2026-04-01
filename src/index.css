@@ -2,6 +2,14 @@
 @import "tailwindcss";
 
 :root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+
   --bg-primary: #09090b;
   --bg-secondary: #111113;
   --bg-tertiary: #19191d;
@@ -29,6 +37,18 @@
   --status-success: #22c55e;
   --status-error-bg: rgba(239,68,68,0.12);
   --status-error: #ef4444;
+  --color-success: #22c55e;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+  --color-success-border: rgba(34, 197, 94, 0.3);
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.3);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+  --color-info: #3b82f6;
+  --color-info-bg: rgba(59, 130, 246, 0.1);
+  --color-info-border: rgba(59, 130, 246, 0.3);
   --surface-element: rgba(12, 12, 14, 0.9);
   --surface-element-border: rgba(255, 255, 255, 0.08);
   --bg-hover: rgba(255, 255, 255, 0.06);
@@ -69,6 +89,18 @@
   --status-success: #16a34a;
   --status-error-bg: rgba(239,68,68,0.1);
   --status-error: #dc2626;
+  --color-success: #16a34a;
+  --color-success-bg: rgba(34, 197, 94, 0.08);
+  --color-success-border: rgba(34, 197, 94, 0.25);
+  --color-error: #dc2626;
+  --color-error-bg: rgba(239, 68, 68, 0.08);
+  --color-error-border: rgba(239, 68, 68, 0.25);
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.08);
+  --color-warning-border: rgba(245, 158, 11, 0.25);
+  --color-info: #2563eb;
+  --color-info-bg: rgba(59, 130, 246, 0.08);
+  --color-info-border: rgba(59, 130, 246, 0.25);
   --surface-element: rgba(255, 255, 255, 0.9);
   --surface-element-border: rgba(0, 0, 0, 0.08);
   --bg-hover: rgba(0, 0, 0, 0.04);
@@ -2497,6 +2529,67 @@ body::before {
   color: #d97706;
 }
 
+/* Demo tab bar — horizontal scrollable row of tab buttons */
+.demo-tab-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: var(--surface-element-border);
+  border-radius: 8px;
+  padding: 3px;
+  height: 40px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.demo-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.demo-tab-bar .demo-tab-btn {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  background: transparent;
+  color: var(--text-muted);
+  outline: none;
+  white-space: nowrap;
+}
+
+.demo-tab-bar .demo-tab-btn[aria-pressed="true"],
+.demo-tab-bar .demo-tab-btn.is-active {
+  background: var(--surface-element);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Predict mode answer choices — hover shows border highlight only, no bg fill */
+.predict-choice-button:hover:not(:disabled) {
+  border-color: var(--text-muted) !important;
+  background: transparent !important;
+}
+
+.predict-choice-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* Debug editor — focus ring on wrapper when textarea is focused */
+.debug-editor-wrap:focus-within {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
 .control-kicker {
   display: inline-block;
   margin-bottom: 8px;
@@ -2853,6 +2946,11 @@ input[type="range"]:focus-visible {
   background: color-mix(in srgb, var(--status-error-bg) 78%, var(--bg-secondary));
 }
 
+.theora-toast--info {
+  border-color: color-mix(in srgb, var(--color-info) 35%, var(--border));
+  background: color-mix(in srgb, var(--color-info-bg) 78%, var(--bg-secondary));
+}
+
 .theora-toast--visible {
   opacity: 1;
   transform: translateY(0);
@@ -2872,6 +2970,10 @@ input[type="range"]:focus-visible {
 
 .theora-toast--error .theora-toast__icon {
   color: var(--status-error);
+}
+
+.theora-toast--info .theora-toast__icon {
+  color: var(--color-info);
 }
 
 .theora-toast__body {

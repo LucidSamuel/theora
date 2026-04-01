@@ -1,6 +1,6 @@
 let container: HTMLDivElement | null = null;
 
-type ToastTone = 'success' | 'error';
+type ToastTone = 'success' | 'error' | 'info';
 
 function getContainer(): HTMLDivElement {
   if (!container || !document.body.contains(container)) {
@@ -54,10 +54,15 @@ function showAndDismiss(el: HTMLDivElement, duration: number): void {
 }
 
 export function showToast(message: string, subOrTone?: string, duration = 2600): void {
-  const tone: ToastTone = subOrTone === 'error' ? 'error' : 'success';
-  const sub = subOrTone === 'error' ? undefined : subOrTone;
-  const icon = tone === 'error' ? '!' : '✓';
+  const tone: ToastTone = subOrTone === 'error' ? 'error' : subOrTone === 'info' ? 'info' : 'success';
+  const sub = (subOrTone === 'error' || subOrTone === 'info') ? undefined : subOrTone;
+  const icon = tone === 'error' ? '!' : tone === 'info' ? 'i' : '✓';
   const el = buildToastElement(icon, message, sub, tone);
+  showAndDismiss(el, duration);
+}
+
+export function showInfoToast(message: string, sub?: string, duration = 2600): void {
+  const el = buildToastElement('i', message, sub, 'info');
   showAndDismiss(el, duration);
 }
 

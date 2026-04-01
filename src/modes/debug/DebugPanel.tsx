@@ -218,7 +218,7 @@ const shareBtnStyle: React.CSSProperties = {
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 12 }}>
       {label && (
         <div
           className="text-[10px] font-mono uppercase mb-2"

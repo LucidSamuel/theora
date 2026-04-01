@@ -82,7 +82,7 @@ export function AttackPanel({ activeDemo }: { activeDemo: DemoId }) {
           <StepProgress current={currentStep} total={totalSteps} />
 
           {/* Instruction card */}
-          <div className="control-note" style={{ marginTop: 10, marginBottom: 10 }}>
+          <div className="control-note" style={{ marginTop: 12, marginBottom: 12 }}>
             <div
               className="text-[12px] mb-2"
               style={{ color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}
@@ -92,7 +92,7 @@ export function AttackPanel({ activeDemo }: { activeDemo: DemoId }) {
           </div>
 
           {/* Observation */}
-          <div className="control-card" style={{ marginBottom: 10 }}>
+          <div className="control-card" style={{ marginBottom: 12 }}>
             <div
               className="text-[10px] font-mono uppercase mb-1"
               style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}
@@ -138,15 +138,15 @@ export function AttackPanel({ activeDemo }: { activeDemo: DemoId }) {
                 height: 34,
                 borderRadius: 7,
                 border: 'none',
-                background: isLastStep ? 'var(--text-primary)' : 'var(--button-bg-strong)',
-                color: isLastStep ? 'var(--bg-primary)' : 'var(--text-primary)',
+                background: 'var(--text-primary)',
+                color: 'var(--bg-primary)',
                 cursor: 'pointer',
                 fontSize: 12,
                 fontFamily: 'var(--font-display)',
-                fontWeight: isLastStep ? 600 : 500,
+                fontWeight: 600,
               }}
             >
-              {isLastStep ? 'See Result' : 'Next'}
+              {isLastStep ? 'See Result' : 'Next Step'}
             </button>
           </div>
         </>
@@ -225,7 +225,7 @@ function AdversaryNarration({ text }: { text: string }) {
       {expanded && (
         <div
           className="text-[11px] mt-1"
-          style={{ color: 'var(--text-secondary)', lineHeight: 1.5, fontStyle: 'italic' }}
+          style={{ color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}
         >
           {text}
         </div>

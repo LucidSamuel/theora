@@ -30,9 +30,10 @@ export function DebugMode({ activeDemo, children }: DebugModeProps) {
             className="hidden md:flex flex-col h-full border-r shrink-0"
             style={{
               borderColor: 'var(--border)',
-              width: 280,
+              width: 320,
               backgroundColor: 'var(--bg-primary)',
               fontFamily: 'var(--font-sans)',
+              overflow: 'hidden',
             }}
           >
             <DebugPanel activeDemo={activeDemo} />

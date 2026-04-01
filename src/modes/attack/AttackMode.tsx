@@ -21,7 +21,7 @@ export function AttackMode({ activeDemo, children }: AttackModeProps) {
           className="hidden md:flex flex-col h-full border-r shrink-0"
           style={{
             borderColor: 'var(--border)',
-            width: 260,
+            width: 320,
             backgroundColor: 'var(--bg-primary)',
             fontFamily: 'var(--font-sans)',
           }}

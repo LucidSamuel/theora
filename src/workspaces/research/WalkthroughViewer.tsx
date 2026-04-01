@@ -73,7 +73,7 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
           <span style={badgeStyle}>{walkthrough.sections.length} sections</span>
           <span style={badgeStyle}>{demoCount} interactive demos</span>
           {walkthrough.generatedBy === 'ai' && (
-            <span style={{ ...badgeStyle, borderColor: 'var(--status-error)' }}>AI-generated</span>
+            <span style={{ ...badgeStyle, borderColor: 'var(--color-info-border)', color: 'var(--color-info)' }}>AI-generated</span>
           )}
         </div>
       </header>
@@ -130,9 +130,10 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
 
 const badgeStyle: React.CSSProperties = {
   fontSize: 11,
+  fontWeight: 600,
   color: 'var(--text-muted)',
-  padding: '3px 8px',
-  borderRadius: 6,
+  padding: '2px 10px',
+  borderRadius: 9999,
   border: '1px solid var(--border)',
   fontFamily: 'var(--font-mono)',
 };

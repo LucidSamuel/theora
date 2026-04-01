@@ -471,28 +471,7 @@ export function PlonkDemo(): JSX.Element {
     handleFitToView({ instant: true });
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Tab styles ────────────────────────────────────────────────────────────────
-
-  const tabStyle = (id: TabId) => ({
-    flex: 1,
-    padding: '6px 0',
-    fontSize: 11,
-    fontFamily: 'var(--font-mono)',
-    fontWeight: activeTab === id ? 700 : 400,
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    transition: 'background 0.15s, color 0.15s',
-    background:
-      activeTab === id
-        ? 'var(--surface-element)'
-        : 'transparent',
-    color:
-      activeTab === id
-        ? 'var(--text-primary)'
-        : 'var(--text-muted)',
-    outline: 'none',
-  } as React.CSSProperties);
+  // ── Tab styles removed — now handled by .demo-tab-bar / .demo-tab-btn CSS classes
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -504,16 +483,7 @@ export function PlonkDemo(): JSX.Element {
       <DemoSidebar>
         {/* Tab selector */}
         <ControlGroup label="View">
-          <div
-            style={{
-              display: 'flex',
-              gap: 4,
-              background: 'var(--surface-element-border)',
-              borderRadius: 8,
-              padding: 3,
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="demo-tab-bar">
             {(
               [
                 ['gates', 'Gates'],
@@ -525,7 +495,7 @@ export function PlonkDemo(): JSX.Element {
             ).map(([id, label]) => (
               <button
                 key={id}
-                style={tabStyle(id)}
+                className="demo-tab-btn"
                 onClick={() => setActiveTab(id)}
                 aria-pressed={activeTab === id}
               >

@@ -356,18 +356,18 @@ export function LookupDemo(): JSX.Element {
       <DemoSidebar>
         {/* ── View Tab Selector ── */}
         <ControlGroup label="View">
-          <div className="control-choice-list" style={{ flexDirection: 'row', gap: 6 }}>
+          <div className="demo-tab-bar">
             <button
-              className={`control-choice-button ${view === 'multiset' ? 'is-active' : ''}`}
+              className="demo-tab-btn"
+              aria-pressed={view === 'multiset'}
               onClick={() => setView('multiset')}
-              style={{ textAlign: 'center' }}
             >
               Multiset
             </button>
             <button
-              className={`control-choice-button ${view === 'logup' ? 'is-active' : ''}`}
+              className="demo-tab-btn"
+              aria-pressed={view === 'logup'}
               onClick={() => setView('logup')}
-              style={{ textAlign: 'center' }}
             >
               LogUp
             </button>

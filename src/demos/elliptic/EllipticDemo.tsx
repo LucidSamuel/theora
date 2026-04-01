@@ -353,17 +353,17 @@ export function EllipticDemo(): JSX.Element {
     >
       <DemoSidebar>
         {/* ── Tab selector ──────────────────────────────────────────────── */}
-        <div className="control-choice-list" style={{ flexDirection: 'row', gap: 0 }}>
+        <div className="demo-tab-bar">
           <button
-            className={`control-choice-button ${activeTab === 'curves' ? 'is-active' : ''}`}
-            style={{ textAlign: 'center' }}
+            className="demo-tab-btn"
+            aria-pressed={activeTab === 'curves'}
             onClick={() => setActiveTab('curves')}
           >
             Curves
           </button>
           <button
-            className={`control-choice-button ${activeTab === 'pairings' ? 'is-active' : ''}`}
-            style={{ textAlign: 'center' }}
+            className="demo-tab-btn"
+            aria-pressed={activeTab === 'pairings'}
             onClick={() => setActiveTab('pairings')}
           >
             Pairings

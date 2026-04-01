@@ -22,8 +22,11 @@ export function HashBadge({ hash, truncate = 8, color = 'var(--text-muted)', cla
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer hover:opacity-80 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full font-mono transition-all cursor-pointer hover:opacity-80 ${className}`}
       style={{
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '2px 10px',
         backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
         color: color,
         border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,

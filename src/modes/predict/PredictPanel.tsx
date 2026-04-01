@@ -88,7 +88,7 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
       </div>
 
       {/* Question */}
-      <div className="control-note" style={{ marginBottom: 10 }}>
+      <div className="control-note" style={{ marginBottom: 12 }}>
         <div
           className="text-[12px]"
           style={{ color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}
@@ -103,37 +103,48 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
       )}
 
       {/* Choices */}
-      <div className="flex flex-col gap-2 mb-3">
+      <div className="flex flex-col mb-3" style={{ gap: 8 }}>
         {challenge.choices.map((choice, i) => {
           const isSelected = selectedIndex === i;
           const isCorrect = i === challenge.correctIndex;
           const showResult = phase === 'revealed';
+          const isNeutralAfterReveal = showResult && !isCorrect && !(isSelected && !isCorrect);
 
-          let bgColor = 'var(--button-bg)';
+          let bgColor = isSelected ? 'var(--button-bg-strong)' : 'transparent';
           let borderColor = isSelected ? 'var(--text-muted)' : 'var(--border)';
-          let textColor = 'var(--text-secondary)';
+          let textColor = isSelected ? 'var(--text-primary)' : 'var(--text-secondary)';
+          let opacity: number | undefined = undefined;
 
           if (showResult) {
             if (isCorrect) {
               bgColor = 'var(--status-success-bg)';
               borderColor = 'var(--status-success)';
               textColor = 'var(--text-primary)';
+              opacity = 1;
             } else if (isSelected && !isCorrect) {
               bgColor = 'var(--status-error-bg)';
               borderColor = 'var(--status-error)';
               textColor = 'var(--text-primary)';
+              opacity = 1;
+            } else {
+              bgColor = 'transparent';
+              borderColor = 'var(--border)';
+              textColor = 'var(--text-muted)';
+              opacity = 0.5;
             }
           }
 
           return (
             <button
               key={i}
+              className="predict-choice-button"
               onClick={() => phase === 'prompt' && selectChoice(i)}
               disabled={phase !== 'prompt'}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 4,
+                minHeight: 44,
                 padding: '10px 12px',
                 borderRadius: 8,
                 border: `1px solid ${borderColor}`,
@@ -144,14 +155,15 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
                 fontSize: 12,
                 lineHeight: 1.4,
                 fontFamily: 'var(--font-sans)',
-                transition: 'all 150ms ease',
+                transition: 'border-color 150ms ease, background 150ms ease, color 150ms ease, opacity 150ms ease',
+                opacity: opacity ?? 1,
               }}
             >
               <span>{choice.label}</span>
               {showResult && (
                 <span
                   className="text-[10px]"
-                  style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}
+                  style={{ color: isNeutralAfterReveal ? 'var(--text-muted)' : 'inherit', fontStyle: 'italic', opacity: isNeutralAfterReveal ? 1 : 0.75 }}
                 >
                   {choice.rationale}
                 </span>
@@ -168,7 +180,8 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
           disabled={selectedIndex === null}
           style={{
             width: '100%',
-            height: 38,
+            height: 44,
+            marginTop: 16,
             borderRadius: 8,
             border: 'none',
             background: selectedIndex !== null ? 'var(--text-primary)' : 'var(--border)',
@@ -188,7 +201,8 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
           onClick={reveal}
           style={{
             width: '100%',
-            height: 38,
+            height: 44,
+            marginTop: 16,
             borderRadius: 8,
             border: 'none',
             background: 'var(--text-primary)',
@@ -209,7 +223,7 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
           <div
             className="control-note"
             style={{
-              marginBottom: 10,
+              marginBottom: 12,
               borderLeft: `3px solid ${correct ? 'var(--status-success)' : 'var(--status-error)'}`,
             }}
           >
@@ -404,24 +418,30 @@ function ApiKeyInput({ onDone }: { onDone: () => void }) {
           color: 'var(--text-primary)',
           fontSize: 11,
           fontFamily: 'var(--font-mono)',
-          padding: '0 10px',
-          marginBottom: 8,
+          padding: '0 8px',
+          marginBottom: 16,
         }}
       />
 
-      <div className="flex flex-col gap-1 mb-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
         {(['memory', 'session', 'local'] as const).map((p) => (
           <label
             key={p}
-            className="flex items-center gap-2 text-[10px]"
-            style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 10,
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+            }}
           >
             <input
               type="radio"
               name="key-storage"
               checked={pref === p}
               onChange={() => setPref(p)}
-              style={{ margin: 0 }}
+              style={{ margin: 0, flexShrink: 0 }}
             />
             {p === 'memory' && 'This tab only (safest)'}
             {p === 'session' && 'Until tab closes'}
@@ -431,8 +451,8 @@ function ApiKeyInput({ onDone }: { onDone: () => void }) {
       </div>
 
       <div
-        className="text-[9px] mb-2"
-        style={{ color: 'var(--text-muted)', lineHeight: 1.3, opacity: 0.7 }}
+        className="control-note"
+        style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}
       >
         Key is sent only to api.anthropic.com. Never stored on our servers.
       </div>
@@ -443,7 +463,7 @@ function ApiKeyInput({ onDone }: { onDone: () => void }) {
         </div>
       )}
 
-      <div className="control-button-row">
+      <div className="control-button-row" style={{ marginTop: 16, gap: 8 }}>
         <button
           onClick={handleSave}
           disabled={!key}
