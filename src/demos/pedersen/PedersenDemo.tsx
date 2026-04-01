@@ -11,7 +11,7 @@ import {
   ToggleControl,
 } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -312,16 +312,14 @@ export function PedersenDemo(): JSX.Element {
           showToast('Reset to defaults');
         }} variant="secondary" />
 
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="pedersen" />
-          <div className="control-button-grid">
-            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="pedersen"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHashUrl}
+          onCopyEmbed={handleCopyEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleCopyAuditSummary}
+        />
       </DemoSidebar>
 
       <DemoCanvasArea>

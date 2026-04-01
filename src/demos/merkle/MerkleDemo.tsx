@@ -13,7 +13,7 @@ import {
   ControlNote,
 } from '@/components/shared/Controls';
 import { HashBadge } from '@/components/shared/HashBadge';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -784,16 +784,14 @@ export function MerkleDemo() {
 
         <ButtonControl label="Reset to Defaults" onClick={() => { handleReset(); showToast('Reset to defaults'); }} variant="secondary" />
 
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="merkle" />
-          <div className="control-button-grid mt-1.5">
-            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="merkle"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHashUrl}
+          onCopyEmbed={handleCopyEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleCopyAuditSummary}
+        />
 
         {state.proof && (
           <ControlGroup label="Merkle Proof">

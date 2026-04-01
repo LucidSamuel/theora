@@ -4,7 +4,7 @@ import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
 import { ControlGroup, SelectControl, SliderControl, ToggleControl, ButtonControl, ControlCard, ControlNote, NumberInputControl } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -563,16 +563,14 @@ export function EllipticDemo(): JSX.Element {
 
         <ButtonControl label="Reset to Defaults" onClick={handleResetAll} variant="secondary" />
 
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="elliptic" />
-          <div className="control-button-grid">
-            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="elliptic"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHashUrl}
+          onCopyEmbed={handleCopyEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleCopyAuditSummary}
+        />
       </DemoSidebar>
 
       <DemoCanvasArea>

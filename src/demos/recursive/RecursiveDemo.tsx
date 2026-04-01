@@ -35,7 +35,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { exportCanvasPng } from '@/lib/canvas';
 import { EmbedModal } from '@/components/shared/EmbedModal';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 
 type Action =
   | { type: 'SET_MODE'; mode: RecursiveMode }
@@ -994,16 +994,14 @@ export function RecursiveDemo(): JSX.Element {
           )}
         </ControlGroup>
 
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="recursive" />
-          <div className="control-button-grid">
-            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="recursive"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHashUrl}
+          onCopyEmbed={handleCopyEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleCopyAuditSummary}
+        />
 
         <ControlGroup label="Actions">
           <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} />

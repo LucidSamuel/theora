@@ -11,7 +11,7 @@ import {
   SelectControl,
 } from '@/components/shared/Controls';
 import { EmbedModal } from '@/components/shared/EmbedModal';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
@@ -949,6 +949,9 @@ export function PlonkDemo(): JSX.Element {
               <ControlNote>
                 Cost data is computed from the Custom Gates tab circuit. Edit gates there to update.
               </ControlNote>
+              <ControlNote>
+                Proof-size and verifier-cost strings below are structural estimates, not hardware benchmarks. They compare protocol shape and scaling, not measured milliseconds.
+              </ControlNote>
             </ControlGroup>
 
             <ControlGroup label="Cost Comparison">
@@ -998,17 +1001,14 @@ export function PlonkDemo(): JSX.Element {
           </>
         )}
 
-        {/* Share section — always visible */}
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="plonk" />
-          <div className="control-button-grid">
-            <ButtonControl label="Hash URL" onClick={handleCopyHashUrl} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleCopyEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleCopyAuditSummary} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="plonk"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHashUrl}
+          onCopyEmbed={handleCopyEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleCopyAuditSummary}
+        />
       </DemoSidebar>
 
       <DemoCanvasArea>

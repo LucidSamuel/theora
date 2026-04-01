@@ -4,6 +4,7 @@ import { useGitHub } from '@/hooks/useGitHub';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { ModeBar } from '@/modes';
 import type { Theme } from '@/lib/theme';
+import { ApiKeyModal } from '@/components/shared/ApiKeyModal';
 
 function HeaderBtn({
   onClick,
@@ -267,6 +268,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
   const demo = DEMOS.find((d) => d.id === activeDemo)!;
   const { status, user, setConnectOpen, setSavesOpen } = useGitHub();
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
 
   return (
     <header
@@ -386,6 +388,12 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
             <circle cx="7" cy="4.2" r="0.7" fill="currentColor"/>
           </svg>
         </HeaderBtn>
+        <HeaderBtn onClick={() => setApiKeyOpen(true)} label="API key settings">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.05 3.05l.7.7M10.25 10.25l.7.7M10.95 3.05l-.7.7M3.75 10.25l-.7.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+        </HeaderBtn>
         <HeaderBtn onClick={onToggleTheme} label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             {theme === 'dark' ? (
@@ -406,6 +414,7 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
           </svg>
         </HeaderBtn>
       </div>
+      <ApiKeyModal isOpen={apiKeyOpen} onClose={() => setApiKeyOpen(false)} />
     </header>
   );
 }

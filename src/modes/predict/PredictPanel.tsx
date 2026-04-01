@@ -4,8 +4,8 @@ import { useMode } from '@/modes/ModeProvider';
 import { hasPredictChallenges } from './challenges';
 import { ApiKeyStore } from './ai/apiKeyStore';
 import { getCurrentExportEnvelope } from '@/lib/githubImport';
+import { ApiKeyModal } from '@/components/shared/ApiKeyModal';
 import type { DemoId } from '@/types';
-import type { KeyStoragePreference } from './types';
 
 export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
   const {
@@ -16,8 +16,8 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
   } = usePredict();
   const { setMode } = useMode();
   const { challenge, phase, selectedIndex, correct } = state;
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const hasApiKey = aiEnabled || ApiKeyStore.has();
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(() => aiEnabled || ApiKeyStore.has());
 
   if (!hasPredictChallenges(activeDemo)) {
     return <NoChallengePanel />;
@@ -287,52 +287,156 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
       {/* AI challenge section */}
       <div style={{ marginTop: 'auto', paddingTop: 16 }}>
         <div
-          className="text-[10px] font-mono uppercase mb-2"
-          style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 8,
+          }}
         >
-          AI Challenges
+          <span
+            className="text-[10px] font-mono uppercase"
+            style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}
+          >
+            AI Challenges
+          </span>
+          {hasApiKey && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 10,
+                color: 'var(--status-success)',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: 'var(--status-success)',
+                  display: 'inline-block',
+                }}
+              />
+              Connected
+            </span>
+          )}
         </div>
 
         {hasApiKey ? (
-          <button
-            onClick={() => generateAi(demoState)}
-            disabled={aiLoading}
-            style={{
-              width: '100%',
-              height: 34,
-              borderRadius: 7,
-              border: '1px solid var(--border)',
-              background: 'var(--button-bg)',
-              color: aiLoading ? 'var(--text-muted)' : 'var(--text-secondary)',
-              cursor: aiLoading ? 'wait' : 'pointer',
-              fontSize: 11,
-              fontFamily: 'var(--font-display)',
-              fontWeight: 500,
-            }}
-          >
-            {aiLoading ? 'Generating...' : 'Generate AI Challenge'}
-          </button>
+          <>
+            <div
+              className="text-[10px] mb-2"
+              style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}
+            >
+              Storage: {storageLabel(ApiKeyStore.getPreference())}
+            </div>
+            <button
+              onClick={() => generateAi(demoState)}
+              disabled={aiLoading}
+              style={{
+                width: '100%',
+                height: 34,
+                borderRadius: 7,
+                border: '1px solid var(--border)',
+                background: 'var(--button-bg)',
+                color: aiLoading ? 'var(--text-muted)' : 'var(--text-secondary)',
+                cursor: aiLoading ? 'wait' : 'pointer',
+                fontSize: 11,
+                fontFamily: 'var(--font-display)',
+                fontWeight: 500,
+              }}
+            >
+              {aiLoading ? 'Generating...' : 'Generate AI Challenge'}
+            </button>
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                marginTop: 8,
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                onClick={() => setApiKeyOpen(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-sans)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: 2,
+                }}
+              >
+                Manage
+              </button>
+              <button
+                onClick={() => { ApiKeyStore.clear(); setHasApiKey(false); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-sans)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: 2,
+                }}
+              >
+                Disconnect
+              </button>
+            </div>
+          </>
         ) : (
-          <button
-            onClick={() => setShowKeyInput(!showKeyInput)}
-            style={{
-              width: '100%',
-              height: 34,
-              borderRadius: 7,
-              border: '1px solid var(--border)',
-              background: 'var(--button-bg)',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: 11,
-              fontFamily: 'var(--font-display)',
-              fontWeight: 500,
-            }}
-          >
-            Add API Key for AI Challenges
-          </button>
+          <>
+            <div
+              className="text-[11px] mb-3"
+              style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}
+            >
+              Personalized challenges powered by Claude.
+            </div>
+            <button
+              onClick={() => setApiKeyOpen(true)}
+              style={{
+                width: '100%',
+                height: 34,
+                borderRadius: 7,
+                border: '1px solid var(--border)',
+                background: 'var(--button-bg)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: 11,
+                fontFamily: 'var(--font-display)',
+                fontWeight: 500,
+              }}
+            >
+              Add API Key
+            </button>
+            <div style={{ marginTop: 8, textAlign: 'center' }}>
+              <a
+                href="https://console.anthropic.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  textDecoration: 'none',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              >
+                console.anthropic.com →
+              </a>
+            </div>
+          </>
         )}
-
-        {showKeyInput && !hasApiKey && <ApiKeyInput onDone={() => setShowKeyInput(false)} />}
 
         {aiError && (
           <div
@@ -343,6 +447,14 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
           </div>
         )}
       </div>
+
+      <ApiKeyModal
+        isOpen={apiKeyOpen}
+        onClose={() => {
+          setApiKeyOpen(false);
+          setHasApiKey(ApiKeyStore.has());
+        }}
+      />
     </div>
   );
 }
@@ -378,129 +490,10 @@ function HintToggle({ hint }: { hint: string }) {
   );
 }
 
-function ApiKeyInput({ onDone }: { onDone: () => void }) {
-  const [key, setKey] = useState('');
-  const [pref, setPref] = useState<KeyStoragePreference>(ApiKeyStore.getPreference());
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSave = () => {
-    if (!ApiKeyStore.validate(key)) {
-      setError('Invalid key format. Anthropic API keys start with sk-ant-');
-      return;
-    }
-    ApiKeyStore.setPreference(pref);
-    ApiKeyStore.set(key);
-    setKey('');
-    setError(null);
-    onDone();
-  };
-
-  return (
-    <div className="control-card" style={{ marginTop: 8 }}>
-      <div
-        className="text-[10px] font-mono uppercase mb-2"
-        style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}
-      >
-        Anthropic API Key
-      </div>
-      <input
-        type="password"
-        value={key}
-        onChange={(e) => { setKey(e.target.value); setError(null); }}
-        placeholder="sk-ant-..."
-        autoComplete="off"
-        style={{
-          width: '100%',
-          height: 32,
-          borderRadius: 6,
-          border: '1px solid var(--border)',
-          background: 'var(--input-bg)',
-          color: 'var(--text-primary)',
-          fontSize: 11,
-          fontFamily: 'var(--font-mono)',
-          padding: '0 8px',
-          marginBottom: 16,
-        }}
-      />
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-        {(['memory', 'session', 'local'] as const).map((p) => (
-          <label
-            key={p}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 10,
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="radio"
-              name="key-storage"
-              checked={pref === p}
-              onChange={() => setPref(p)}
-              style={{ margin: 0, flexShrink: 0 }}
-            />
-            {p === 'memory' && 'This tab only (safest)'}
-            {p === 'session' && 'Until tab closes'}
-            {p === 'local' && 'Remember across sessions'}
-          </label>
-        ))}
-      </div>
-
-      <div
-        className="control-note"
-        style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}
-      >
-        Key is sent only to api.anthropic.com. Never stored on our servers.
-      </div>
-
-      {error && (
-        <div className="text-[10px] mb-2" style={{ color: 'var(--status-error)' }}>
-          {error}
-        </div>
-      )}
-
-      <div className="control-button-row" style={{ marginTop: 16, gap: 8 }}>
-        <button
-          onClick={handleSave}
-          disabled={!key}
-          style={{
-            flex: 1,
-            height: 30,
-            borderRadius: 6,
-            border: 'none',
-            background: key ? 'var(--text-primary)' : 'var(--border)',
-            color: key ? 'var(--bg-primary)' : 'var(--text-muted)',
-            cursor: key ? 'pointer' : 'not-allowed',
-            fontSize: 11,
-            fontFamily: 'var(--font-display)',
-            fontWeight: 500,
-          }}
-        >
-          Save
-        </button>
-        <button
-          onClick={onDone}
-          style={{
-            flex: 1,
-            height: 30,
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontFamily: 'var(--font-display)',
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
+function storageLabel(pref: 'memory' | 'session' | 'local'): string {
+  if (pref === 'session') return 'Until tab closes';
+  if (pref === 'local') return 'Across sessions';
+  return 'This tab only';
 }
 
 function NoChallengePanel() {

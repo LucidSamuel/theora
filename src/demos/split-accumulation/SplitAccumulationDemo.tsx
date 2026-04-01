@@ -16,7 +16,7 @@ import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { EmbedModal } from '@/components/shared/EmbedModal';
-import { SaveToGitHub } from '@/components/shared/SaveToGitHub';
+import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { exportCanvasPng } from '@/lib/canvas';
@@ -444,16 +444,14 @@ export function SplitAccumulationDemo() {
           />
         </ControlGroup>
 
-        <ControlGroup label="Share">
-          <ButtonControl label="Copy Share URL" onClick={handleCopyShareUrl} />
-          <SaveToGitHub demoId="split-accumulation" />
-          <div className="control-button-grid">
-            <ButtonControl label="Hash URL" onClick={handleCopyHash} variant="secondary" />
-            <ButtonControl label="Embed" onClick={handleOpenEmbed} variant="secondary" />
-            <ButtonControl label="Export PNG" onClick={handleExportPng} variant="secondary" />
-            <ButtonControl label="Audit JSON" onClick={handleExportJson} variant="secondary" />
-          </div>
-        </ControlGroup>
+        <ShareSaveDropdown
+          demoId="split-accumulation"
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyHashUrl={handleCopyHash}
+          onCopyEmbed={handleOpenEmbed}
+          onExportPng={handleExportPng}
+          onCopyAudit={handleExportJson}
+        />
       </DemoSidebar>
 
       <DemoCanvasArea>

@@ -4,6 +4,8 @@ import { useActiveDemo } from '@/hooks/useActiveDemo';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GitHubProvider } from '@/hooks/useGitHub';
 import { ModeProvider, useMode, PlaceholderMode, AttackMode, PredictMode, DebugMode } from '@/modes';
+import { hasPredictChallenges } from '@/modes/predict/challenges';
+import { hasAttackScenario } from '@/modes/attack/scenarios';
 import { Layout } from '@/components/layout/Layout';
 import { DemoContainer } from '@/components/layout/DemoContainer';
 import { DemoErrorBoundary } from '@/components/shared/DemoErrorBoundary';
@@ -168,7 +170,13 @@ function AppContent({
   activeLocationKey: string;
   renderDemo: () => JSX.Element;
 }) {
-  const { mode } = useMode();
+  const { mode, setMode } = useMode();
+
+  // Auto-fallback to Explore when the active demo does not support the current mode
+  useEffect(() => {
+    if (mode === 'predict' && !hasPredictChallenges(activeDemo)) setMode('explore');
+    if (mode === 'attack' && !hasAttackScenario(activeDemo)) setMode('explore');
+  }, [activeDemo, mode, setMode]);
 
   if (mode === 'attack') {
     return (
