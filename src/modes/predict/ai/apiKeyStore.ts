@@ -102,6 +102,7 @@ export const ApiKeyStore = {
           break;
       }
     }
+    notify();
   },
 
   /** Validates that a string looks like a valid Anthropic API key format. */

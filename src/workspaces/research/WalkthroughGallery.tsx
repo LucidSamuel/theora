@@ -7,27 +7,31 @@ interface WalkthroughGalleryProps {
 
 export function WalkthroughGallery({ walkthroughs, onSelect }: WalkthroughGalleryProps) {
   return (
-    <section style={{ padding: '0 24px 64px', maxWidth: 960, margin: '0 auto' }}>
+    <section className="lp-shell" style={{ paddingBottom: 64, maxWidth: 960 }}>
+      <p className="lp-overline" style={{ marginBottom: 8 }}>Curated walkthroughs</p>
       <h2
-        className="font-display"
         style={{
-          fontSize: 20,
-          fontWeight: 600,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 'clamp(20px, 3vw, 28px)',
+          fontWeight: 700,
           color: 'var(--text-primary)',
           margin: '0 0 8px',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.15,
         }}
       >
-        Curated Walkthroughs
+        Landmark papers, mapped to demos.
       </h2>
       <p
         style={{
-          fontSize: 13,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 14,
           color: 'var(--text-muted)',
           margin: '0 0 28px',
-          lineHeight: 1.5,
+          lineHeight: 1.7,
         }}
       >
-        Hand-written mappings of landmark cryptography papers to interactive theora demos.
+        Hand-written mappings of cryptography papers to interactive theora demos.
       </p>
       <div
         style={{
@@ -62,23 +66,23 @@ function WalkthroughCard({
         alignItems: 'flex-start',
         textAlign: 'left',
         padding: '20px 18px',
-        borderRadius: 12,
+        borderRadius: 8,
         border: '1px solid var(--border)',
         background: 'var(--surface-element)',
         cursor: 'pointer',
-        transition: 'border-color 0.15s',
+        transition: 'border-color 160ms ease',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--text-muted)')}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--focus-ring)')}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
     >
       <div
         style={{
-          fontSize: 15,
-          fontWeight: 600,
+          fontSize: 14,
+          fontWeight: 500,
           color: 'var(--text-primary)',
-          fontFamily: 'var(--font-display)',
+          fontFamily: 'var(--font-mono)',
           marginBottom: 4,
-          lineHeight: 1.3,
+          lineHeight: 1.45,
         }}
       >
         {walkthrough.paper.title}
@@ -88,16 +92,18 @@ function WalkthroughCard({
           fontSize: 12,
           color: 'var(--text-muted)',
           marginBottom: 10,
+          fontFamily: 'var(--font-mono)',
         }}
       >
         {walkthrough.paper.authors} ({walkthrough.paper.year})
       </div>
       <div
         style={{
-          fontSize: 12,
+          fontSize: 13,
           color: 'var(--text-secondary)',
-          lineHeight: 1.5,
+          lineHeight: 1.65,
           marginBottom: 14,
+          fontFamily: 'var(--font-mono)',
           display: '-webkit-box',
           WebkitLineClamp: 3,
           WebkitBoxOrient: 'vertical',
@@ -107,31 +113,24 @@ function WalkthroughCard({
         {walkthrough.paper.abstractSummary}
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span
-          style={{
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            padding: '3px 8px',
-            borderRadius: 6,
-            background: 'var(--bg-secondary)',
-            fontFamily: 'var(--font-mono)',
-          }}
-        >
+        <span style={badgeStyle}>
           {walkthrough.sections.length} sections
         </span>
-        <span
-          style={{
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            padding: '3px 8px',
-            borderRadius: 6,
-            background: 'var(--bg-secondary)',
-            fontFamily: 'var(--font-mono)',
-          }}
-        >
+        <span style={badgeStyle}>
           {demoCount} demos
         </span>
       </div>
     </button>
   );
 }
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: 10,
+  color: 'var(--text-muted)',
+  padding: '3px 8px',
+  borderRadius: 6,
+  background: 'var(--bg-secondary)',
+  fontFamily: 'var(--font-mono)',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+};

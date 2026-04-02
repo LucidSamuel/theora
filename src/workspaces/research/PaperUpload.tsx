@@ -34,7 +34,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
 
   const handleAnalyze = useCallback(async () => {
     const key = ApiKeyStore.get();
-    if (!key) { setError('API key is required — click "Add API Key" above'); return; }
+    if (!key) { setError('API key is required — click the gear icon in the nav bar'); return; }
     if (!file && !eprintUrl.trim()) { setError('Upload a PDF or enter an eprint URL'); return; }
 
     setLoading(true);
@@ -107,24 +107,28 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
   }, []);
 
   return (
-    <section style={{ padding: '0 24px 64px', maxWidth: 640, margin: '0 auto' }}>
+    <section className="lp-shell" style={{ paddingBottom: 64, maxWidth: 640 }}>
+      <p className="lp-overline" style={{ marginBottom: 8 }}>AI analysis</p>
       <h2
-        className="font-display"
         style={{
-          fontSize: 20,
-          fontWeight: 600,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 'clamp(20px, 3vw, 28px)',
+          fontWeight: 700,
           color: 'var(--text-primary)',
           margin: '0 0 8px',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.15,
         }}
       >
-        Analyze a Paper
+        Analyze a paper
       </h2>
       <p
         style={{
-          fontSize: 13,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 14,
           color: 'var(--text-muted)',
-          margin: '0 0 24px',
-          lineHeight: 1.5,
+          margin: '0 0 28px',
+          lineHeight: 1.7,
         }}
       >
         Upload a PDF or paste an eprint URL. Claude reads the paper and maps sections to interactive theora demos.
@@ -137,14 +141,15 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
         onClick={() => fileInputRef.current?.click()}
         style={{
           padding: '32px 20px',
-          borderRadius: 12,
-          border: '2px dashed var(--border)',
+          borderRadius: 8,
+          border: '1px dashed var(--border)',
           textAlign: 'center',
           cursor: 'pointer',
           marginBottom: 16,
-          transition: 'border-color 0.15s',
+          transition: 'border-color 160ms ease',
+          background: 'var(--surface-element)',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--text-muted)')}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--focus-ring)')}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
       >
         <input
@@ -158,11 +163,11 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           }}
         />
         {file ? (
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
             {file.name} ({(file.size / 1024).toFixed(0)} KB)
           </div>
         ) : (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             Drop a PDF here or click to upload
           </div>
         )}
@@ -170,16 +175,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
 
       {/* OR eprint URL */}
       <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            textAlign: 'center',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}
-        >
+        <div className="lp-overline" style={{ textAlign: 'center', marginBottom: 12 }}>
           or paste an eprint URL
         </div>
         <input
@@ -189,7 +185,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           onChange={(e) => { setEprintUrl(e.target.value); setError(null); }}
           style={{
             width: '100%',
-            height: 38,
+            height: 40,
             padding: '0 14px',
             borderRadius: 8,
             border: '1px solid var(--border)',
@@ -203,12 +199,14 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
       </div>
 
       {/* API key status */}
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 12,
-            color: 'var(--text-secondary)',
-            display: 'block',
+            fontSize: 11,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
             marginBottom: 8,
           }}
         >
@@ -223,7 +221,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
               padding: '10px 14px',
               borderRadius: 8,
               border: '1px solid var(--border)',
-              background: 'var(--bg-secondary)',
+              background: 'var(--surface-element)',
             }}
           >
             <span
@@ -235,10 +233,11 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
                 flexShrink: 0,
               }}
             />
-            <span style={{ fontSize: 12, color: 'var(--text-primary)', flex: 1 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-primary)', flex: 1, fontFamily: 'var(--font-mono)' }}>
               Connected
             </span>
             <button
+              type="button"
               onClick={() => setApiKeyOpen(true)}
               style={{
                 background: 'none',
@@ -247,6 +246,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
                 cursor: 'pointer',
                 fontSize: 11,
                 color: 'var(--text-muted)',
+                fontFamily: 'var(--font-mono)',
                 textDecoration: 'underline',
                 textUnderlineOffset: 2,
               }}
@@ -256,19 +256,10 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setApiKeyOpen(true)}
-            style={{
-              width: '100%',
-              height: 38,
-              borderRadius: 8,
-              border: '1px solid var(--border)',
-              background: 'var(--button-bg)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontFamily: 'var(--font-display)',
-              fontWeight: 500,
-            }}
+            className="lp-btn-ghost"
+            style={{ width: '100%', fontSize: 12 }}
           >
             Add API Key
           </button>
@@ -276,9 +267,10 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
         <div
           style={{
             fontSize: 11,
+            fontFamily: 'var(--font-mono)',
             color: 'var(--text-muted)',
-            marginTop: 6,
-            lineHeight: 1.4,
+            marginTop: 8,
+            lineHeight: 1.5,
           }}
         >
           Your key is sent directly to Anthropic — it never touches theora's servers.
@@ -287,20 +279,17 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
 
       {/* Analyze button */}
       <button
+        type="button"
         onClick={handleAnalyze}
         disabled={loading}
+        className="lp-btn-primary"
         style={{
           width: '100%',
-          height: 42,
-          borderRadius: 10,
-          border: 'none',
-          background: loading ? 'var(--text-muted)' : 'var(--text-primary)',
-          color: 'var(--bg-primary)',
-          fontSize: 14,
-          fontFamily: 'var(--font-display)',
-          fontWeight: 500,
-          cursor: loading ? 'default' : 'pointer',
+          height: 44,
+          fontSize: 13,
           marginBottom: 16,
+          opacity: loading ? 0.6 : 1,
+          cursor: loading ? 'default' : 'pointer',
         }}
       >
         {loading ? 'Analyzing...' : 'Analyze'}
@@ -314,13 +303,14 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
               key={i}
               style={{
                 fontSize: 12,
+                fontFamily: 'var(--font-mono)',
                 color: i <= progressIdx ? 'var(--text-secondary)' : 'var(--text-muted)',
                 opacity: i <= progressIdx ? 1 : 0.4,
-                marginBottom: 4,
+                marginBottom: 6,
                 transition: 'opacity 0.3s, color 0.3s',
               }}
             >
-              {i < progressIdx ? '●' : i === progressIdx ? '○' : '○'} {msg}
+              {i < progressIdx ? '●' : '○'} {msg}
             </div>
           ))}
         </div>
@@ -332,9 +322,11 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           style={{
             padding: '10px 14px',
             borderRadius: 8,
-            background: 'var(--status-error-bg)',
-            color: 'var(--status-error)',
+            border: '1px solid var(--color-error-border)',
+            background: 'var(--color-error-bg)',
+            color: 'var(--color-error)',
             fontSize: 12,
+            fontFamily: 'var(--font-mono)',
             lineHeight: 1.5,
           }}
         >

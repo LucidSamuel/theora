@@ -5,68 +5,42 @@ interface ResearchHeroProps {
 
 export function ResearchHero({ onScrollToGallery, onScrollToUpload }: ResearchHeroProps) {
   return (
-    <section
-      style={{
-        padding: '80px 24px 64px',
-        textAlign: 'center',
-        maxWidth: 640,
-        margin: '0 auto',
-      }}
-    >
+    <section className="lp-shell" style={{ padding: '80px 24px 64px', textAlign: 'center', maxWidth: 720 }}>
+      <p className="lp-overline" style={{ marginBottom: 16 }}>Research workspace</p>
       <h1
-        className="font-display"
         style={{
-          fontSize: 32,
-          fontWeight: 600,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 'clamp(1.6rem, 5vw, 2.4rem)',
+          fontWeight: 700,
+          lineHeight: 1.05,
+          letterSpacing: '-0.03em',
           color: 'var(--text-primary)',
-          margin: '0 0 12px',
-          letterSpacing: '-0.02em',
-        }}
-      >
-        Research
-      </h1>
-      <p
-        style={{
-          fontSize: 16,
-          color: 'var(--text-muted)',
-          margin: '0 0 36px',
-          lineHeight: 1.6,
+          margin: '0 0 16px',
         }}
       >
         Read papers. Interact with the math.
+      </h1>
+      <p
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 15,
+          color: 'var(--text-secondary)',
+          margin: '0 0 36px',
+          lineHeight: 1.7,
+          maxWidth: 520,
+          marginInline: 'auto',
+        }}
+      >
+        Upload a cryptography paper or explore curated walkthroughs with live interactive demos mapped to each section.
       </p>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button onClick={onScrollToGallery} style={heroBtnPrimary}>
-          Explore curated walkthroughs
+        <button type="button" onClick={onScrollToGallery} className="lp-btn-primary lp-btn-lg">
+          Explore walkthroughs
         </button>
-        <button onClick={onScrollToUpload} style={heroBtnSecondary}>
+        <button type="button" onClick={onScrollToUpload} className="lp-btn-ghost lp-btn-lg">
           Analyze a paper
         </button>
       </div>
     </section>
   );
 }
-
-const heroBtnBase: React.CSSProperties = {
-  height: 42,
-  padding: '0 24px',
-  borderRadius: 10,
-  fontSize: 14,
-  fontFamily: 'var(--font-display)',
-  fontWeight: 500,
-  cursor: 'pointer',
-  border: 'none',
-};
-
-const heroBtnPrimary: React.CSSProperties = {
-  ...heroBtnBase,
-  background: 'var(--text-primary)',
-  color: 'var(--bg-primary)',
-};
-
-const heroBtnSecondary: React.CSSProperties = {
-  ...heroBtnBase,
-  background: 'transparent',
-  color: 'var(--text-secondary)',
-  border: '1px solid var(--border)',
-};

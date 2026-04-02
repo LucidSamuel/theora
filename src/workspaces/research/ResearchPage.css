@@ -1,61 +1,11 @@
-.research-page {
-  min-height: 100vh;
-  background-color: var(--bg-primary);
+/* Research page uses lp-* classes from index.css for nav/footer.
+   Only page-specific overrides go here. */
+
+.lp-nav-link--active {
   color: var(--text-primary);
-  font-family: var(--font-sans);
+  cursor: default;
 }
 
-.research-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 56px;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background-color: var(--bg-primary);
-  backdrop-filter: blur(12px);
-}
-
-.research-header__left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.research-header__right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.research-header__link {
-  font-size: 12px;
-  color: var(--text-muted);
-  text-decoration: none;
-  font-family: var(--font-display);
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: color 0.15s;
-}
-
-.research-header__link:hover {
-  color: var(--text-secondary);
-}
-
-.research-footer {
-  padding: 32px 24px;
-  border-top: 1px solid var(--border);
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.research-footer a {
-  color: var(--text-muted);
-  text-decoration: underline;
-  margin: 0 8px;
+.lp-nav-link--active:hover {
+  color: var(--text-primary);
 }

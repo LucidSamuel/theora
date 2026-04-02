@@ -13,19 +13,13 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
   const demoCount = walkthrough.sections.filter((s) => s.demo).length;
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+    <div className="lp-shell" style={{ maxWidth: 1100, paddingBottom: 80 }}>
       {/* Back */}
       <button
+        type="button"
         onClick={onBack}
-        style={{
-          fontSize: 12,
-          color: 'var(--text-muted)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'var(--font-display)',
-          padding: '16px 0',
-        }}
+        className="lp-nav-link"
+        style={{ padding: '16px 0', display: 'inline-block' }}
       >
         ← Back to walkthroughs
       </button>
@@ -33,13 +27,14 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
       {/* Paper header */}
       <header style={{ paddingBottom: 32 }}>
         <h2
-          className="font-display"
           style={{
-            fontSize: 26,
-            fontWeight: 600,
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'clamp(22px, 4vw, 30px)',
+            fontWeight: 700,
             color: 'var(--text-primary)',
             margin: '0 0 8px',
-            lineHeight: 1.2,
+            lineHeight: 1.15,
+            letterSpacing: '-0.03em',
           }}
         >
           {walkthrough.paper.title}
@@ -47,6 +42,7 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
         <div
           style={{
             fontSize: 13,
+            fontFamily: 'var(--font-mono)',
             color: 'var(--text-muted)',
             marginBottom: 6,
           }}
@@ -58,15 +54,10 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
             href={walkthrough.paper.eprintUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              fontSize: 12,
-              color: 'var(--text-muted)',
-              textDecoration: 'underline',
-              display: 'inline-block',
-              marginBottom: 8,
-            }}
+            className="lp-nav-link"
+            style={{ display: 'inline-block', marginBottom: 8, padding: 0 }}
           >
-            eprint/{walkthrough.paper.eprintId}
+            eprint/{walkthrough.paper.eprintId} ↗
           </a>
         )}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -93,7 +84,7 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
                   fontSize: 13,
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
-                  fontFamily: 'var(--font-display)',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 Table of contents
@@ -114,6 +105,7 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
                 borderTop: '1px solid var(--border)',
                 marginTop: 16,
                 fontSize: 11,
+                fontFamily: 'var(--font-mono)',
                 color: 'var(--text-muted)',
                 lineHeight: 1.5,
               }}
@@ -129,11 +121,13 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
 }
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
+  fontSize: 10,
+  fontWeight: 400,
   color: 'var(--text-muted)',
-  padding: '2px 10px',
-  borderRadius: 9999,
+  padding: '3px 10px',
+  borderRadius: 6,
   border: '1px solid var(--border)',
   fontFamily: 'var(--font-mono)',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
 };
