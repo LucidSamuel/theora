@@ -580,8 +580,10 @@ export function Landing() {
         <div className="lp-statement">
           <div className="lp-shell">
             <p className="lp-statement-text">
-              Conference talks use terminal output. Blog posts use static
-              diagrams. Papers use notation. theora makes the math move.
+              Reading a proof and understanding it are different things.
+              Understanding starts when you break one — corrupt a witness,
+              forge a transcript, trace where soundness fails. theora makes
+              every primitive something you operate, not something you read.
             </p>
           </div>
         </div>
@@ -784,16 +786,8 @@ export function Landing() {
             >
               GitHub ↗
             </a>
-            <a
-              href={TWITTER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lp-nav-link"
-            >
-              @lucidzk ↗
-            </a>
           </div>
-          <p className="lp-footer-legal">v1.0.0 · MIT License · By LucidSamuel</p>
+          <p className="lp-footer-legal">MIT License · By <a href={TWITTER_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>LucidSamuel</a></p>
         </div>
       </footer>
     </div>

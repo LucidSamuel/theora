@@ -176,7 +176,7 @@ export function ResearchPage() {
               GitHub ↗
             </a>
           </div>
-          <p className="lp-footer-legal">MIT License</p>
+          <p className="lp-footer-legal">MIT License · By <a href="https://x.com/lucidzk" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>LucidSamuel</a></p>
         </div>
       </footer>
     </div>
