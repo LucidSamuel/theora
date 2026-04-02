@@ -1,4 +1,4 @@
-import type { Walkthrough } from './types';
+import type { Walkthrough, WalkthroughReference } from './types';
 import { WalkthroughSection } from './WalkthroughSection';
 import { WalkthroughTOC } from './WalkthroughTOC';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -11,6 +11,7 @@ interface WalkthroughViewerProps {
 export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const demoCount = walkthrough.sections.filter((s) => s.demo).length;
+  const refs = walkthrough.references;
 
   return (
     <div className="lp-shell" style={{ maxWidth: 1100, paddingBottom: 80 }}>
@@ -94,10 +95,13 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
           )}
 
           {walkthrough.sections.map((section, i) => (
-            <WalkthroughSection key={section.id} section={section} index={i} />
+            <WalkthroughSection key={section.id} section={section} index={i} references={refs} />
           ))}
 
-          {/* Footer */}
+          {/* References */}
+          {refs && refs.length > 0 && <ReferencesSection references={refs} />}
+
+          {/* AI footer */}
           {walkthrough.generatedBy === 'ai' && (
             <div
               style={{
@@ -117,6 +121,79 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
         </div>
       </div>
     </div>
+  );
+}
+
+function ReferencesSection({ references }: { references: WalkthroughReference[] }) {
+  return (
+    <section
+      id="references"
+      style={{
+        padding: '32px 0',
+        borderTop: '1px solid var(--border)',
+      }}
+    >
+      <h3
+        className="font-display"
+        style={{
+          fontSize: 18,
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          margin: '0 0 16px',
+        }}
+      >
+        References
+      </h3>
+      <ol
+        style={{
+          margin: 0,
+          paddingLeft: 24,
+          listStyleType: 'decimal',
+        }}
+      >
+        {references.map((ref, i) => (
+          <li
+            key={ref.id}
+            id={`ref-${ref.id}`}
+            style={{
+              fontSize: 13,
+              color: 'var(--text-secondary)',
+              lineHeight: 1.6,
+              marginBottom: 10,
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)', marginRight: 4 }}>[{i + 1}]</span>
+            {ref.authors && (
+              <span style={{ color: 'var(--text-primary)' }}>{ref.authors}. </span>
+            )}
+            <span style={{ fontStyle: 'italic' }}>"{ref.title}"</span>
+            {ref.year && <span> ({ref.year})</span>}
+            {ref.url && (
+              <>
+                {'. '}
+                <a
+                  href={ref.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'var(--text-muted)',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: 2,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {ref.url}
+                </a>
+              </>
+            )}
+            {ref.note && (
+              <span style={{ color: 'var(--text-muted)' }}> — {ref.note}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

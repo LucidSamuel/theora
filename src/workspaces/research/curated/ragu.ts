@@ -23,18 +23,20 @@ export const raguWalkthrough: Walkthrough = {
         'Tachyon is a proposed Zcash scalability upgrade that aims to shrink transactions by two orders of magnitude and eliminate runaway state growth for validators. At its core is Ragu, a Rust library implementing proof-carrying data (PCD) that closely follows the original Halo construction. Ragu enables recursive proof composition without a trusted setup, which is what makes the 100x transaction size reduction possible. The roadmap is modular: Ragu is developed independently of the payment protocol (PIR + post-quantum delivery) and shielded protocol (new pool with simplified keys), so performance and security work on the proof system doesn\'t block higher-level design. Ragu will undergo several rounds of optimization and auditing before deployment.',
       keyInsight:
         'Ragu is Tachyon\'s foundational cryptographic engine: recursive proof composition without trusted setup.',
+      citations: ['halo-2019', 'tachyon-proposal'],
     },
     {
       id: 'pasta-curves',
       title: 'The Pasta Curves: Why Ragu Needs Two Elliptic Curves',
       summary:
-        'Recursive proof composition has a fundamental problem: to verify a proof inside another proof, you need to perform elliptic curve arithmetic inside a circuit. But a curve\'s arithmetic is efficient in its scalar field, and the circuit operates over the base field. If these don\'t match, the arithmetic is prohibitively expensive. The Pasta curves solve this with a cycle: Pallas and Vesta are two curves where each curve\'s base field equals the other\'s scalar field. A proof computed on Pallas can be efficiently verified as a circuit on Vesta, and vice versa. In the diagram, each depth level alternates colors. The root is Pallas, its children are Vesta, their children are Pallas again. Ragu\'s recursion depends on this alternation.',
+        'Recursive proof composition has a fundamental problem: to verify a proof inside another proof, you need to perform elliptic curve arithmetic inside a circuit. But a curve\'s arithmetic is efficient in its scalar field, and the circuit operates over the base field. If these don\'t match, the arithmetic is prohibitively expensive. The Pasta curves solve this with a cycle: `Pallas` and `Vesta` are two curves where each curve\'s base field equals the other\'s scalar field. A proof computed on `Pallas` can be efficiently verified as a circuit on `Vesta`, and vice versa. In the diagram, each depth level alternates colors. The root is `Pallas`, its children are `Vesta`, their children are `Pallas` again. Ragu\'s recursion depends on this alternation.',
       keyInsight:
-        'Pallas and Vesta form a cycle: each curve\'s base field equals the other\'s scalar field, making cross-curve verification efficient.',
+        '`Pallas` and `Vesta` form a cycle: each curve\'s base field equals the other\'s scalar field, making cross-curve verification efficient.',
+      citations: ['pasta-curves'],
       demo: {
         demoId: 'recursive',
         state: { mode: 'tree', depth: 4, showPasta: true, showProofSize: true },
-        caption: 'Pallas and Vesta alternate by depth. Run verification to watch bottom-up proof checking',
+        caption: '`Pallas` and `Vesta` alternate by depth. Run verification to watch bottom-up proof checking',
         interactionHints: [
           'Run verification to watch it proceed from leaves to root',
           'Each node verifies its children\'s proofs before producing its own',
@@ -73,16 +75,17 @@ export const raguWalkthrough: Walkthrough = {
       id: 'ivc-folding',
       title: 'IVC: How Tachyon Folds Proofs',
       summary:
-        'Switch to IVC (Incrementally Verifiable Computation) mode and the tree becomes a chain. This is closer to how Tachyon would actually operate: each Zcash block transition is a new computation step that folds into the running accumulator. Step 1 computes f(x) and produces a proof. Step 2 takes the proof from step 1, verifies it internally, computes its own f(x), and produces a new proof attesting to both computations. At the end of a chain of 100 steps, the final proof is no larger than after 2 steps. This is how Tachyon achieves its transaction size reduction: instead of each validator independently verifying every transaction, the chain produces a single accumulated proof. A new node syncing to the chain tip verifies one proof instead of replaying history.',
+        'Switch to IVC (Incrementally Verifiable Computation) mode and the tree becomes a chain. This is closer to how Tachyon would actually operate: each Zcash block transition is a new computation step that folds into the running accumulator. Step 1 computes `f(x)` and produces a proof. Step 2 takes the proof from step 1, verifies it internally, computes its own `f(x)`, and produces a new proof attesting to both computations. At the end of a chain of 100 steps, the final proof is no larger than after 2 steps. This is how Tachyon achieves its transaction size reduction: instead of each validator independently verifying every transaction, the chain produces a single accumulated proof. A new node syncing to the chain tip verifies one proof instead of replaying history.',
       keyInsight:
         'Proof size stays constant regardless of chain length. A new node verifies one proof instead of replaying history.',
+      citations: ['halo-2019'],
       demo: {
         demoId: 'recursive',
         state: { mode: 'ivc', ivcLength: 8, showPasta: true, showProofSize: true, ivcFoldStep: 4 },
-        caption: 'Each fold absorbs the previous proof. The Pasta cycle applies here too, alternating Pallas and Vesta at each step',
+        caption: 'Each fold absorbs the previous proof. The Pasta cycle applies here too, alternating `Pallas` and `Vesta` at each step',
         interactionHints: [
           'Continue folding to see the chain grow while proof size stays constant',
-          'Notice Pallas/Vesta alternation at each fold step',
+          'Notice `Pallas`/`Vesta` alternation at each fold step',
         ],
       },
     },
@@ -90,16 +93,17 @@ export const raguWalkthrough: Walkthrough = {
       id: 'polynomial-commitments',
       title: 'Polynomial Commitments: What Ragu Actually Commits To',
       summary:
-        'Every SNARK encodes its computation as polynomials. Ragu\'s constraint system (the R1CS matrices that check transaction validity) gets compiled into a set of polynomials. The prover commits to these polynomials, and the verifier challenges the prover to open the commitment at random points. The flow: Commit (produce a short, binding representation of the polynomial), Challenge (the verifier picks a random evaluation point, in Ragu derived via Fiat-Shamir), Open (the prover evaluates and provides a quotient proof), Verify (the verifier checks consistency). The important distinction: Ragu uses IPA (Inner Product Arguments), not KZG. The interface is the same but KZG uses pairings and requires a trusted setup. IPA uses inner products and requires no trusted setup. The tradeoff is proof size: KZG gives constant-size proofs, IPA gives log-size proofs. Zcash\'s philosophy demands no trusted setup, so Ragu chose IPA.',
+        'Every SNARK encodes its computation as polynomials. Ragu\'s constraint system (the R1CS matrices that check transaction validity) gets compiled into a set of polynomials. The prover commits to these polynomials, and the verifier challenges the prover to open the commitment at random points. The flow: Commit (produce a short, binding representation of the polynomial), Challenge (the verifier picks a random evaluation point, in Ragu derived via Fiat-Shamir), Open (the prover evaluates and provides a quotient proof), Verify (the verifier checks consistency). The important distinction: Ragu uses IPA (Inner Product Arguments), not KZG. The interface is the same but KZG uses pairings and requires a trusted setup. IPA uses inner products and requires no trusted setup. The tradeoff is proof size: KZG gives `O(1)` proofs, IPA gives `O(log n)` proofs. Zcash\'s philosophy demands no trusted setup, so Ragu chose IPA.',
       keyInsight:
         'Ragu uses IPA, not KZG. Same commit/challenge/open/verify interface, but no trusted setup required.',
+      citations: ['halo-2019', 'bulletproofs-ipa'],
       demo: {
         demoId: 'polynomial',
         state: { mode: 'coefficients', coefficients: [5, 1, 1], kzgStep: 1 },
-        caption: 'The polynomial f(x) = x\u00B2 + x + 5. Step through the commit, challenge, open, verify flow',
+        caption: 'The polynomial `f(x) = x\u00B2 + x + 5`. Step through the commit, challenge, open, verify flow',
         interactionHints: [
           'Step through all 4 KZG phases to see the full commitment lifecycle',
-          'The polynomial encodes f(x) = x\u00B2 + x + 5, the same computation used in the Pipeline demo',
+          'The polynomial encodes `f(x) = x\u00B2 + x + 5`, the same computation used in the Pipeline demo',
         ],
       },
     },
@@ -107,15 +111,15 @@ export const raguWalkthrough: Walkthrough = {
       id: 'schwartz-zippel',
       title: 'Why One Random Point Is Enough',
       summary:
-        'Enable comparison mode and overlay a second polynomial. Count the intersections. Two different degree-d polynomials can agree on at most d points. This is the Schwartz-Zippel lemma, and it\'s why a single random evaluation point is enough to catch a cheating prover with overwhelming probability. If the prover committed to the wrong polynomial, the chance that the verifier\'s random challenge lands on one of the (at most d) agreeing points is negligible over a large field.',
+        'Enable comparison mode and overlay a second polynomial. Count the intersections. Two different degree-`d` polynomials can agree on at most `d` points. This is the Schwartz-Zippel lemma, and it\'s why a single random evaluation point is enough to catch a cheating prover with overwhelming probability. If the prover committed to the wrong polynomial, the chance that the verifier\'s random challenge lands on one of the (at most `d`) agreeing points is negligible over a large field.',
       keyInsight:
-        'Schwartz-Zippel lemma: two distinct degree-d polynomials agree on at most d points. One random check catches cheaters.',
+        'Schwartz-Zippel lemma: two distinct degree-`d` polynomials agree on at most `d` points. One random check catches cheaters.',
       demo: {
         demoId: 'polynomial',
         state: { mode: 'coefficients', coefficients: [0, 0, 1], compareEnabled: true, compareCoefficients: [-1, 2] },
-        caption: 'x\u00B2 vs 2x\u22121: two polynomials overlaid to show they intersect at most d times',
+        caption: '`x\u00B2` vs `2x\u22121`: two polynomials overlaid to show they intersect at most `d` times',
         interactionHints: [
-          'Count the intersection points, at most d for degree-d polynomials',
+          'Count the intersection points, at most `d` for degree-`d` polynomials',
           'Adjust coefficients to see how different polynomials can only agree at a few points',
         ],
       },
@@ -141,9 +145,10 @@ export const raguWalkthrough: Walkthrough = {
       id: 'fiat-shamir-broken',
       title: 'Fiat-Shamir: The Frozen Heart Vulnerability',
       summary:
-        'Switch to broken mode. The challenge is now derived as e = Hash(public_input). The commitment is omitted from the hash. The prover can compute the challenge before choosing their commitment, then work backward to craft a commitment that satisfies the verification equation. This is the Frozen Heart vulnerability class, disclosed by Trail of Bits in 2022, which affected multiple production ZK implementations. The fix is straightforward: include all prior messages in the hash. But the bug is subtle because the proof still "looks" valid. The verification equation checks out, the soundness guarantee is just gone. Ragu\'s implementation is careful about transcript composition for exactly this reason.',
+        'Switch to broken mode. The challenge is now derived as `e = Hash(public_input)`. The commitment is omitted from the hash. The prover can compute the challenge before choosing their commitment, then work backward to craft a commitment that satisfies the verification equation. This is the Frozen Heart vulnerability class, disclosed by Trail of Bits in 2022, which affected multiple production ZK implementations. The fix is straightforward: include all prior messages in the hash. But the bug is subtle because the proof still "looks" valid. The verification equation checks out, the soundness guarantee is just gone. Ragu\'s implementation is careful about transcript composition for exactly this reason.',
       keyInsight:
         'Frozen Heart (Trail of Bits, 2022): omitting the commitment from the hash lets attackers forge proofs that pass verification.',
+      citations: ['frozen-heart'],
       demo: {
         demoId: 'fiat-shamir',
         state: { mode: 'fs-broken', secret: 9, nonce: 12, verifierSeed: 17, forgeryComplete: true },
@@ -161,10 +166,11 @@ export const raguWalkthrough: Walkthrough = {
         'Every Zcash transaction ultimately compiles down to R1CS (Rank-1 Constraint System) constraints. "I know a secret key that opens this note, and the note value plus fee equals the output" becomes equations over a finite field. The diagram shows these constraints as a circuit with wires. Each wire carries a value. Each constraint checks a relationship between wires. If all constraints are satisfied, the witness is valid. Toggle exploit mode to see the bug that costs billions: a 2024 analysis of 141 SNARK vulnerabilities found ~96% were caused by underconstrained circuits. Remove a constraint and the intermediate wire becomes unconstrained. The prover can set it to anything. This is the Zcash Sapling counterfeiting bug (2018) in miniature. Ragu\'s PCD framework provides a clean separation between the constraint layer (where bugs live) and the proof composition layer (sound by construction), making auditing more tractable.',
       keyInsight:
         '~96% of SNARK vulnerabilities are underconstrained circuits. Ragu separates the constraint layer from the recursion layer to make auditing tractable.',
+      citations: ['snark-vuln-study', 'sapling-bug'],
       demo: {
         demoId: 'circuit',
         state: { x: 7, broken: false },
-        caption: 'R1CS constraints for f(x) = x\u00B2 + x + 5. Toggle exploit mode to see an underconstrained failure',
+        caption: 'R1CS constraints for `f(x) = x\u00B2 + x + 5`. Toggle exploit mode to see an underconstrained failure',
         interactionHints: [
           'Toggle the exploit to remove a constraint and see how the prover can cheat',
           'This mirrors the Zcash Sapling counterfeiting bug pattern',
@@ -175,9 +181,10 @@ export const raguWalkthrough: Walkthrough = {
       id: 'merkle-tree',
       title: 'The Note Commitment Tree: Zcash\'s Merkle Heart',
       summary:
-        'Zcash uses a Merkle tree to commit to shielded notes. Each note (your ZEC, encrypted) is a leaf. The Merkle root is posted onchain. When you spend a note, you prove it\'s in the tree by revealing the sibling hashes along the path from your leaf to the root. You never reveal which leaf is yours. Click a leaf to generate its inclusion proof. The highlighted path from leaf to root is exactly the data a Zcash spender would provide. Edit a leaf and watch the cascade: only the hashes on the path to the root change, while every sibling branch is untouched. This is why Merkle trees are O(log n) for updates. Tachyon proposes upgrading the hash function from Pedersen to Poseidon. Poseidon is algebraically simpler, generating fewer constraints when verified inside Ragu\'s circuits. This matters because Tachyon\'s shielded protocol requires Merkle proof verification inside recursive circuits. Every constraint saved compounds across the entire recursion stack.',
+        'Zcash uses a Merkle tree to commit to shielded notes. Each note (your ZEC, encrypted) is a leaf. The Merkle root is posted onchain. When you spend a note, you prove it\'s in the tree by revealing the sibling hashes along the path from your leaf to the root. You never reveal which leaf is yours. Click a leaf to generate its inclusion proof. The highlighted path from leaf to root is exactly the data a Zcash spender would provide. Edit a leaf and watch the cascade: only the hashes on the path to the root change, while every sibling branch is untouched. This is why Merkle trees are `O(log n)` for updates. Tachyon proposes upgrading the hash function from Pedersen to Poseidon. Poseidon is algebraically simpler, generating fewer constraints when verified inside Ragu\'s circuits. This matters because Tachyon\'s shielded protocol requires Merkle proof verification inside recursive circuits. Every constraint saved compounds across the entire recursion stack.',
       keyInsight:
         'Tachyon upgrades from Pedersen to Poseidon hashing. Fewer constraints per hash compounds across the full recursion stack.',
+      citations: ['poseidon-hash', 'tachyon-proposal'],
       demo: {
         demoId: 'merkle',
         state: {
@@ -198,7 +205,7 @@ export const raguWalkthrough: Walkthrough = {
       id: 'proof-pipeline',
       title: 'The Proof Pipeline as a Tachyon Transaction',
       summary:
-        'Each stage maps to a simplified Tachyon transaction: (1) Witness, the sender knows their secret key, note value, and randomness; (2) Constraints, the circuit checks value_in = value_out + fee and that the note commitment is in the Merkle tree; (3) Polynomial, the constraint system is encoded as polynomials for Ragu\'s IPA; (4) Commit, the prover commits over the Pasta curve, no trusted setup; (5) Challenge, Fiat-Shamir hashes the entire transcript; (6) Open, the prover reveals the evaluation and quotient proof; (7) Verify, a Zcash node checks this in milliseconds. With Tachyon, this proof is itself folded into the next recursive step, becoming input to the next IVC iteration. This is where the 100x size reduction comes from: one accumulated proof replaces thousands of individual verifications.',
+        'Each stage maps to a simplified Tachyon transaction: (1) Witness, the sender knows their secret key, note value, and randomness; (2) Constraints, the circuit checks `value_in = value_out + fee` and that the note commitment is in the Merkle tree; (3) Polynomial, the constraint system is encoded as polynomials for Ragu\'s IPA; (4) Commit, the prover commits over the Pasta curve, no trusted setup; (5) Challenge, Fiat-Shamir hashes the entire transcript; (6) Open, the prover reveals the evaluation and quotient proof; (7) Verify, a Zcash node checks this in milliseconds. With Tachyon, this proof is itself folded into the next recursive step, becoming input to the next IVC iteration. This is where the 100x size reduction comes from: one accumulated proof replaces thousands of individual verifications.',
       keyInsight:
         'Each verified proof folds into the next IVC iteration. One accumulated proof replaces thousands of individual verifications.',
       demo: {
@@ -235,6 +242,72 @@ export const raguWalkthrough: Walkthrough = {
         'Tachyon\'s roadmap is deliberately modular: Ragu (proof system), payment protocol (PIR + post-quantum delivery), shielded protocol (new pool with simplified keys), and mainnet activation (after community consensus and ZIP approval). Each layer can be developed, optimized, and audited independently. Ragu is still under construction and will go through several rounds of optimization and external auditing before deployment. But the architecture is concrete enough to visualize, and visualization is how we build community understanding before code review begins. As Ragu moves through its optimization and audit cycles, these visualizations will evolve alongside the implementation. Living documentation that stays current as the architecture matures.',
       keyInsight:
         'Visualization builds community understanding before code review begins. Living documentation that evolves with the implementation.',
+    },
+  ],
+  references: [
+    {
+      id: 'halo-2019',
+      authors: 'Sean Bowe, Jack Grigg, Daira Hopwood',
+      title: 'Recursive Proof Composition without a Trusted Setup',
+      year: 2019,
+      url: 'https://eprint.iacr.org/2019/1021',
+      note: 'The original Halo paper. Ragu\'s PCD construction closely follows this design.',
+    },
+    {
+      id: 'pasta-curves',
+      authors: 'Daira Hopwood, Sean Bowe',
+      title: 'The Pasta Curves for Halo 2 and Beyond',
+      year: 2020,
+      url: 'https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/',
+      note: 'Specification of the Pallas/Vesta curve cycle used by Ragu.',
+    },
+    {
+      id: 'tachyon-proposal',
+      authors: 'Sean Bowe',
+      title: 'Tachyon: Cross-Chain Proof-Carrying Data for Zcash',
+      year: 2024,
+      url: 'https://forum.zcashcommunity.com/t/tachyon-cross-chain-proof-carrying-data-for-zcash/48832',
+      note: 'The Tachyon scalability proposal introducing Ragu as the proof engine.',
+    },
+    {
+      id: 'frozen-heart',
+      authors: 'Jim Miller, Trail of Bits',
+      title: 'Coordinated disclosure of vulnerabilities affecting Girault, Bulletproofs, and PlonK',
+      year: 2022,
+      url: 'https://blog.trailofbits.com/2022/04/13/part-1-coordinated-disclosure-of-vulnerabilities-affecting-girault-bulletproofs-and-plonk/',
+      note: 'The Frozen Heart vulnerability class: omitting commitments from Fiat-Shamir transcripts.',
+    },
+    {
+      id: 'snark-vuln-study',
+      authors: 'Youssef El Housni, Gautam Botrel',
+      title: 'Common ZK SNARK Vulnerabilities and How to Avoid Them',
+      year: 2024,
+      url: 'https://www.zksecurity.xyz/blog/posts/common-zksnark-vulnerabilities/',
+      note: 'Analysis showing ~96% of SNARK vulnerabilities stem from underconstrained circuits.',
+    },
+    {
+      id: 'sapling-bug',
+      authors: 'Electric Coin Company',
+      title: 'Zcash Counterfeiting Vulnerability Successfully Remediated',
+      year: 2019,
+      url: 'https://electriccoin.co/blog/zcash-counterfeiting-vulnerability-successfully-remediated/',
+      note: 'Disclosure of the Sapling circuit counterfeiting bug (discovered 2018, patched in Sapling activation).',
+    },
+    {
+      id: 'poseidon-hash',
+      authors: 'Lorenzo Grassi, Dmitry Khovratovich, Christian Rechberger, Arnab Roy, Markus Schofnegger',
+      title: 'Poseidon: A New Hash Function for Zero-Knowledge Proof Systems',
+      year: 2021,
+      url: 'https://eprint.iacr.org/2019/458',
+      note: 'The SNARK-friendly hash function Tachyon proposes as a replacement for Pedersen hashing.',
+    },
+    {
+      id: 'bulletproofs-ipa',
+      authors: 'Benedikt B\u00FCnz, Jonathan Bootle, Dan Boneh, Andrew Poelstra, Pieter Wuille, Greg Maxwell',
+      title: 'Bulletproofs: Short Proofs for Confidential Transactions and More',
+      year: 2018,
+      url: 'https://eprint.iacr.org/2017/1066',
+      note: 'Introduces the Inner Product Argument (IPA) commitment scheme that Ragu uses instead of KZG.',
     },
   ],
   generatedBy: 'curated',

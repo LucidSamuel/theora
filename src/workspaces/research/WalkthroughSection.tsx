@@ -1,12 +1,24 @@
 import type { WalkthroughSection as SectionType } from './types';
+import type { WalkthroughReference } from './types';
 import { InlineDemo } from './InlineDemo';
+import { formatInlineCode } from './formatText';
 
 interface WalkthroughSectionProps {
   section: SectionType;
   index: number;
+  references?: WalkthroughReference[];
 }
 
-export function WalkthroughSection({ section, index }: WalkthroughSectionProps) {
+export function WalkthroughSection({ section, index, references }: WalkthroughSectionProps) {
+  const cited = section.citations?.length
+    ? section.citations
+        .map((id) => {
+          const refIdx = references?.findIndex((r) => r.id === id) ?? -1;
+          return refIdx >= 0 ? { idx: refIdx, ref: references![refIdx] } : null;
+        })
+        .filter(Boolean) as { idx: number; ref: WalkthroughReference }[]
+    : null;
+
   return (
     <section
       id={`section-${section.id}`}
@@ -52,7 +64,7 @@ export function WalkthroughSection({ section, index }: WalkthroughSectionProps) 
           margin: '0 0 12px',
         }}
       >
-        {section.summary}
+        {formatInlineCode(section.summary)}
       </p>
 
       {/* Key insight */}
@@ -70,7 +82,32 @@ export function WalkthroughSection({ section, index }: WalkthroughSectionProps) 
             fontStyle: 'italic',
           }}
         >
-          {section.keyInsight}
+          {formatInlineCode(section.keyInsight)}
+        </div>
+      )}
+
+      {/* Section citations */}
+      {cited && cited.length > 0 && (
+        <div
+          style={{
+            fontSize: 12,
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-mono)',
+            marginBottom: 16,
+            lineHeight: 1.6,
+          }}
+        >
+          {cited.map(({ idx, ref }, i) => (
+            <span key={ref.id}>
+              {i > 0 && ', '}
+              <a
+                href={`#ref-${ref.id}`}
+                style={{ color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: 2 }}
+              >
+                [{idx + 1}]
+              </a>
+            </span>
+          ))}
         </div>
       )}
 

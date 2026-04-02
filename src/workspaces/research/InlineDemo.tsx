@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { WalkthroughDemo } from './types';
 import { buildWalkthroughDemoUrl } from './urls';
+import { formatInlineCode } from './formatText';
 
 interface InlineDemoProps {
   demo: WalkthroughDemo;
@@ -97,7 +98,7 @@ export function InlineDemo({ demo, height = 500 }: InlineDemoProps) {
             fontStyle: 'italic',
           }}
         >
-          {demo.caption}
+          {formatInlineCode(demo.caption)}
         </p>
       )}
 
@@ -125,7 +126,7 @@ export function InlineDemo({ demo, height = 500 }: InlineDemoProps) {
                   marginBottom: 4,
                 }}
               >
-                {hint}
+                {formatInlineCode(hint)}
               </li>
             ))}
           </ul>

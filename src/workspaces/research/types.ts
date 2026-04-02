@@ -1,5 +1,14 @@
 import type { DemoId } from '@/types';
 
+export interface WalkthroughReference {
+  id: string;
+  title: string;
+  authors?: string;
+  year?: number;
+  url?: string;
+  note?: string;
+}
+
 export interface Walkthrough {
   id: string;
   paper: {
@@ -11,6 +20,7 @@ export interface Walkthrough {
     abstractSummary: string;
   };
   sections: WalkthroughSection[];
+  references?: WalkthroughReference[];
   generatedBy: 'curated' | 'ai';
   generatedAt?: string;
 }
@@ -21,6 +31,7 @@ export interface WalkthroughSection {
   title: string;
   summary: string;
   keyInsight?: string;
+  citations?: string[];
   demo?: WalkthroughDemo;
 }
 
