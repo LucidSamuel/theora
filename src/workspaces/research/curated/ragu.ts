@@ -1,11 +1,11 @@
 import type { Walkthrough } from '../types';
 
 export const raguWalkthrough: Walkthrough = {
-  id: 'ragu-2025',
+  id: 'ragu-2026',
   paper: {
     title: 'How Ragu Composes Proofs',
     authors: 'LucidSamuel',
-    year: 2025,
+    year: 2026,
     abstractSummary:
       'Using interactive diagrams to explain the proof-carrying data framework behind Zcash\'s proposed Tachyon upgrade. Walk through Ragu\'s architecture from the Pasta curve cycle to the full proof pipeline with animated, clickable diagrams instead of static figures.',
   },

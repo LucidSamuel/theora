@@ -180,7 +180,7 @@ describe('curated research state schema', () => {
     const noTrustedSetup = halo.sections.find((section) => section.id === 'no-trusted-setup')!.demo!;
     const groth16 = getCuratedWalkthrough('groth16-2016')!;
     const trustedSetup = groth16.sections.find((section) => section.id === 'trusted-setup')!.demo!;
-    const ragu = getCuratedWalkthrough('ragu-2025')!;
+    const ragu = getCuratedWalkthrough('ragu-2026')!;
     const pipeline = ragu.sections.find((section) => section.id === 'proof-pipeline')!.demo!;
 
     expect(accumulation.state).toMatchObject({ ivcLength: 8 });
