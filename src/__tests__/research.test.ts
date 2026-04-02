@@ -68,8 +68,8 @@ describe('curated walkthroughs', () => {
     expect(getCuratedWalkthrough('nonexistent')).toBeNull();
   });
 
-  it('has 5 curated walkthroughs', () => {
-    expect(CURATED_WALKTHROUGHS.length).toBe(5);
+  it('has 4 curated walkthroughs', () => {
+    expect(CURATED_WALKTHROUGHS.length).toBe(4);
   });
 
   it('each walkthrough has at least one section with a demo', () => {
