@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
+import { ApiKeyModal } from '@/components/shared/ApiKeyModal';
 import { CURATED_WALKTHROUGHS, getCuratedWalkthrough } from './curated';
 import { ResearchHero } from './ResearchHero';
 import { WalkthroughGallery } from './WalkthroughGallery';
@@ -63,6 +64,8 @@ export function ResearchPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
+
   return (
     <div className="research-page">
       {/* Header */}
@@ -76,6 +79,24 @@ export function ResearchPage() {
           <a href="/app" className="research-header__link">
             Back to Demos
           </a>
+          <button
+            onClick={() => setApiKeyOpen(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px 8px',
+              color: 'var(--text-muted)',
+              fontSize: 14,
+            }}
+            aria-label="API key settings"
+            title="API key settings"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.05 3.05l.7.7M10.25 10.25l.7.7M10.95 3.05l-.7.7M3.75 10.25l-.7.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
           <button
             onClick={toggle}
             style={{
@@ -92,6 +113,7 @@ export function ResearchPage() {
           </button>
         </div>
       </header>
+      <ApiKeyModal isOpen={apiKeyOpen} onClose={() => setApiKeyOpen(false)} />
 
       {/* Content */}
       {activeWalkthrough ? (

@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { ApiKeyStore } from '@/modes/predict/ai/apiKeyStore';
+import { ApiKeyModal } from '@/components/shared/ApiKeyModal';
 import { analyzePaper, fileToBase64 } from './paperAnalyzer';
 import type { Walkthrough } from './types';
 import { isPdfResponse, normalizePaperPdfUrl } from './urls';
@@ -16,7 +17,8 @@ const PROGRESS_MESSAGES = [
 ];
 
 export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
-  const [apiKey, setApiKey] = useState(ApiKeyStore.get() ?? '');
+  const [hasKey, setHasKey] = useState(() => ApiKeyStore.has());
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [eprintUrl, setEprintUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,10 +27,14 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressInterval = useRef<ReturnType<typeof setInterval>>();
 
+  // Stay in sync when key is changed from the header modal or elsewhere
+  useEffect(() => {
+    return ApiKeyStore.subscribe(() => setHasKey(ApiKeyStore.has()));
+  }, []);
+
   const handleAnalyze = useCallback(async () => {
-    const key = apiKey.trim();
-    if (!key) { setError('API key is required'); return; }
-    if (!ApiKeyStore.validate(key)) { setError('Invalid API key format'); return; }
+    const key = ApiKeyStore.get();
+    if (!key) { setError('API key is required — click "Add API Key" above'); return; }
     if (!file && !eprintUrl.trim()) { setError('Upload a PDF or enter an eprint URL'); return; }
 
     setLoading(true);
@@ -77,9 +83,6 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
         }
       }
 
-      // Store the key (in-memory by default)
-      ApiKeyStore.set(key);
-
       const result = await analyzePaper(base64, key);
       if (result.error) {
         setError(result.error);
@@ -92,7 +95,7 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
       setLoading(false);
       clearInterval(progressInterval.current);
     }
-  }, [apiKey, file, eprintUrl, onWalkthroughGenerated]);
+  }, [file, eprintUrl, onWalkthroughGenerated]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -199,42 +202,82 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
         />
       </div>
 
-      {/* API key */}
+      {/* API key status */}
       <div style={{ marginBottom: 20 }}>
-        <label
+        <div
           style={{
             fontSize: 12,
             color: 'var(--text-secondary)',
             display: 'block',
-            marginBottom: 6,
+            marginBottom: 8,
           }}
         >
           Anthropic API key
-        </label>
-        <input
-          type="password"
-          placeholder="sk-ant-..."
-          value={apiKey}
-          onChange={(e) => { setApiKey(e.target.value); setError(null); }}
-          autoComplete="off"
-          style={{
-            width: '100%',
-            height: 38,
-            padding: '0 14px',
-            borderRadius: 8,
-            border: '1px solid var(--border)',
-            background: 'var(--bg-primary)',
-            color: 'var(--text-primary)',
-            fontSize: 13,
-            fontFamily: 'var(--font-mono)',
-            boxSizing: 'border-box',
-          }}
-        />
+        </div>
+        {hasKey ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-secondary)',
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--status-success)',
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: 12, color: 'var(--text-primary)', flex: 1 }}>
+              Connected
+            </span>
+            <button
+              onClick={() => setApiKeyOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                fontSize: 11,
+                color: 'var(--text-muted)',
+                textDecoration: 'underline',
+                textUnderlineOffset: 2,
+              }}
+            >
+              Manage
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setApiKeyOpen(true)}
+            style={{
+              width: '100%',
+              height: 38,
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--button-bg)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontFamily: 'var(--font-display)',
+              fontWeight: 500,
+            }}
+          >
+            Add API Key
+          </button>
+        )}
         <div
           style={{
             fontSize: 11,
             color: 'var(--text-muted)',
-            marginTop: 4,
+            marginTop: 6,
             lineHeight: 1.4,
           }}
         >
@@ -298,6 +341,11 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           {error}
         </div>
       )}
+
+      <ApiKeyModal
+        isOpen={apiKeyOpen}
+        onClose={() => setApiKeyOpen(false)}
+      />
     </section>
   );
 }

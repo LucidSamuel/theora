@@ -29,6 +29,12 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
   }, [isOpen]);
 
   const handleSave = () => {
+    // If key field is empty but we already have a key, just save the preference change
+    if (!key && hasKey) {
+      ApiKeyStore.setPreference(pref);
+      onClose();
+      return;
+    }
     if (!ApiKeyStore.validate(key)) {
       setError('Invalid key format. Anthropic API keys start with sk-ant-');
       return;
@@ -232,15 +238,15 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={handleSave}
-            disabled={!key}
+            disabled={!key && !hasKey}
             style={{
               flex: 1,
               height: 38,
               borderRadius: 8,
               border: 'none',
-              background: key ? 'var(--text-primary)' : 'var(--border)',
-              color: key ? 'var(--bg-primary)' : 'var(--text-muted)',
-              cursor: key ? 'pointer' : 'not-allowed',
+              background: (key || hasKey) ? 'var(--text-primary)' : 'var(--border)',
+              color: (key || hasKey) ? 'var(--bg-primary)' : 'var(--text-muted)',
+              cursor: (key || hasKey) ? 'pointer' : 'not-allowed',
               fontSize: 12,
               fontFamily: 'var(--font-display)',
               fontWeight: 600,

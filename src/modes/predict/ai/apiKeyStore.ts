@@ -6,6 +6,11 @@ const PREF_KEY = 'theora:ai:storage-pref';
 
 let memoryKey: string | null = null;
 
+// Simple same-tab change notification
+type Listener = () => void;
+const listeners = new Set<Listener>();
+function notify() { listeners.forEach((fn) => fn()); }
+
 function tryGet(storage: Storage | undefined, key: string): string | null {
   try { return storage?.getItem(key) ?? null; } catch { return null; }
 }
@@ -57,12 +62,14 @@ export const ApiKeyStore = {
         trySet(getSessionStorage(), SESSION_KEY, key);
         break;
     }
+    notify();
   },
 
   clear(): void {
     memoryKey = null;
     tryRemove(getSessionStorage(), SESSION_KEY);
     tryRemove(getLocalStorage(), LOCAL_KEY);
+    notify();
   },
 
   has(): boolean {
@@ -100,5 +107,11 @@ export const ApiKeyStore = {
   /** Validates that a string looks like a valid Anthropic API key format. */
   validate(key: string): boolean {
     return /^sk-ant-[a-zA-Z0-9_-]{40,}$/.test(key.trim());
+  },
+
+  /** Subscribe to key set/clear events. Returns an unsubscribe function. */
+  subscribe(fn: () => void): () => void {
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
   },
 };

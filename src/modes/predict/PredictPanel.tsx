@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePredict } from './PredictProvider';
 import { useMode } from '@/modes/ModeProvider';
 import { hasPredictChallenges } from './challenges';
@@ -18,6 +18,11 @@ export function PredictPanel({ activeDemo }: { activeDemo: DemoId }) {
   const { challenge, phase, selectedIndex, correct } = state;
   const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(() => aiEnabled || ApiKeyStore.has());
+
+  // Stay in sync when the key is changed from the header modal or elsewhere
+  useEffect(() => {
+    return ApiKeyStore.subscribe(() => setHasApiKey(ApiKeyStore.has()));
+  }, []);
 
   if (!hasPredictChallenges(activeDemo)) {
     return <NoChallengePanel />;
