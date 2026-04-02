@@ -14,7 +14,7 @@ export const raguWalkthrough: Walkthrough = {
       id: 'intro',
       title: 'Why Interactive Diagrams',
       summary:
-        'There\'s a recurring problem when you try to explain how Ragu works. You draw some boxes on a whiteboard, label them "Pallas" and "Vesta," draw arrows between them, and then spend twenty minutes trying to convey what "each proof verifies the previous proof" actually means in practice. This walkthrough uses Theora\'s interactive demos to walk through Ragu\'s architecture with animated, clickable diagrams instead of static figures. Every diagram links to a live interactive version. Click any of them and you can manipulate the state yourself.',
+        'There\'s a recurring problem when you try to explain most cryptographic primitives. You draw some boxes on a whiteboard, label them "Pallas" and "Vesta," draw arrows between them, and then spend twenty minutes trying to convey what "each proof verifies the previous proof" actually means in practice. This walkthrough uses Theora\'s interactive demos to walk through Ragu\'s architecture with animated, clickable diagrams instead of static figures. Every diagram links to a live interactive version. Click any of them and you can manipulate the state yourself.',
     },
     {
       id: 'tachyon',
@@ -51,8 +51,18 @@ export const raguWalkthrough: Walkthrough = {
         'A bad transaction invalidates its branch, not the whole block. Sibling branches remain valid.',
       demo: {
         demoId: 'recursive',
-        state: { mode: 'tree', depth: 3, showPasta: true, showProofSize: true, badProofNode: 'node_3_5', autoplay: true },
-        caption: 'A bad proof at a leaf invalidates only its branch. Watch failure propagate upward while siblings stay green',
+        state: {
+          mode: 'tree', depth: 3, showPasta: true, showProofSize: true,
+          badProofNode: 'node_3_5',
+          verifiedNodes: [
+            'node_3_0', 'node_3_1', 'node_3_2', 'node_3_3',
+            'node_3_4', 'node_3_6', 'node_3_7',
+            'node_2_0', 'node_2_1', 'node_2_3',
+            'node_1_0',
+          ],
+          failedNodes: ['node_3_5', 'node_2_2', 'node_1_1', 'node_0_0'],
+        },
+        caption: 'A bad proof at a leaf invalidates only its branch. Sibling branches stay green',
         interactionHints: [
           'Watch the failure propagate from leaf to root',
           'Notice sibling branches remain fully valid',
