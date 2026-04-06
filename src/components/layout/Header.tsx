@@ -389,9 +389,13 @@ export function Header({ activeDemo, theme, onToggleTheme, onToggleInfo, onOpenI
           </svg>
         </HeaderBtn>
         <HeaderBtn onClick={() => setApiKeyOpen(true)} label="API key settings">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.2"/>
-            <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.05 3.05l.7.7M10.25 10.25l.7.7M10.95 3.05l-.7.7M3.75 10.25l-.7.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 8V4H8"/>
+            <rect x="8" y="8" width="8" height="12" rx="2"/>
+            <circle cx="10" cy="13" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="14" cy="13" r="1" fill="currentColor" stroke="none"/>
+            <path d="M9 17h2"/>
+            <path d="M13 17h2"/>
           </svg>
         </HeaderBtn>
         <HeaderBtn onClick={onToggleTheme} label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
