@@ -232,6 +232,7 @@ export function LookupDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-lookup.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     if (view === 'multiset') {
       const payload = {

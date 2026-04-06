@@ -20,6 +20,7 @@ import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { exportCanvasPng } from '@/lib/canvas';
+import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
 import {
   decodeState,
   decodeStatePlain,
@@ -206,6 +207,7 @@ export function SplitAccumulationDemo() {
   const interaction = useCanvasInteraction();
   const mergedHandlers = useMemo(() => mergeCanvasHandlers(interaction, camera), [interaction, camera]);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const gifRecorderRef = useRef<GifRecorder | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -280,6 +282,14 @@ export function SplitAccumulationDemo() {
     }
   }, [state.currentStep, state.numSteps, state.autoPlaying, state.settlement]);
 
+  // Stop GIF recording when auto-play ends
+  useEffect(() => {
+    if (!state.autoPlaying && gifRecorderRef.current) {
+      gifRecorderRef.current.stop();
+      gifRecorderRef.current = null;
+    }
+  }, [state.autoPlaying]);
+
   // -- Fit to view --
   const fitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
@@ -334,6 +344,20 @@ export function SplitAccumulationDemo() {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     exportCanvasPng(canvas, camera, fitToView, 'theora-split-accumulation.png', showDownloadToast);
+  }, [camera, fitToView]);
+
+  const handleExportGif = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    dispatch({ type: 'RESET' });
+    gifRecorderRef.current = startGifRecording({
+      canvas,
+      camera,
+      fitToView,
+      filename: 'theora-split-accumulation.gif',
+      onDone: () => showDownloadToast('theora-split-accumulation.gif'),
+    });
+    dispatch({ type: 'SET_AUTO', autoPlaying: true });
   }, [camera, fitToView]);
 
   const handleExportJson = useCallback(() => {
@@ -450,6 +474,7 @@ export function SplitAccumulationDemo() {
           onCopyHashUrl={handleCopyHash}
           onCopyEmbed={handleOpenEmbed}
           onExportPng={handleExportPng}
+          onExportGif={handleExportGif}
           onCopyAudit={handleExportJson}
         />
       </DemoSidebar>

@@ -9,10 +9,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "postinstall": "cp node_modules/gif.js/dist/gif.worker.js public/gif.worker.js",
     "verify:mcp": "npm --prefix mcp-server run verify",
     "verify": "npm test && npm run build && npm run verify:mcp"
   },
   "dependencies": {
+    "gif.js": "^0.2.0",
     "lucide-react": "^0.563.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

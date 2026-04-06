@@ -406,6 +406,7 @@ export function NovaDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-nova.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
+
   const handleCopyAuditSummary = useCallback(() => {
     const payload = {
       demo: 'nova',

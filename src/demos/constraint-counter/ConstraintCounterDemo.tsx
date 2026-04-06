@@ -167,6 +167,7 @@ export function ConstraintCounterDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-constraint-counter.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
+
   const handleAuditJson = useCallback(() => {
     copyToClipboard(JSON.stringify({
       demo: 'constraint-counter',

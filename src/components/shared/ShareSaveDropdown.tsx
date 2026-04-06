@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Hash, Code, Image, FileJson, Github } from 'lucide-react';
+import { Link, Hash, Code, Image, Film, FileJson, Github } from 'lucide-react';
 import { useGitHub } from '@/hooks/useGitHub';
 import { createGitHubSave, GitHubSessionError } from '@/lib/githubApi';
 import { getCurrentExportEnvelope } from '@/lib/githubImport';
@@ -13,6 +13,7 @@ interface ShareSaveDropdownProps {
   onCopyHashUrl: () => void;
   onCopyEmbed: () => void;
   onExportPng: () => void;
+  onExportGif?: () => void;
   onCopyAudit?: () => void;
 }
 
@@ -69,6 +70,7 @@ export function ShareSaveDropdown({
   onCopyHashUrl,
   onCopyEmbed,
   onExportPng,
+  onExportGif,
   onCopyAudit,
 }: ShareSaveDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -193,6 +195,13 @@ export function ShareSaveDropdown({
               label="Export PNG"
               onClick={wrap(onExportPng)}
             />
+            {onExportGif && (
+              <ActionRow
+                icon={<Film size={14} />}
+                label="Export GIF"
+                onClick={wrap(onExportGif)}
+              />
+            )}
             {onCopyAudit && (
               <ActionRow
                 icon={<FileJson size={14} />}

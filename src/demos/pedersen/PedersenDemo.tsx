@@ -187,6 +187,7 @@ export function PedersenDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-pedersen.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'pedersen',

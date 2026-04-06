@@ -369,6 +369,7 @@ export function FRIDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-fri.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const layers = state.commitPhase?.layers.map((l, i) => ({
       layer: i,

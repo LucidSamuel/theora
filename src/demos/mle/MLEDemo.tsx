@@ -367,6 +367,7 @@ export function MLEDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-mle.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'mle',

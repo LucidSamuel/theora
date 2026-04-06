@@ -34,6 +34,7 @@ import { renderProofTree, renderIvcChain } from './renderer';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { exportCanvasPng } from '@/lib/canvas';
+import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
 import { EmbedModal } from '@/components/shared/EmbedModal';
 import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 
@@ -257,6 +258,7 @@ export function RecursiveDemo(): JSX.Element {
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const gifRecorderRef = useRef<GifRecorder | null>(null);
   const followCamera = useFollowCamera(camera);
   const [followEnabled, setFollowEnabled] = useState(true);
   const [treeLens, setTreeLens] = useState<'verify' | 'fuse'>('verify');
@@ -301,6 +303,14 @@ export function RecursiveDemo(): JSX.Element {
 
     return () => clearInterval(interval);
   }, [state.verification.isRunning, state.verification.speed, state.mode]);
+
+  // Stop GIF recording when verification ends
+  useEffect(() => {
+    if (!state.verification.isRunning && gifRecorderRef.current) {
+      gifRecorderRef.current.stop();
+      gifRecorderRef.current = null;
+    }
+  }, [state.verification.isRunning]);
 
   // Activate follow camera when auto-verify starts
   useEffect(() => {
@@ -760,6 +770,20 @@ export function RecursiveDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, fitToView, 'theora-recursive.png', showDownloadToast);
   };
 
+  const handleExportGif = () => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    dispatch({ type: 'BUILD_TREE' });
+    gifRecorderRef.current = startGifRecording({
+      canvas,
+      camera,
+      fitToView,
+      filename: 'theora-recursive.gif',
+      onDone: () => showDownloadToast('theora-recursive.gif'),
+    });
+    setTimeout(() => dispatch({ type: 'SET_VERIFICATION', isRunning: true }), 50);
+  };
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'recursive',
@@ -1000,6 +1024,7 @@ export function RecursiveDemo(): JSX.Element {
           onCopyHashUrl={handleCopyHashUrl}
           onCopyEmbed={handleCopyEmbed}
           onExportPng={handleExportPng}
+          onExportGif={handleExportGif}
           onCopyAudit={handleCopyAuditSummary}
         />
 

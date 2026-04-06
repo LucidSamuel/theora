@@ -237,6 +237,7 @@ export function Groth16Demo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-groth16.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
+
   const handleCopyAuditSummary = useCallback(() => {
     const payload = {
       demo: 'groth16',

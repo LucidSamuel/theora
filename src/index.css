@@ -666,7 +666,6 @@ body::before {
   width: 100%;
   aspect-ratio: 16 / 10;
   border: none;
-  pointer-events: none;
 }
 
 .lp-teaser-shimmer {

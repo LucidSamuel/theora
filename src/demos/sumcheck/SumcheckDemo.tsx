@@ -360,6 +360,7 @@ export function SumcheckDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-sumcheck.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const poly = createPolynomial(state.numVariables, state.fieldSize, state.values);
     const oracleValue = state.rounds.length === state.numVariables

@@ -675,6 +675,7 @@ export function AccumulatorDemo() {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-accumulator.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'accumulator',

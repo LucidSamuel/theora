@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
 import { copyToClipboard } from '@/lib/clipboard';
 import { exportCanvasPng } from '@/lib/canvas';
+import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
 import { fitCameraToBounds } from '@/lib/cameraFit';
 import { showDownloadToast, showToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -39,6 +40,7 @@ export function ObliviousSyncDemo(): JSX.Element {
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const gifRecorderRef = useRef<GifRecorder | null>(null);
 
   useEffect(() => {
     const hashState = getHashState();
@@ -79,6 +81,14 @@ export function ObliviousSyncDemo(): JSX.Element {
     const timeout = window.setTimeout(() => setRound((value) => Math.min(4, value + 1)), 900);
     return () => window.clearTimeout(timeout);
   }, [autoplay, round]);
+
+  // Stop GIF recording when autoplay ends
+  useEffect(() => {
+    if (!autoplay && gifRecorderRef.current) {
+      gifRecorderRef.current.stop();
+      gifRecorderRef.current = null;
+    }
+  }, [autoplay]);
 
   useEffect(() => {
     setEntry('oblivious-sync', {
@@ -124,6 +134,20 @@ export function ObliviousSyncDemo(): JSX.Element {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-oblivious-sync.png', showDownloadToast);
+  }, [camera, handleFitToView]);
+
+  const handleExportGif = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    setRound(0);
+    gifRecorderRef.current = startGifRecording({
+      canvas,
+      camera,
+      fitToView: handleFitToView,
+      filename: 'theora-oblivious-sync.gif',
+      onDone: () => showDownloadToast('theora-oblivious-sync.gif'),
+    });
+    setAutoplay(true);
   }, [camera, handleFitToView]);
 
   const handleAuditJson = useCallback(() => {
@@ -176,6 +200,7 @@ export function ObliviousSyncDemo(): JSX.Element {
           onCopyHashUrl={handleCopyHashUrl}
           onCopyEmbed={handleCopyEmbed}
           onExportPng={handleExportPng}
+          onExportGif={handleExportGif}
           onCopyAudit={handleAuditJson}
         />
       </DemoSidebar>

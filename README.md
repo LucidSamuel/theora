@@ -38,7 +38,7 @@ Interactive zero-knowledge proof visualizer. Demos across 4 categories, multiple
 | **Rerandomization** | Proof unlinkability via commitment rerandomization |
 | **Constraint Counter** | Pedersen vs Poseidon in-circuit cost comparison |
 
-Every demo is shareable (URL-encoded state), embeddable (`<iframe>`), and exportable (PNG, JSON).
+Every demo is shareable (URL-encoded state), embeddable (`<iframe>`), and exportable (PNG, GIF, JSON). Demos with auto-play animations (Pipeline, Recursive, Split Accumulation, Oblivious Sync) support animated GIF export that captures the full sequence.
 
 ## Interaction Modes
 
@@ -84,7 +84,7 @@ Add to your MCP config:
 
 ## Tech
 
-Vite + React + TypeScript + Tailwind CSS. All visualizations hand-rendered on `<canvas>` with spring-physics animations at 60fps. No charting libraries, no external state management. 4 runtime dependencies: react, react-dom, react-router-dom, lucide-react.
+Vite + React + TypeScript + Tailwind CSS. All visualizations hand-rendered on `<canvas>` with spring-physics animations at 60fps. No charting libraries, no external state management. 5 runtime dependencies: react, react-dom, react-router-dom, lucide-react, gif.js.
 
 ## License
 

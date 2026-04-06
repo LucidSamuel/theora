@@ -349,6 +349,7 @@ export function PlonkDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-plonk.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'plonk',

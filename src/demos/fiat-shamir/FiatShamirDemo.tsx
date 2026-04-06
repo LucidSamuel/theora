@@ -128,6 +128,7 @@ export function FiatShamirDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-fiat-shamir.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'fiat-shamir',

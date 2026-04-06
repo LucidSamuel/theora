@@ -23,6 +23,7 @@ import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { exportCanvasPng } from '@/lib/canvas';
+import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { fitCameraToBounds } from '@/lib/cameraFit';
 import {
@@ -157,6 +158,7 @@ export function PipelineDemo() {
   const camera = useCanvasCamera();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const gifRecorderRef = useRef<GifRecorder | null>(null);
   const { setEntry } = useInfoPanel();
   const [linkBusy, setLinkBusy] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
@@ -269,6 +271,14 @@ export function PipelineDemo() {
     [theme, activeStage, state.results, state.fault]
   );
 
+  // Stop GIF recording when auto-play ends
+  useEffect(() => {
+    if (!state.autoPlaying && gifRecorderRef.current) {
+      gifRecorderRef.current.stop();
+      gifRecorderRef.current = null;
+    }
+  }, [state.autoPlaying]);
+
   // Update info panel on stage change
   const prevStageRef = useRef(activeStage);
   if (prevStageRef.current !== activeStage) {
@@ -345,6 +355,20 @@ export function PipelineDemo() {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-pipeline.png', showDownloadToast);
+  }, [camera, handleFitToView]);
+
+  const handleExportGif = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    dispatch({ type: 'RESET' });
+    gifRecorderRef.current = startGifRecording({
+      canvas,
+      camera,
+      fitToView: handleFitToView,
+      filename: 'theora-pipeline.gif',
+      onDone: () => showDownloadToast('theora-pipeline.gif'),
+    });
+    dispatch({ type: 'SET_AUTO', autoPlaying: true });
   }, [camera, handleFitToView]);
 
   const handleCopyAuditSummary = useCallback(() => {
@@ -547,6 +571,7 @@ export function PipelineDemo() {
           onCopyHashUrl={handleCopyHashUrl}
           onCopyEmbed={handleCopyEmbed}
           onExportPng={handleExportPng}
+          onExportGif={handleExportGif}
           onCopyAudit={handleCopyAuditSummary}
         />
         <ButtonControl label="Reset" onClick={() => dispatch({ type: 'RESET' })} variant="secondary" />

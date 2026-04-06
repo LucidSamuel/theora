@@ -614,6 +614,7 @@ export function MerkleDemo() {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-merkle.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'merkle',

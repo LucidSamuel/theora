@@ -390,16 +390,15 @@ export function Landing() {
                 <span className="lp-teaser-dot" />
                 <span className="lp-teaser-dot" />
                 <span className="lp-teaser-label">
-                  Live Preview — Proof Pipeline
+                  Live Preview — Recursive Proofs
                 </span>
               </div>
               <div className="lp-teaser-shimmer" />
               <iframe
-                src={`${origin}/app?embed=pipeline`}
+                src={`${origin}/app?embed=recursive&r=eyJtb2RlIjoidHJlZSIsImRlcHRoIjo0LCJzaG93UGFzdGEiOnRydWUsInNob3dQcm9vZlNpemUiOnRydWV9`}
                 title="theora demo preview"
                 className="lp-teaser-iframe"
                 loading="lazy"
-                tabIndex={-1}
                 onLoad={handleTeaserLoad}
               />
             </div>

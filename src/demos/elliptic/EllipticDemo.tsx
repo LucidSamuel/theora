@@ -257,6 +257,7 @@ export function EllipticDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-elliptic.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload: Record<string, unknown> = {
       demo: 'elliptic',

@@ -150,6 +150,7 @@ export function CircuitDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-circuit.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'circuit',

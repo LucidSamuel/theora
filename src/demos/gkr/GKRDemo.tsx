@@ -415,6 +415,7 @@ export function GKRDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-gkr.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'gkr',

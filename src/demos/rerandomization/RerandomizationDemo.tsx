@@ -133,6 +133,7 @@ export function RerandomizationDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-rerandomization.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
+
   const handleAuditJson = useCallback(() => {
     copyToClipboard(JSON.stringify({
       demo: 'rerandomization',

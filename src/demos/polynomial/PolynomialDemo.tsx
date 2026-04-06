@@ -917,6 +917,7 @@ export function PolynomialDemo() {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-polynomial.png', showDownloadToast);
   };
 
+
   const handleCopyAuditSummary = () => {
     const payload = {
       demo: 'polynomial',
