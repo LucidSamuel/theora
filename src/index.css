@@ -569,7 +569,7 @@ body::before {
   align-items: center;
   gap: 64px;
   height: 100%;
-  padding: 48px 0 64px;
+  padding-block: 48px 64px;
 }
 
 .lp-hero-copy {
@@ -1630,7 +1630,7 @@ body::before {
   .lp-hero-split {
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 32px 0 48px;
+    padding-block: 32px 48px;
   }
 
   .lp-hero-title {
