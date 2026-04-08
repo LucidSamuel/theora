@@ -70,6 +70,25 @@ export function WalkthroughViewer({ walkthrough, onBack }: WalkthroughViewerProp
         </div>
       </header>
 
+      {/* Walkthrough note */}
+      {walkthrough.note && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--surface-element)',
+            marginBottom: 24,
+            fontSize: 13,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.6,
+          }}
+        >
+          {walkthrough.note}
+        </div>
+      )}
+
       {/* Main layout: TOC + content */}
       <div style={{ display: 'flex', gap: 40 }}>
         {/* Sticky TOC on desktop */}

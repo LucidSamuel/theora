@@ -13,6 +13,12 @@ import { PLONK_PERMUTATION_BREAK } from './plonk';
 import { GROTH16_CORRUPT_PROOF } from './groth16';
 import { SUMCHECK_CHEAT } from './sumcheck';
 import { FRI_DEGREE_FRAUD } from './fri';
+import { MLE_FORGERY } from './mle';
+import { NOVA_INVALID_WITNESS } from './nova';
+import { GKR_FALSE_OUTPUT } from './gkr';
+import { SPLIT_ACC_BAD_FOLD } from './split-accumulation';
+import { OSYNC_DEANONYMIZE } from './oblivious-sync';
+import { RERAND_LINKABILITY } from './rerandomization';
 
 export const ALL_SCENARIOS: AttackScenario[] = [
   FROZEN_HEART,
@@ -28,6 +34,12 @@ export const ALL_SCENARIOS: AttackScenario[] = [
   GROTH16_CORRUPT_PROOF,
   SUMCHECK_CHEAT,
   FRI_DEGREE_FRAUD,
+  MLE_FORGERY,
+  NOVA_INVALID_WITNESS,
+  GKR_FALSE_OUTPUT,
+  SPLIT_ACC_BAD_FOLD,
+  OSYNC_DEANONYMIZE,
+  RERAND_LINKABILITY,
 ];
 
 const BY_DEMO = new Map<DemoId, AttackScenario>();
@@ -48,4 +60,4 @@ export function hasAttackScenario(demoId: DemoId): boolean {
   return BY_DEMO.has(demoId);
 }
 
-export const ATTACK_DEMO_IDS: DemoId[] = ALL_SCENARIOS.map((s) => s.demoId);
+export const ATTACK_DEMO_IDS: DemoId[] = [...new Set(ALL_SCENARIOS.map((s) => s.demoId))];

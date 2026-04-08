@@ -15,6 +15,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { EmbedModal } from '@/components/shared/EmbedModal';
 import { ShareSaveDropdown } from '@/components/shared/ShareSaveDropdown';
 import { copyToClipboard } from '@/lib/clipboard';
@@ -36,6 +38,7 @@ import {
   buildNaiveSteps,
   buildAccumulatedSteps,
   settleAccumulator,
+  settleCorruptedAccumulator,
   getNaiveTotalCost,
   getAccumulatedTotalCost,
   getSavingsRatio,
@@ -54,6 +57,7 @@ interface SplitAccState {
   naiveSteps: NaiveStep[];
   accumulatedSteps: AccumulatedStep[];
   settlement: Settlement | null;
+  badFoldIndex: number | null;
   autoPlaying: boolean;
   speed: number;
   showCostComparison: boolean;
@@ -68,6 +72,7 @@ type Action =
   | { type: 'SET_AUTO'; autoPlaying: boolean }
   | { type: 'SET_SPEED'; speed: number }
   | { type: 'TOGGLE_COST_COMPARISON' }
+  | { type: 'LOAD_ATTACK_TRACE'; badFoldIndex: number | null; settled: boolean }
   | { type: 'RESET' }
   | { type: 'RESTORE'; numSteps: number; currentStep: number; msmBaseCost: number; showCostComparison: boolean; settled: boolean };
 
@@ -88,6 +93,7 @@ function createInitial(numSteps: number, msmBaseCost: number): SplitAccState {
     naiveSteps,
     accumulatedSteps,
     settlement: null,
+    badFoldIndex: null,
     autoPlaying: false,
     speed: 2,
     showCostComparison: true,
@@ -99,11 +105,11 @@ function reducer(state: SplitAccState, action: Action): SplitAccState {
     case 'SET_NUM_STEPS': {
       const n = action.numSteps;
       const { naiveSteps, accumulatedSteps } = buildSteps(n, state.msmBaseCost);
-      return { ...state, numSteps: n, naiveSteps, accumulatedSteps, currentStep: -1, settlement: null, autoPlaying: false };
+      return { ...state, numSteps: n, naiveSteps, accumulatedSteps, currentStep: -1, settlement: null, badFoldIndex: null, autoPlaying: false };
     }
     case 'SET_MSM_BASE_COST': {
       const { naiveSteps, accumulatedSteps } = buildSteps(state.numSteps, action.cost);
-      return { ...state, msmBaseCost: action.cost, naiveSteps, accumulatedSteps, currentStep: -1, settlement: null, autoPlaying: false };
+      return { ...state, msmBaseCost: action.cost, naiveSteps, accumulatedSteps, currentStep: -1, settlement: null, badFoldIndex: null, autoPlaying: false };
     }
     case 'STEP_FORWARD': {
       if (state.currentStep >= state.numSteps - 1) return state;
@@ -134,7 +140,13 @@ function reducer(state: SplitAccState, action: Action): SplitAccState {
     }
     case 'SETTLE': {
       if (state.currentStep < state.numSteps - 1) return state;
-      return { ...state, settlement: settleAccumulator(state.msmBaseCost, state.numSteps), autoPlaying: false };
+      return {
+        ...state,
+        settlement: state.badFoldIndex === null
+          ? settleAccumulator(state.msmBaseCost, state.numSteps)
+          : settleCorruptedAccumulator(state.msmBaseCost, state.numSteps),
+        autoPlaying: false,
+      };
     }
     case 'SET_AUTO':
       return { ...state, autoPlaying: action.autoPlaying };
@@ -142,9 +154,40 @@ function reducer(state: SplitAccState, action: Action): SplitAccState {
       return { ...state, speed: action.speed };
     case 'TOGGLE_COST_COMPARISON':
       return { ...state, showCostComparison: !state.showCostComparison };
+    case 'LOAD_ATTACK_TRACE': {
+      const { naiveSteps, accumulatedSteps } = buildSteps(state.numSteps, state.msmBaseCost);
+      const clampedBadFold = action.badFoldIndex === null
+        ? null
+        : Math.max(0, Math.min(action.badFoldIndex, state.numSteps - 1));
+      const currentStep = action.settled
+        ? state.numSteps - 1
+        : clampedBadFold ?? Math.max(0, state.numSteps - 2);
+      const naive = naiveSteps.map((step, index) => ({
+        ...step,
+        status: (index < currentStep ? 'verified' : index === currentStep ? 'computing' : 'pending') as NaiveStep['status'],
+      }));
+      const accumulated = accumulatedSteps.map((step, index) => ({
+        ...step,
+        corrupted: clampedBadFold === index,
+        status: (index < currentStep ? 'folded' : index === currentStep ? 'folding' : 'pending') as AccumulatedStep['status'],
+      }));
+      return {
+        ...state,
+        currentStep,
+        naiveSteps: naive,
+        accumulatedSteps: accumulated,
+        settlement: action.settled
+          ? clampedBadFold === null
+            ? settleAccumulator(state.msmBaseCost, state.numSteps)
+            : settleCorruptedAccumulator(state.msmBaseCost, state.numSteps)
+          : null,
+        badFoldIndex: clampedBadFold,
+        autoPlaying: false,
+      };
+    }
     case 'RESET': {
       const { naiveSteps, accumulatedSteps } = buildSteps(state.numSteps, state.msmBaseCost);
-      return { ...state, currentStep: -1, naiveSteps, accumulatedSteps, settlement: null, autoPlaying: false };
+      return { ...state, currentStep: -1, naiveSteps, accumulatedSteps, settlement: null, badFoldIndex: null, autoPlaying: false };
     }
     case 'RESTORE': {
       const { naiveSteps, accumulatedSteps } = buildSteps(action.numSteps, action.msmBaseCost);
@@ -167,6 +210,7 @@ function reducer(state: SplitAccState, action: Action): SplitAccState {
         naiveSteps: naive,
         accumulatedSteps: acc,
         settlement,
+        badFoldIndex: null,
         autoPlaying: false,
         speed: 2,
         showCostComparison: action.showCostComparison,
@@ -203,6 +247,7 @@ export function SplitAccumulationDemo() {
   const [state, dispatch] = useReducer(reducer, null, () => createInitial(6, 200));
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const camera = useCanvasCamera();
   const interaction = useCanvasInteraction();
   const mergedHandlers = useMemo(() => mergeCanvasHandlers(interaction, camera), [interaction, camera]);
@@ -212,6 +257,20 @@ export function SplitAccumulationDemo() {
   const [embedUrl, setEmbedUrl] = useState('');
   const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isDark = theme === 'dark';
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    LOAD_ATTACK_TRACE: (payload) => {
+      if (!payload || typeof payload !== 'object') return;
+      const settled = typeof (payload as { settled?: unknown }).settled === 'boolean'
+        ? (payload as { settled: boolean }).settled
+        : false;
+      const badFoldIndex = typeof (payload as { badFoldIndex?: unknown }).badFoldIndex === 'number'
+        && Number.isInteger((payload as { badFoldIndex: number }).badFoldIndex)
+        ? (payload as { badFoldIndex: number }).badFoldIndex
+        : null;
+      dispatch({ type: 'LOAD_ATTACK_TRACE', badFoldIndex, settled });
+    },
+  }), [currentDemoAction]));
 
   // -- Restore from URL --
   useEffect(() => {
@@ -245,7 +304,11 @@ export function SplitAccumulationDemo() {
 
     setEntry('split-accumulation', {
       title: 'Split Accumulation',
-      body: 'Compares naive recursion (full MSM per step) vs split accumulation (cheap folds + one final MSM).',
+      body: state.badFoldIndex === null
+        ? 'Compares naive recursion (full MSM per step) vs split accumulation (cheap folds + one final MSM).'
+        : state.settlement?.verified === false
+          ? `A bad fold was injected at step ${state.badFoldIndex + 1}. The final MSM caught the corrupted accumulator.`
+          : `A bad fold is queued at step ${state.badFoldIndex + 1}. Random folding keeps the error inside the accumulator until settlement.`,
       glossary: [
         { term: 'MSM', definition: `Multi-scalar multiplication: ${state.msmBaseCost} gates per invocation.` },
         { term: 'Fold', definition: `Random linear combination: ~10 field ops per step.` },
@@ -303,17 +366,21 @@ export function SplitAccumulationDemo() {
 
   // -- Draw --
   const handleDraw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-    renderSplitAccumulation(
-      ctx, frame,
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+      renderSplitAccumulation(
+        ctx, frame,
       state.naiveSteps,
       state.accumulatedSteps,
       state.currentStep,
-      state.settlement,
-      state.msmBaseCost,
-      state.showCostComparison,
-      isDark
-    );
-  }, [state, isDark]);
+        state.settlement,
+        state.msmBaseCost,
+        state.showCostComparison,
+        state.badFoldIndex,
+        isDark,
+        worldMouse.x,
+        worldMouse.y
+      );
+  }, [state, isDark, camera, interaction]);
 
   // -- Share helpers --
   const shareState = useMemo(() => serializeState(state), [state]);
@@ -398,7 +465,7 @@ export function SplitAccumulationDemo() {
       onEmbedFitToView={fitToView}
     >
       <DemoSidebar width="compact">
-        <ControlGroup label="Configuration">
+        <ControlGroup label="Configuration" collapsible ariaLabel="Toggle configuration controls">
           <SliderControl
             label="Recursive steps"
             min={3} max={8} step={1}
@@ -413,7 +480,7 @@ export function SplitAccumulationDemo() {
           />
         </ControlGroup>
 
-        <ControlGroup label="Stepping">
+        <ControlGroup label="Stepping" collapsible ariaLabel="Toggle stepping controls">
           <ControlCard>
             <div className="control-kicker">Progress</div>
             <div className="control-value" style={{ fontSize: 18 }}>
@@ -460,7 +527,7 @@ export function SplitAccumulationDemo() {
           )}
         </ControlGroup>
 
-        <ControlGroup label="Display">
+        <ControlGroup label="Display" collapsible ariaLabel="Toggle display settings">
           <ToggleControl
             label="Cost comparison"
             checked={state.showCostComparison}
@@ -490,7 +557,7 @@ export function SplitAccumulationDemo() {
       </DemoCanvasArea>
 
       <DemoAside width="narrow">
-        <ControlGroup label="Cost Analysis">
+        <ControlGroup label="Cost Analysis" collapsible ariaLabel="Toggle cost analysis panel">
           {currentNaiveStep && (
             <ControlCard>
               <div className="control-kicker">Current naive circuit</div>
@@ -545,6 +612,14 @@ export function SplitAccumulationDemo() {
             </ControlCard>
           )}
         </ControlGroup>
+
+        {state.badFoldIndex !== null && (
+          <ControlNote tone={state.settlement?.verified === false ? 'error' : 'default'}>
+            {state.settlement?.verified === false
+              ? `Bad fold injected at step ${state.badFoldIndex + 1}; the final MSM rejected the accumulated claim.`
+              : `Bad fold injected at step ${state.badFoldIndex + 1}; the error is folded forward until the final MSM check.`}
+          </ControlNote>
+        )}
 
         <ControlNote>
           Naive recursion keeps dragging MSM-heavy verification logic forward, so later recursive circuits get bigger and bigger.

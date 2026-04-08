@@ -9,13 +9,8 @@ export const raguWalkthrough: Walkthrough = {
     abstractSummary:
       'Using interactive diagrams to explain the proof-carrying data framework behind Zcash\'s proposed Tachyon upgrade. Walk through Ragu\'s architecture from the Pasta curve cycle to the full proof pipeline with animated, clickable diagrams instead of static figures.',
   },
+  note: 'This walkthrough uses theora\'s interactive demos to explain Ragu\'s architecture with animated, clickable diagrams instead of static figures. Every diagram links to a live interactive version — click any of them to manipulate the state yourself.',
   sections: [
-    {
-      id: 'intro',
-      title: 'Why Interactive Diagrams',
-      summary:
-        'There\'s a recurring problem when you try to explain most cryptographic primitives. You draw some boxes on a whiteboard, label them "Pallas" and "Vesta," draw arrows between them, and then spend twenty minutes trying to convey what "each proof verifies the previous proof" actually means in practice. This walkthrough uses Theora\'s interactive demos to walk through Ragu\'s architecture with animated, clickable diagrams instead of static figures. Every diagram links to a live interactive version. Click any of them and you can manipulate the state yourself.',
-    },
     {
       id: 'tachyon',
       title: 'What Tachyon Is Building',
@@ -240,8 +235,6 @@ export const raguWalkthrough: Walkthrough = {
       title: 'What This Means for Zcash',
       summary:
         'Tachyon\'s roadmap is deliberately modular: Ragu (proof system), payment protocol (PIR + post-quantum delivery), shielded protocol (new pool with simplified keys), and mainnet activation (after community consensus and ZIP approval). Each layer can be developed, optimized, and audited independently. Ragu is still under construction and will go through several rounds of optimization and external auditing before deployment. But the architecture is concrete enough to visualize, and visualization is how we build community understanding before code review begins. As Ragu moves through its optimization and audit cycles, these visualizations will evolve alongside the implementation. Living documentation that stays current as the architecture matures.',
-      keyInsight:
-        'Visualization builds community understanding before code review begins. Living documentation that evolves with the implementation.',
     },
   ],
   references: [

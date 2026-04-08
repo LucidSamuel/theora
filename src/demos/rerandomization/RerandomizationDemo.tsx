@@ -43,6 +43,7 @@ export function RerandomizationDemo(): JSX.Element {
   const [nonce, setNonce] = useState(1);
   const [gameSeed, setGameSeed] = useState(5);
   const [guesses, setGuesses] = useState<Record<string, string>>({});
+  const [revealed, setRevealed] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -72,6 +73,7 @@ export function RerandomizationDemo(): JSX.Element {
   const changedBytes = useMemo(() => countChangedBytes(original, rerandomized), [original, rerandomized]);
   const matchingGame = useMemo(() => buildMatchingGame(gameSeed), [gameSeed]);
   const score = useMemo(() => scoreMatchingGame(matchingGame, guesses), [guesses, matchingGame]);
+  const allGuessed = matchingGame.shuffled.every((card) => guesses[card.id] && guesses[card.id] !== '');
 
   useEffect(() => {
     setEntry('rerandomization', {
@@ -150,7 +152,7 @@ export function RerandomizationDemo(): JSX.Element {
   return (
     <DemoLayout onEmbedFitToView={handleFitToView}>
       <DemoSidebar width="compact">
-        <ControlGroup label="Statement">
+        <ControlGroup label="Statement" ariaLabel="Statement selection">
           <SelectControl
             label="Public statement"
             value={String(statementIndex)}
@@ -160,23 +162,44 @@ export function RerandomizationDemo(): JSX.Element {
           <ButtonControl label="Rerandomize again" onClick={() => setNonce((value) => value + 1)} />
         </ControlGroup>
 
-        <ControlGroup label="Matching Game">
-          {matchingGame.shuffled.map((card, index) => (
-            <SelectControl
-              key={card.id}
-              label={`Rerandomized proof ${index + 1}`}
-              value={guesses[card.id] ?? ''}
-              options={[
-                { value: '', label: 'Choose original proof' },
-                ...matchingGame.originals.map((proof) => ({ value: proof.id, label: proof.statementLabel })),
-              ]}
-              onChange={(value) => setGuesses((current) => ({ ...current, [card.id]: value }))}
-            />
-          ))}
+        <ControlGroup label="Matching Game" ariaLabel="Matching game controls">
+          {matchingGame.shuffled.map((card, index) => {
+            const guess = guesses[card.id];
+            const isCorrect = guess === card.originalId;
+            const correctOriginal = matchingGame.originals.find((p) => p.id === card.originalId);
+            return (
+              <div key={card.id}>
+                <SelectControl
+                  label={`Rerandomized proof ${index + 1}`}
+                  value={guess ?? ''}
+                  options={[
+                    { value: '', label: 'Choose original proof' },
+                    ...matchingGame.originals.map((proof) => ({ value: proof.id, label: proof.statementLabel })),
+                  ]}
+                  onChange={(value) => { setGuesses((current) => ({ ...current, [card.id]: value })); setRevealed(false); }}
+                />
+                {revealed && guess && guess !== '' && (
+                  <div style={{ marginTop: 4, fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: isCorrect ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                      {isCorrect ? '\u2713 Correct' : '\u2717 Wrong'}
+                    </span>
+                    {!isCorrect && correctOriginal && (
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        \u2014 answer: {correctOriginal.statementLabel.slice(0, 40)}{correctOriginal.statementLabel.length > 40 ? '\u2026' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           <div className="control-button-row">
-            <ButtonControl label="Shuffle game" onClick={() => { setGameSeed((value) => value + 1); setGuesses({}); }} />
-            <ButtonControl label="Clear guesses" onClick={() => setGuesses({})} variant="secondary" />
+            <ButtonControl label="Shuffle game" onClick={() => { setGameSeed((value) => value + 1); setGuesses({}); setRevealed(false); }} />
+            <ButtonControl label="Clear guesses" onClick={() => { setGuesses({}); setRevealed(false); }} variant="secondary" />
           </div>
+          {allGuessed && !revealed && (
+            <ButtonControl label="Reveal answers" onClick={() => setRevealed(true)} variant="secondary" />
+          )}
         </ControlGroup>
 
         <ShareSaveDropdown
@@ -195,7 +218,7 @@ export function RerandomizationDemo(): JSX.Element {
       </DemoCanvasArea>
 
       <DemoAside width="narrow">
-        <ControlGroup label="Linkability Check">
+        <ControlGroup label="Linkability Check" ariaLabel="Linkability check results">
           <ControlCard>
             <div className="control-kicker">Same statement</div>
             <div className="control-value" style={{ color: verifiedSameStatement(original, rerandomized) ? '#22c55e' : '#ef4444' }}>

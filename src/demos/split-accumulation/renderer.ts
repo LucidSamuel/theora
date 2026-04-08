@@ -11,6 +11,7 @@ import type {
 const ACCENT_NAIVE = '#ef4444';
 const ACCENT_ACCUM = '#22c55e';
 const ACCENT_FOLD = '#a78bfa';
+const ACCENT_ERROR = '#ef4444';
 
 const PANEL_GAP = 48;
 const STEP_W = 130;
@@ -21,6 +22,16 @@ const ACC_BOX_H = 56;
 const COST_BAR_MAX_W = 110;
 const COST_BAR_H = 12;
 const HEADER_Y = 22;
+
+// ── Hash cell hit region for tooltip ──────────────────────────────
+
+interface HashCell {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fullHash: string;
+}
 
 // ── Main renderer ──────────────────────────────────────────────────
 
@@ -33,7 +44,10 @@ export function renderSplitAccumulation(
   settlement: Settlement | null,
   msmBaseCost: number,
   showCostComparison: boolean,
-  isDark: boolean
+  badFoldIndex: number | null,
+  isDark: boolean,
+  mouseX: number = 0,
+  mouseY: number = 0
 ) {
   const { width, height, time } = frame;
   const numSteps = naiveSteps.length;
@@ -42,6 +56,8 @@ export function renderSplitAccumulation(
   const textSecondary = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
   const textMuted = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
   const borderBase = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+  const hashCells: HashCell[] = [];
 
   const cx = width / 2;
 
@@ -91,6 +107,15 @@ export function renderSplitAccumulation(
     drawStepBox(ctx, leftX + 8, y, STEP_W, STEP_H, `Step ${i + 1}`, step.claim.commitment.slice(0, 8),
       isActive, isDone, isPending, ACCENT_NAIVE, textPrimary, textMuted, borderBase, time);
 
+    // Collect hash cell for tooltip hover detection
+    hashCells.push({
+      x: leftX + 8 + 12,
+      y: y + 22,
+      w: STEP_W - 24,
+      h: 14,
+      fullHash: step.claim.commitment,
+    });
+
     // MSM cost bar
     const barX = leftX + 8 + STEP_W + 12;
     const barY = y + (STEP_H - COST_BAR_H) / 2;
@@ -106,6 +131,14 @@ export function renderSplitAccumulation(
       ctx.fillStyle = isDone ? textSecondary : textPrimary;
       ctx.textAlign = 'left';
       ctx.fillText(`${step.embeddedVerifierCount}x MSM`, barX + barW + 6, barY + COST_BAR_H - 2);
+    }
+
+    // Per-step explanation label
+    if (isActive) {
+      ctx.font = '600 8px "Space Grotesk", sans-serif';
+      ctx.fillStyle = hexToRgba(ACCENT_NAIVE, 0.7);
+      ctx.textAlign = 'left';
+      ctx.fillText(`Re-verify ${step.embeddedVerifierCount} MSM${step.embeddedVerifierCount > 1 ? 's' : ''}`, leftX + 8, y + STEP_H + 10);
     }
 
     // Arrow to next step
@@ -126,9 +159,20 @@ export function renderSplitAccumulation(
     const isActive = i === currentStep;
     const isDone = i < currentStep;
     const isPending = i > currentStep;
+    const isCorrupted = step.corrupted === true || badFoldIndex === i;
+    const stepAccent = isCorrupted ? ACCENT_ERROR : ACCENT_ACCUM;
 
     drawStepBox(ctx, accStepX, y, STEP_W, STEP_H, `Step ${i + 1}`, step.claim.commitment.slice(0, 8),
-      isActive, isDone, isPending, ACCENT_ACCUM, textPrimary, textMuted, borderBase, time);
+      isActive, isDone, isPending, stepAccent, textPrimary, textMuted, borderBase, time);
+
+    // Collect hash cell for tooltip hover detection
+    hashCells.push({
+      x: accStepX + 12,
+      y: y + 22,
+      w: STEP_W - 24,
+      h: 14,
+      fullHash: step.claim.commitment,
+    });
 
     // Field ops cost bar (small)
     const barX = accStepX + STEP_W + 12;
@@ -145,6 +189,20 @@ export function renderSplitAccumulation(
       ctx.fillStyle = isDone ? textSecondary : textPrimary;
       ctx.textAlign = 'left';
       ctx.fillText(`fold: ${step.fieldOpsCost}`, barX + Math.max(barW, 4) + 6, barY + COST_BAR_H - 2);
+    }
+
+    // Per-step explanation label
+    if (isActive) {
+      const isLast = i === numSteps - 1;
+      const label = isCorrupted
+        ? 'Bad fold injected'
+        : isLast
+          ? 'Fold + final MSM'
+          : 'Fold (cheap)';
+      ctx.font = '600 8px "Space Grotesk", sans-serif';
+      ctx.fillStyle = hexToRgba(stepAccent, 0.7);
+      ctx.textAlign = 'left';
+      ctx.fillText(label, accStepX, y + STEP_H + 10);
     }
 
     // Fold arrow to accumulator
@@ -187,6 +245,42 @@ export function renderSplitAccumulation(
   // ── Flow particles ──
   if (currentStep >= 0) {
     drawParticles(ctx, leftX + 8, rightX + 8, stepsTop, numSteps, currentStep, time);
+  }
+
+  // ── Hover tooltip for hash values ──
+  for (const cell of hashCells) {
+    if (mouseX >= cell.x && mouseX <= cell.x + cell.w &&
+        mouseY >= cell.y && mouseY <= cell.y + cell.h) {
+      const tooltipText = `0x${cell.fullHash}`;
+      ctx.save();
+      ctx.font = '11px "JetBrains Mono", monospace';
+      const metrics = ctx.measureText(tooltipText);
+      const tooltipW = metrics.width + 16;
+      const tooltipH = 24;
+      let tooltipX = cell.x + cell.w + 8;
+      let tooltipY = cell.y - tooltipH / 2 + 7;
+
+      // Clamp to canvas bounds
+      if (tooltipX + tooltipW > width - 10) tooltipX = cell.x - tooltipW - 8;
+      if (tooltipX < 10) tooltipX = 10;
+      if (tooltipY < 10) tooltipY = 10;
+      if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+
+      ctx.fillStyle = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(tooltipX, tooltipY, tooltipW, tooltipH, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tooltipText, tooltipX + 8, tooltipY + tooltipH / 2);
+      ctx.restore();
+      break; // Only show one tooltip at a time
+    }
   }
 }
 
@@ -301,18 +395,19 @@ function drawSettlement(
 ) {
   const r = 10;
   const pulse = 0.8 + 0.2 * Math.sin(time * 2);
+  const accent = settlement.verified ? ACCENT_ACCUM : ACCENT_ERROR;
 
-  ctx.fillStyle = hexToRgba(ACCENT_ACCUM, 0.06);
+  ctx.fillStyle = hexToRgba(accent, 0.06);
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
   ctx.fill();
 
-  ctx.strokeStyle = hexToRgba(ACCENT_ACCUM, 0.5);
+  ctx.strokeStyle = hexToRgba(accent, 0.5);
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   ctx.font = '600 11px "Space Grotesk", sans-serif';
-  ctx.fillStyle = hexToRgba(ACCENT_ACCUM, pulse);
+  ctx.fillStyle = hexToRgba(accent, pulse);
   ctx.textAlign = 'left';
   ctx.fillText(`Final MSM: ${settlement.msmCost} gates`, x + 14, y + 16);
 
@@ -321,7 +416,7 @@ function drawSettlement(
   ctx.fillText(`One MSM settles ${settlement.foldedCount} deferred claim${settlement.foldedCount === 1 ? '' : 's'}`, x + 14, y + 32);
 
   ctx.font = '11px sans-serif';
-  ctx.fillStyle = hexToRgba(ACCENT_ACCUM, 0.9);
+  ctx.fillStyle = hexToRgba(accent, 0.9);
   ctx.textAlign = 'right';
   ctx.fillText(settlement.verified ? '\u2713 verified' : '\u2717 failed', x + w - 14, y + 24);
 }

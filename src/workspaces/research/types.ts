@@ -19,6 +19,7 @@ export interface Walkthrough {
     eprintUrl?: string;
     abstractSummary: string;
   };
+  note?: string;
   sections: WalkthroughSection[];
   references?: WalkthroughReference[];
   generatedBy: 'curated' | 'ai';

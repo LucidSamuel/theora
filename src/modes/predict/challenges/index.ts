@@ -13,6 +13,12 @@ import { PLONK_CHALLENGES } from './plonk';
 import { GROTH16_CHALLENGES } from './groth16';
 import { SUMCHECK_CHALLENGES } from './sumcheck';
 import { FRI_CHALLENGES } from './fri';
+import { MLE_CHALLENGES } from './mle';
+import { NOVA_CHALLENGES } from './nova';
+import { GKR_CHALLENGES } from './gkr';
+import { SPLIT_ACCUMULATION_CHALLENGES } from './split-accumulation';
+import { OBLIVIOUS_SYNC_CHALLENGES } from './oblivious-sync';
+import { RERANDOMIZATION_CHALLENGES } from './rerandomization';
 
 export const ALL_CHALLENGES: PredictChallenge[] = [
   ...MERKLE_CHALLENGES,
@@ -28,6 +34,12 @@ export const ALL_CHALLENGES: PredictChallenge[] = [
   ...GROTH16_CHALLENGES,
   ...SUMCHECK_CHALLENGES,
   ...FRI_CHALLENGES,
+  ...MLE_CHALLENGES,
+  ...NOVA_CHALLENGES,
+  ...GKR_CHALLENGES,
+  ...SPLIT_ACCUMULATION_CHALLENGES,
+  ...OBLIVIOUS_SYNC_CHALLENGES,
+  ...RERANDOMIZATION_CHALLENGES,
 ];
 
 const CHALLENGE_MAP = new Map<string, PredictChallenge>();

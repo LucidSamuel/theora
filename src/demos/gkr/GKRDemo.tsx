@@ -16,6 +16,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   decodeState,
   decodeStatePlain,
@@ -105,6 +107,39 @@ function buildInitialState(
     verification: null,
     currentStep: -1,
     phase: 'setup',
+  };
+}
+
+function buildCompletedState(options?: { forgedOutputDelta?: bigint }): GKRDemoState {
+  const base = buildInitialState();
+  const honestProof = gkrProve(base.circuit, base.outputPoint, base.layerChallenges);
+
+  if (options?.forgedOutputDelta !== undefined) {
+    const forgedClaim = mod(honestProof.outputClaim + options.forgedOutputDelta, FIELD_SIZE);
+    const forgedProof: GKRProof = {
+      ...honestProof,
+      outputClaim: forgedClaim,
+      layerProofs: honestProof.layerProofs.map((layerProof, index) => (
+        index === 0
+          ? { ...layerProof, claim: forgedClaim }
+          : layerProof
+      )),
+    };
+    return {
+      ...base,
+      proof: forgedProof,
+      verification: gkrVerify(base.circuit, forgedProof),
+      currentStep: 0,
+      phase: 'complete',
+    };
+  }
+
+  return {
+    ...base,
+    proof: honestProof,
+    verification: gkrVerify(base.circuit, honestProof),
+    currentStep: honestProof.layerProofs.length - 1,
+    phase: 'complete',
   };
 }
 
@@ -303,6 +338,7 @@ export function GKRDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
@@ -310,6 +346,21 @@ export function GKRDemo(): JSX.Element {
   const [state, dispatch] = useReducer(reducer, null, () =>
     buildInitialState(),
   );
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    RESET: () => {
+      dispatch({ type: 'RESTORE', state: buildInitialState() });
+    },
+    RUN_ALL: () => {
+      dispatch({ type: 'RESTORE', state: buildCompletedState() });
+    },
+    LOAD_FORGED_OUTPUT_CLAIM: (payload) => {
+      const delta = typeof payload === 'number' && Number.isInteger(payload)
+        ? BigInt(payload)
+        : 1n;
+      dispatch({ type: 'RESTORE', state: buildCompletedState({ forgedOutputDelta: delta }) });
+    },
+  }), [currentDemoAction]));
 
   // ── Restore from URL on mount ──────────────────────────────────────
   useEffect(() => {
@@ -484,7 +535,7 @@ export function GKRDemo(): JSX.Element {
       onEmbedReset={() => dispatch({ type: 'RESET' })}
       onEmbedFitToView={handleFitToView}
     >
-      <DemoSidebar>
+      <DemoSidebar resetScrollKey={`${state.phase}-${state.currentStep}`}>
         {/* Circuit inputs */}
         <ControlGroup label="Circuit Inputs">
           {state.inputValues.map((v, i) => (
@@ -503,7 +554,7 @@ export function GKRDemo(): JSX.Element {
         </ControlGroup>
 
         {/* Circuit structure */}
-        <ControlGroup label="Circuit Structure" collapsible defaultCollapsed>
+        <ControlGroup label="Circuit Structure" collapsible defaultCollapsed ariaLabel="Toggle circuit structure details">
           <ControlCard>
             <span className="control-kicker">Field</span>
             <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>

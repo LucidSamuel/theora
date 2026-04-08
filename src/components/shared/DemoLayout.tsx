@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getSearchParam } from '@/lib/urlState';
 import { useMode } from '@/modes/ModeProvider';
 import { Settings, Play, Pause, X, RotateCcw, Maximize2, SlidersHorizontal } from 'lucide-react';
@@ -46,6 +46,7 @@ interface DemoLayoutProps {
 interface DemoSidebarProps {
   children: ReactNode;
   width?: SidebarWidth;
+  resetScrollKey?: string | number;
 }
 
 interface DemoCanvasAreaProps {
@@ -123,9 +124,14 @@ export function DemoLayout({ children, onEmbedPlay, embedPlaying, onEmbedReset, 
   );
 }
 
-export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) {
+export function DemoSidebar({ children, width = 'standard', resetScrollKey }: DemoSidebarProps) {
   const { isEmbed, panelsVisible, isMobile, mobileSheetOpen, setMobileSheetOpen } = useEmbedContext();
   const { mode } = useMode();
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    sidebarRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [resetScrollKey]);
 
   // Attack/Predict/Debug mode: hide demo sidebar — their panels provide their own
   if (mode === 'attack' || mode === 'predict' || mode === 'debug') return null;
@@ -134,7 +140,7 @@ export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) 
   if (isEmbed && !panelsVisible) return null;
   if (isEmbed) {
     return (
-      <div className={`demo-sidebar demo-sidebar--${width} demo-sidebar--embed`}>
+      <div ref={sidebarRef} className={`demo-sidebar demo-sidebar--${width} demo-sidebar--embed`}>
         {children}
       </div>
     );
@@ -158,7 +164,7 @@ export function DemoSidebar({ children, width = 'standard' }: DemoSidebarProps) 
 
   // Main view expanded
   return (
-    <div className={`demo-sidebar demo-sidebar--${width}`}>
+    <div ref={sidebarRef} className={`demo-sidebar demo-sidebar--${width}`}>
       {children}
     </div>
   );

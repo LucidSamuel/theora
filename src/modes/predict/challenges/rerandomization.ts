@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const RERANDOMIZATION_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'rerand-unlinkability',
+    demoId: 'rerandomization',
+    difficulty: 'beginner',
+    question: 'What does proof rerandomization achieve?',
+    hint: 'Think about what happens if the same proof is submitted twice.',
+    choices: [
+      { label: 'It makes the proof smaller', rationale: 'Rerandomization does not change proof size.' },
+      { label: 'It makes the proof verify faster', rationale: 'Verification cost is unchanged by rerandomization.' },
+      { label: 'It produces a new proof that is unlinkable to the original but verifies the same statement', rationale: 'Correct — rerandomization changes the byte-level representation while preserving validity. No observer can tell the new proof came from the original.' },
+      { label: 'It encrypts the proof so only the verifier can read it', rationale: 'Rerandomized proofs are still publicly verifiable, not encrypted.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Rerandomization adds fresh randomness to a proof, producing a new proof that verifies the same statement but looks completely different at the byte level. This prevents linking: even if someone sees both proofs, they cannot tell they attest to the same witness.',
+    category: 'privacy',
+  },
+  {
+    id: 'rerand-statement-unchanged',
+    demoId: 'rerandomization',
+    difficulty: 'intermediate',
+    question: 'After rerandomization, what stays the same and what changes?',
+    hint: 'The proof bytes change, but what about the statement being proven?',
+    choices: [
+      { label: 'Everything changes — statement, proof, and verification key', rationale: 'The statement and verification key must stay the same for the proof to remain valid.' },
+      { label: 'The statement hash stays the same; the proof bytes change entirely', rationale: 'Correct — rerandomization modifies commitments, evaluations, and IPA components, but the statement (what is being proven) and its hash are unchanged.' },
+      { label: 'Only the first few bytes change; the rest is identical', rationale: 'Rerandomization affects bytes throughout the proof, not just the beginning.' },
+      { label: 'The proof stays the same; only metadata changes', rationale: 'The core proof bytes change — that is the entire point of rerandomization.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Rerandomization preserves the statement and verification equation while changing the proof\'s internal structure. The commitment, evaluation, and IPA components are all re-blinded, so the byte-level representation is entirely new, but the semantic content (what the proof attests to) is unchanged.',
+    category: 'structure',
+  },
+  {
+    id: 'rerand-how-many-times',
+    demoId: 'rerandomization',
+    difficulty: 'beginner',
+    question: 'How many times can a proof be rerandomized?',
+    hint: 'Each rerandomization adds fresh randomness.',
+    choices: [
+      { label: 'Only once — after that the proof is "used up"', rationale: 'Rerandomization does not consume or degrade the proof.' },
+      { label: 'Unlimited — each rerandomization produces a fresh, valid proof', rationale: 'Correct — rerandomization can be applied any number of times. Each application produces a new, independently random proof that verifies the same statement.' },
+      { label: 'At most log(n) times for a proof of size n', rationale: 'There is no mathematical limit on the number of rerandomizations.' },
+      { label: 'Twice — once for the commitment and once for the evaluation', rationale: 'Rerandomization is a single operation that affects all components simultaneously.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Proof rerandomization can be applied unlimited times. Each application is independent: it takes a valid proof and fresh randomness, producing a new valid proof. The output of one rerandomization can be rerandomized again, and no chain of rerandomizations can be linked.',
+    category: 'fundamentals',
+  },
+  {
+    id: 'rerand-zcash-application',
+    demoId: 'rerandomization',
+    difficulty: 'advanced',
+    question: 'Why is proof rerandomization important for Zcash\'s shielded transactions?',
+    hint: 'Think about what a blockchain observer sees when the same note is spent.',
+    choices: [
+      { label: 'It reduces transaction fees', rationale: 'Rerandomization does not affect transaction size or fees.' },
+      { label: 'It prevents miners from censoring specific transactions', rationale: 'Censorship resistance comes from other mechanisms, not rerandomization.' },
+      { label: 'It prevents observers from linking a resubmitted transaction to the original, even if the same note is spent', rationale: 'Correct — if a transaction is rebroadcast (e.g., after a reorg), the rerandomized proof looks completely different on-chain, preventing linkability analysis.' },
+      { label: 'It allows transactions to be verified without downloading the full blockchain', rationale: 'That is achieved by proof succinctness, not rerandomization.' },
+    ],
+    correctIndex: 2,
+    explanation: 'In Zcash, if a shielded transaction needs to be resubmitted (e.g., after a chain reorganization or network timeout), the proof can be rerandomized before rebroadcast. This ensures that observers cannot link the new transaction to the original, preserving the user\'s privacy even in adversarial network conditions.',
+    category: 'applications',
+  },
+];

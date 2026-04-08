@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const GKR_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'gkr-layer-reduction',
+    demoId: 'gkr',
+    difficulty: 'beginner',
+    question: 'In the GKR protocol, what does each layer reduction step accomplish?',
+    hint: 'The verifier starts with a claim about the output and works backward.',
+    choices: [
+      { label: 'It compresses the circuit into fewer gates', rationale: 'GKR does not modify the circuit — it verifies it layer by layer.' },
+      { label: 'It reduces a claim about layer i to a claim about layer i+1 using sumcheck', rationale: 'Correct — each reduction uses the sumcheck protocol to convert a claim about one layer\'s MLE into a claim about the next layer\'s MLE, working from output to input.' },
+      { label: 'It encrypts each layer\'s gate values', rationale: 'GKR is a verification protocol, not an encryption scheme.' },
+      { label: 'It removes redundant gates from the circuit', rationale: 'The circuit structure is fixed; GKR only verifies correctness.' },
+    ],
+    correctIndex: 1,
+    explanation: 'GKR works top-down: the verifier starts with a claim V(r) about the output layer\'s MLE, then uses sumcheck to reduce it to a claim about the next layer. This continues until the input layer, where the verifier can check directly.',
+    category: 'protocol-structure',
+  },
+  {
+    id: 'gkr-oracle-check',
+    demoId: 'gkr',
+    difficulty: 'intermediate',
+    question: 'Why does the GKR verifier need an "oracle check" at the input layer?',
+    hint: 'The verifier has been reducing claims layer by layer. What happens at the bottom?',
+    choices: [
+      { label: 'To verify the prover knows the secret key', rationale: 'GKR does not involve secret keys.' },
+      { label: 'To check that the final reduced claim matches the actual input values', rationale: 'Correct — after reducing through all layers, the verifier holds a claim about the input MLE. Since the verifier knows the inputs, it evaluates the input MLE directly to confirm the claim.' },
+      { label: 'To generate the random challenges for sumcheck', rationale: 'Challenges are generated during each layer reduction, not at the oracle check.' },
+      { label: 'To compress the proof into a single group element', rationale: 'GKR produces an interactive proof, not a succinct commitment.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The oracle check is the base case: the verifier knows the circuit inputs and can compute the input layer\'s MLE at any point. After all layer reductions, the final claim is about input values the verifier already has, so it can verify directly without trusting the prover.',
+    category: 'verification',
+  },
+  {
+    id: 'gkr-prover-complexity',
+    demoId: 'gkr',
+    difficulty: 'advanced',
+    question: 'What is the prover\'s time complexity in the GKR protocol for a circuit with S gates?',
+    hint: 'The prover runs sumcheck at each layer. How expensive is each sumcheck?',
+    choices: [
+      { label: 'O(S)', rationale: 'O(S) would be optimal but the prover needs slightly more work for the sumcheck polynomials.' },
+      { label: 'O(S \u00b7 log S)', rationale: 'Correct — the prover runs sumcheck at each of the O(log S) layers, and each sumcheck over a layer of size n takes O(n) work. The total across all layers is O(S \u00b7 log S).' },
+      { label: 'O(S\u00b2)', rationale: 'Quadratic would be too expensive; GKR achieves near-linear prover time.' },
+      { label: 'O(log S)', rationale: 'That is the verifier\'s complexity, not the prover\'s.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The GKR prover processes each layer via sumcheck. For a circuit with d = O(log S) layers and O(S/d) gates per layer, each sumcheck costs O(S/d) work. Summing over d layers gives O(S \u00b7 log S) total. The verifier, meanwhile, does only O(d \u00b7 log(S/d)) = O(log\u00b2 S) work.',
+    category: 'complexity',
+  },
+  {
+    id: 'gkr-layered-circuit',
+    demoId: 'gkr',
+    difficulty: 'beginner',
+    question: 'Why does GKR require the circuit to be "layered"?',
+    hint: 'Think about what it means for each gate\'s inputs to come from the previous layer.',
+    choices: [
+      { label: 'Layered circuits are faster to evaluate', rationale: 'Evaluation speed is the same; layering is a structural requirement for the protocol.' },
+      { label: 'So the verifier can reduce claims one layer at a time from output to input', rationale: 'Correct — the layer structure ensures each reduction step has a well-defined "previous layer" to reduce to. Without layers, the sumcheck reduction would not have a clear target.' },
+      { label: 'To ensure the circuit has no cycles', rationale: 'All arithmetic circuits are acyclic; layering adds more structure than just acyclicity.' },
+      { label: 'Layered circuits use less memory', rationale: 'Memory usage is not the reason for the layering requirement.' },
+    ],
+    correctIndex: 1,
+    explanation: 'GKR\'s layer-by-layer reduction relies on each gate\'s inputs coming from exactly one layer below. This gives the protocol its recursive structure: a claim about layer i becomes a claim about layer i+1 via sumcheck, bottoming out at the input layer where the verifier can check directly.',
+    category: 'circuit-structure',
+  },
+];

@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const NOVA_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'nova-relaxed-r1cs',
+    demoId: 'nova',
+    difficulty: 'beginner',
+    question: 'When Nova shows a relaxed R1CS instance with u = 1 and E = 0, what does that reduce to?',
+    hint: 'Relaxed R1CS is a generalization of the usual constraint check.',
+    choices: [
+      { label: 'Ordinary R1CS', rationale: 'Correct — u = 1 and E = 0 collapse Az ∘ Bz = u·Cz + E back to Az ∘ Bz = Cz.' },
+      { label: 'An unconstrained witness', rationale: 'The witness is still fully checked by the circuit constraints.' },
+      { label: 'A commitment opening proof', rationale: 'This equation describes the folded instance, not a polynomial opening.' },
+      { label: 'The verifier challenge itself', rationale: 'The verifier challenge r is used during folding, not in the base relaxed equation.' },
+    ],
+    correctIndex: 0,
+    explanation: 'Relaxed R1CS extends ordinary R1CS by permitting a scalar u and error vector E. Setting u = 1 and E = 0 recovers the standard constraint system exactly.',
+    category: 'relaxed-r1cs',
+  },
+  {
+    id: 'nova-cross-term',
+    demoId: 'nova',
+    difficulty: 'intermediate',
+    question: 'Why does Nova compute the cross-term T during a fold?',
+    hint: 'Folding creates mixed products between the running accumulator and the new witness.',
+    choices: [
+      { label: 'To choose the next field modulus', rationale: 'The field is fixed before any folding begins.' },
+      { label: 'To absorb the mixed interaction terms into E′', rationale: 'Correct — T captures the mixed terms so the folded relaxed instance stays algebraically valid.' },
+      { label: 'To reveal the hidden witness values', rationale: 'T is part of the fold algebra, not a witness reveal mechanism.' },
+      { label: 'To compress the commitments into a Merkle root', rationale: 'Nova is not building a Merkle tree here.' },
+    ],
+    correctIndex: 1,
+    explanation: 'When Nova folds W₁ and W₂ into W′ = W₁ + r·W₂, mixed terms appear. The cross-term T captures those interactions so the new error vector E′ can absorb them.',
+    category: 'cross-term',
+  },
+  {
+    id: 'nova-constant-accumulator',
+    demoId: 'nova',
+    difficulty: 'advanced',
+    question: 'If the demo increases from 4 computation steps to 10, what is the key Nova property that should remain true in principle?',
+    hint: 'Think about what the accumulator represents to the verifier.',
+    choices: [
+      { label: 'The number of folds stays the same', rationale: 'More computation steps still mean more folds.' },
+      { label: 'The folded accumulator remains one succinct summary', rationale: 'Correct — Nova keeps one accumulator even as more steps are absorbed.' },
+      { label: 'Every cross-term T is identical', rationale: 'T depends on the specific witnesses and challenges, so it changes.' },
+      { label: 'The prover stores no witness history', rationale: 'The prover still handles witness information while constructing the chain.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Nova’s advantage is constant-size accumulation: the verifier reasons about one succinct folded object instead of a linear history, even though the prover performs more folds.',
+    category: 'succinctness',
+  },
+  {
+    id: 'nova-invalid-witness',
+    demoId: 'nova',
+    difficulty: 'beginner',
+    question: 'If one witness is corrupted so it claims y + 1 instead of x² + x + 5, what happens when that witness is folded in?',
+    hint: 'A bad computation step cannot stay hidden once it enters the accumulator.',
+    choices: [
+      { label: 'The fold that first absorbs it becomes unsatisfied', rationale: 'Correct — the relaxed R1CS check fails as soon as the invalid witness enters the chain.' },
+      { label: 'Nothing changes until the very last verifier check only', rationale: 'The failure appears as soon as the bad step is actually folded in.' },
+      { label: 'The verifier challenge r repairs the witness', rationale: 'The challenge does not fix a false witness.' },
+      { label: 'Only the commitment changes; satisfaction remains true', rationale: 'A corrupted witness changes the algebra, not just the commitment label.' },
+    ],
+    correctIndex: 0,
+    explanation: 'Nova soundness still relies on each step satisfying the underlying circuit. Once a corrupted witness is folded into the accumulator, the relaxed R1CS check fails and the chain is no longer valid.',
+    category: 'soundness',
+  },
+];

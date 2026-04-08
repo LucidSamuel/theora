@@ -55,8 +55,8 @@ const initialState: PredictState = {
 // --- Tests ---
 
 describe('Predict challenge registry', () => {
-  it('has challenges for 13 demos', () => {
-    expect(PREDICT_DEMO_IDS).toHaveLength(13);
+  it('has challenges for 19 demos', () => {
+    expect(PREDICT_DEMO_IDS).toHaveLength(19);
     expect(PREDICT_DEMO_IDS).toContain('merkle');
     expect(PREDICT_DEMO_IDS).toContain('circuit');
     expect(PREDICT_DEMO_IDS).toContain('fiat-shamir');
@@ -70,6 +70,12 @@ describe('Predict challenge registry', () => {
     expect(PREDICT_DEMO_IDS).toContain('groth16');
     expect(PREDICT_DEMO_IDS).toContain('sumcheck');
     expect(PREDICT_DEMO_IDS).toContain('fri');
+    expect(PREDICT_DEMO_IDS).toContain('mle');
+    expect(PREDICT_DEMO_IDS).toContain('nova');
+    expect(PREDICT_DEMO_IDS).toContain('gkr');
+    expect(PREDICT_DEMO_IDS).toContain('split-accumulation');
+    expect(PREDICT_DEMO_IDS).toContain('rerandomization');
+    expect(PREDICT_DEMO_IDS).toContain('oblivious-sync');
   });
 
   it('has at least 4 challenges per demo', () => {
@@ -106,6 +112,7 @@ describe('Predict challenge registry', () => {
     expect(hasPredictChallenges('merkle')).toBe(true);
     expect(hasPredictChallenges('circuit')).toBe(true);
     expect(hasPredictChallenges('recursive')).toBe(true);
+    expect(hasPredictChallenges('nova')).toBe(true);
     expect(hasPredictChallenges('pedersen')).toBe(false);
   });
 

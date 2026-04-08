@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const OBLIVIOUS_SYNC_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'osync-privacy-guarantee',
+    demoId: 'oblivious-sync',
+    difficulty: 'beginner',
+    question: 'In oblivious sync, what does the remote service learn about the wallet\'s notes?',
+    hint: 'The protocol is designed so the service helps without learning private information.',
+    choices: [
+      { label: 'The service sees all note values and which ones are spent', rationale: 'This would defeat the entire purpose of oblivious sync.' },
+      { label: 'The service learns nothing about which specific notes the wallet is querying', rationale: 'Correct — the wallet blinds its nullifiers before sending them, so the service processes the query without knowing which notes are involved.' },
+      { label: 'The service learns the total number of notes but not their values', rationale: 'The service sees the batch size but cannot distinguish real queries from padding in a well-designed protocol.' },
+      { label: 'The service can see spent notes but not unspent ones', rationale: 'The blinding prevents the service from identifying any specific notes.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Oblivious sync uses blinded nullifiers: the wallet hashes and randomizes its note identifiers before querying the service. The service checks for matches against the spent set without learning which specific notes the wallet owns or is asking about.',
+    category: 'privacy',
+  },
+  {
+    id: 'osync-collision-detection',
+    demoId: 'oblivious-sync',
+    difficulty: 'intermediate',
+    question: 'How does the wallet detect that one of its notes has been spent, without the service knowing which note it was?',
+    hint: 'Both the wallet and service compute over the same blinded set, but only the wallet can interpret the result.',
+    choices: [
+      { label: 'The service tells the wallet which notes are spent', rationale: 'The service never learns which notes belong to the wallet.' },
+      { label: 'The wallet decrypts the service\'s response and finds a match between its blinded nullifiers and the spent set', rationale: 'Correct — the wallet can unbind its blinded queries and check the service\'s response for collisions, but the service only sees the blinded values and cannot tell which one matched.' },
+      { label: 'The wallet downloads the entire spent set and checks locally', rationale: 'Downloading the full spent set defeats the scalability benefit of oblivious sync.' },
+      { label: 'A trusted third party notifies the wallet', rationale: 'The protocol is designed to be trustless — no third party is involved.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The protocol returns an encrypted or committed response that the wallet (holding the unblinding key) can decode. If a blinded nullifier matches a spent note, the wallet detects this from the response. The service, lacking the unblinding key, only sees that a batch was processed.',
+    category: 'protocol-flow',
+  },
+  {
+    id: 'osync-round-structure',
+    demoId: 'oblivious-sync',
+    difficulty: 'beginner',
+    question: 'Why does oblivious sync use multiple rounds instead of a single query?',
+    hint: 'Think about what each round accomplishes in the protocol.',
+    choices: [
+      { label: 'To reduce bandwidth by splitting the data', rationale: 'Multiple rounds actually increase total communication; the structure is for privacy.' },
+      { label: 'Each round progressively narrows the search without revealing the target', rationale: 'Correct — the multi-round structure allows the wallet and service to compute a private set intersection incrementally, with each round refining the result while maintaining the oblivious property.' },
+      { label: 'To give the service time to process large databases', rationale: 'The round structure is for cryptographic privacy, not performance.' },
+      { label: 'Each round uses a different encryption key for security', rationale: 'Key rotation is not the purpose of the multi-round design.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The multi-round protocol implements a form of private set intersection. Each round involves blinding, transmission, and response, with the cumulative effect being that the wallet learns the intersection (spent notes) without the service learning which notes were queried.',
+    category: 'protocol-flow',
+  },
+  {
+    id: 'osync-vs-naive',
+    demoId: 'oblivious-sync',
+    difficulty: 'advanced',
+    question: 'Compared to naive sync (wallet sends raw nullifiers to the service), what is the main trade-off of oblivious sync?',
+    hint: 'Privacy comes at a cost.',
+    choices: [
+      { label: 'Oblivious sync is faster but less private', rationale: 'It is the opposite: more private but with higher communication cost.' },
+      { label: 'Oblivious sync provides privacy but requires more communication rounds and computation', rationale: 'Correct — the blinding, multi-round interaction, and cryptographic operations add overhead compared to simply sending raw nullifiers. The trade-off is privacy for efficiency.' },
+      { label: 'There is no trade-off — oblivious sync is strictly better', rationale: 'Oblivious sync adds communication and computation overhead for its privacy benefit.' },
+      { label: 'Oblivious sync requires a trusted setup', rationale: 'Oblivious sync protocols typically do not require a trusted setup.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Naive sync reveals the wallet\'s entire note set to the service, which is a severe privacy leak. Oblivious sync hides this information but requires O(k) rounds of blinded interaction, where k is the protocol parameter, plus cryptographic computation for blinding and unblinding. For privacy-focused systems like Zcash, this trade-off is essential.',
+    category: 'trade-offs',
+  },
+];

@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const MLE_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'mle-uniqueness',
+    demoId: 'mle',
+    difficulty: 'beginner',
+    question: 'Why is the multilinear extension of a function f: {0,1}^n \u2192 F called "unique"?',
+    hint: 'How many multilinear polynomials can agree with f on all Boolean inputs?',
+    choices: [
+      { label: 'There are many multilinear extensions but we pick the simplest', rationale: 'There is exactly one, not many.' },
+      { label: 'Exactly one multilinear polynomial agrees with f on all of {0,1}^n', rationale: 'Correct \u2014 a multilinear polynomial over n variables is determined by its 2^n values on the Boolean hypercube. Since f specifies all 2^n values, there is exactly one multilinear polynomial that matches.' },
+      { label: 'The extension is unique only over small fields', rationale: 'Uniqueness holds over any field, not just small ones.' },
+      { label: 'It is not actually unique \u2014 different extensions can agree on the hypercube', rationale: 'Higher-degree extensions can agree on the hypercube, but the multilinear one is unique.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A multilinear polynomial in n variables has at most 2^n monomials (each variable appears with degree \u2264 1). Since f provides exactly 2^n constraints (one per Boolean input), the system is fully determined. This is why we say "the" multilinear extension, not "a" multilinear extension.',
+    category: 'fundamentals',
+  },
+  {
+    id: 'mle-eq-basis',
+    demoId: 'mle',
+    difficulty: 'intermediate',
+    question: 'In the eq-basis formula f\u0303(r) = \u03a3_v f(v)\u00b7eq(v, r), what does the eq(v, r) function compute?',
+    hint: 'eq(v, r) is a product over coordinates. What does it equal when v = r?',
+    choices: [
+      { label: 'The Hamming distance between v and r', rationale: 'Hamming distance counts differing bits \u2014 eq is a product, not a count.' },
+      { label: 'A Lagrange basis polynomial that equals 1 when r = v and 0 at other Boolean points', rationale: 'Correct \u2014 eq(v, r) = \u220fi (v\u1d62r\u1d62 + (1-v\u1d62)(1-r\u1d62)). At Boolean inputs, this is 1 if v = r and 0 otherwise, acting as an interpolation selector.' },
+      { label: 'A hash of v and r', rationale: 'eq is an algebraic formula, not a hash.' },
+      { label: 'The inner product \u27e8v, r\u27e9 over the field', rationale: 'The inner product is a single sum, not a product over coordinates.' },
+    ],
+    correctIndex: 1,
+    explanation: 'eq(v, r) = \u220fi (v\u1d62r\u1d62 + (1-v\u1d62)(1-r\u1d62)) is the multilinear Lagrange basis polynomial for vertex v. On the Boolean hypercube, it selects exactly the vertex v (evaluating to 1 at v and 0 at all other vertices). For non-Boolean r, it smoothly interpolates.',
+    category: 'eq-basis',
+  },
+  {
+    id: 'mle-partial-eval',
+    demoId: 'mle',
+    difficulty: 'intermediate',
+    question: 'When you partially evaluate f\u0303(x\u2081, x\u2082, x\u2083) at x\u2081 = r\u2081, what is the result?',
+    hint: 'Fixing one variable in a multilinear polynomial over 3 variables gives...',
+    choices: [
+      { label: 'A constant', rationale: 'Fixing 1 of 3 variables leaves 2 free variables.' },
+      { label: 'A univariate polynomial in x\u2082', rationale: 'Two variables remain free, not just one.' },
+      { label: 'A multilinear polynomial in (x\u2082, x\u2083) over a reduced hypercube', rationale: 'Correct \u2014 fixing x\u2081 = r\u2081 reduces the 3-variable MLE to a 2-variable MLE. The new function is defined on {0,1}\u00b2 with values computed from the original 8 values.' },
+      { label: 'A polynomial of degree 3', rationale: 'Multilinear means degree \u2264 1 per variable. Fixing one variable cannot increase the degree.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Partial evaluation fixes one variable and produces a lower-dimensional MLE. For f\u0303(r\u2081, x\u2082, x\u2083), each pair (b\u2082, b\u2083) gets value (1-r\u2081)\u00b7f(0,b\u2082,b\u2083) + r\u2081\u00b7f(1,b\u2082,b\u2083). This is exactly what sumcheck does in each round \u2014 it partially evaluates the MLE one variable at a time.',
+    category: 'partial-evaluation',
+  },
+  {
+    id: 'mle-non-boolean-eval',
+    demoId: 'mle',
+    difficulty: 'advanced',
+    question: 'What makes evaluating an MLE at a non-Boolean point (e.g., r = (2, 3)) useful in proof systems?',
+    hint: 'Think about what the verifier learns from a single non-Boolean evaluation.',
+    choices: [
+      { label: 'It reveals the original function values', rationale: 'A single non-Boolean evaluation does not reveal individual function values \u2014 it is a weighted combination.' },
+      { label: 'It compresses all 2^n function values into a single field element that the verifier can check', rationale: 'Correct \u2014 f\u0303(r) is a random linear combination of all f(v) values. By the Schwartz-Zippel lemma, checking f\u0303(r) at a random r is equivalent (with high probability) to checking all 2^n values.' },
+      { label: 'It makes the polynomial easier to commit to', rationale: 'Commitment schemes work on the polynomial itself, not on specific evaluations.' },
+      { label: 'It has no practical use \u2014 only Boolean evaluations matter', rationale: 'Non-Boolean evaluations are the foundation of sumcheck, GKR, and other protocols.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Evaluating f\u0303 at a random point r compresses the entire truth table into one field element. The Schwartz-Zippel lemma guarantees that if two functions disagree on any input, their MLEs disagree at a random point with high probability. This is why sumcheck and GKR use random MLE evaluations as succinct claims.',
+    category: 'proof-systems',
+  },
+];

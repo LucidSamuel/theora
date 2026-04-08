@@ -37,6 +37,7 @@ export function ObliviousSyncDemo(): JSX.Element {
   const [injectSpentMatch, setInjectSpentMatch] = useState(false);
   const [round, setRound] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
+  const [autoPlayDelay, setAutoPlayDelay] = useState(900);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -78,9 +79,9 @@ export function ObliviousSyncDemo(): JSX.Element {
       setAutoplay(false);
       return;
     }
-    const timeout = window.setTimeout(() => setRound((value) => Math.min(4, value + 1)), 900);
+    const timeout = window.setTimeout(() => setRound((value) => Math.min(4, value + 1)), autoPlayDelay);
     return () => window.clearTimeout(timeout);
-  }, [autoplay, round]);
+  }, [autoplay, autoPlayDelay, round]);
 
   // Stop GIF recording when autoplay ends
   useEffect(() => {
@@ -172,13 +173,13 @@ export function ObliviousSyncDemo(): JSX.Element {
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
-        <ControlGroup label="Scenario">
+        <ControlGroup label="Scenario" ariaLabel="Scenario parameters">
           <SliderControl label="Wallet notes" value={walletCount} min={2} max={6} step={1} onChange={(value) => { setWalletCount(value); setRound(0); }} />
           <SliderControl label="Spent-set size" value={serviceCount} min={4} max={12} step={1} onChange={(value) => { setServiceCount(value); setRound(0); }} />
           <ToggleControl label="Inject spent-note collision" checked={injectSpentMatch} onChange={(value) => { setInjectSpentMatch(value); setRound(0); }} />
         </ControlGroup>
 
-        <ControlGroup label="Protocol">
+        <ControlGroup label="Protocol" ariaLabel="Protocol round controls">
           <ControlCard>
             <div className="control-kicker">Current round</div>
             <div className="control-value">#{round + 1}</div>
@@ -192,6 +193,7 @@ export function ObliviousSyncDemo(): JSX.Element {
             <ButtonControl label={autoplay ? 'Pause' : 'Auto-play'} onClick={() => setAutoplay((value) => !value)} />
             <ButtonControl label="Replay" onClick={() => { setRound(0); setAutoplay(false); }} />
           </div>
+          <SliderControl label={`Speed: ${autoPlayDelay}ms`} value={1800 - autoPlayDelay} min={0} max={1500} step={100} onChange={(value) => setAutoPlayDelay(1800 - value)} />
         </ControlGroup>
 
         <ShareSaveDropdown
@@ -211,7 +213,7 @@ export function ObliviousSyncDemo(): JSX.Element {
       </DemoCanvasArea>
 
       <DemoAside width="narrow">
-        <ControlGroup label="What Each Party Learns">
+        <ControlGroup label="What Each Party Learns" ariaLabel="What each party learns in this round">
           <ControlCard>
             <div className="control-kicker">Wallet learns</div>
             <div className="control-caption">{details.walletLearns[0]}</div>

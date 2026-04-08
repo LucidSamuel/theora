@@ -6,6 +6,20 @@ function formatByte(value: number): string {
   return value.toString(16).padStart(2, '0');
 }
 
+/** Amber highlight color for changed bytes. */
+const CHANGED_BG = '#f59e0b';
+const CHANGED_BORDER = '#d97706';
+
+function truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  const measured = ctx.measureText(text).width;
+  if (measured <= maxWidth) return text;
+  let truncated = text;
+  while (truncated.length > 0 && ctx.measureText(truncated + '\u2026').width > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated + '\u2026';
+}
+
 function drawProofBytes(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -28,7 +42,8 @@ function drawProofBytes(
   ctx.fillStyle = theme === 'dark' ? '#fafafa' : '#09090b';
   ctx.font = '700 13px "Space Grotesk", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(title, x + 16, y + 24);
+  const titleMaxWidth = width - 32;
+  ctx.fillText(truncateText(ctx, title, titleMaxWidth), x + 16, y + 24);
 
   proof.components.forEach((component, componentIndex) => {
     const rowY = y + 52 + componentIndex * 52;
@@ -42,17 +57,21 @@ function drawProofBytes(
       const compareByte = comparison?.components[componentIndex]?.bytes[byteIndex];
       const changed = compareByte !== undefined && compareByte !== byte;
       ctx.fillStyle = changed
-        ? hexToRgba(accent, 0.22)
+        ? hexToRgba(CHANGED_BG, 0.3)
         : theme === 'dark'
           ? 'rgba(255,255,255,0.05)'
           : 'rgba(15,23,42,0.06)';
       drawRoundedRect(ctx, byteX, byteY, 22, 22, 6);
       ctx.fill();
-      ctx.strokeStyle = hexToRgba(changed ? accent : '#94a3b8', changed ? 0.8 : 0.25);
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = changed
+        ? hexToRgba(CHANGED_BORDER, 0.9)
+        : hexToRgba('#94a3b8', 0.25);
+      ctx.lineWidth = changed ? 1.5 : 1;
       drawRoundedRect(ctx, byteX, byteY, 22, 22, 6);
       ctx.stroke();
-      ctx.fillStyle = theme === 'dark' ? '#e4e4e7' : '#18181b';
+      ctx.fillStyle = changed
+        ? (theme === 'dark' ? '#fbbf24' : '#92400e')
+        : (theme === 'dark' ? '#e4e4e7' : '#18181b');
       ctx.font = '10px "JetBrains Mono", monospace';
       ctx.fillText(formatByte(byte), byteX + 3, byteY + 14);
     });
@@ -89,7 +108,8 @@ export function renderRerandomization(
   ctx.fillText('Proof Rerandomization', 40, 44);
   ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
   ctx.font = '12px "Space Grotesk", sans-serif';
-  ctx.fillText(`${changedBytes} bytes changed, but the statement hash stayed fixed`, 40, 66);
+  const subtitle = `${changedBytes} bytes changed, but the statement hash stayed fixed`;
+  ctx.fillText(truncateText(ctx, subtitle, width - 80), 40, 66);
 
   const panelWidth = (width - 120) / 2;
   drawProofBytes(ctx, 40, 92, panelWidth, 'Original proof', original, rerandomized, '#38bdf8', theme);
@@ -100,14 +120,14 @@ export function renderRerandomization(
   ctx.fill();
   ctx.fillStyle = '#22c55e';
   ctx.font = '700 12px "Space Grotesk", sans-serif';
-  ctx.fillText('verified: same statement, different proof transcript', 56, 346);
+  ctx.fillText(truncateText(ctx, 'verified: same statement, different proof transcript', width - 120), 56, 346);
 
   ctx.fillStyle = isDark ? '#e4e4e7' : '#18181b';
   ctx.font = '600 13px "Space Grotesk", sans-serif';
   ctx.fillText('Matching game', 40, 402);
   ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
   ctx.font = '12px "Space Grotesk", sans-serif';
-  ctx.fillText('Can you match each rerandomized proof back to its original source?', 40, 424);
+  ctx.fillText(truncateText(ctx, 'Can you match each rerandomized proof back to its original source?', width - 80), 40, 424);
 
   cards.forEach((card, index) => {
     const y = 450 + index * 70;

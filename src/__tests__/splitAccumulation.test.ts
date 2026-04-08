@@ -7,6 +7,7 @@ import {
   getNaiveTotalCost,
   getSavingsRatio,
   settleAccumulator,
+  settleCorruptedAccumulator,
 } from '@/demos/split-accumulation/logic';
 
 describe('split accumulation logic', () => {
@@ -46,6 +47,15 @@ describe('split accumulation logic', () => {
     expect(settlement.msmCost).toBe(240);
     expect(settlement.foldedCount).toBe(6);
     expect(settlement.verified).toBe(true);
+  });
+
+  it('marks the final MSM as failed when a bad fold was accumulated', () => {
+    const settlement = settleCorruptedAccumulator(240, 6);
+
+    expect(settlement.msmSize).toBe(240);
+    expect(settlement.msmCost).toBe(240);
+    expect(settlement.foldedCount).toBe(6);
+    expect(settlement.verified).toBe(false);
   });
 
   it('shows accumulation cheaper than naive recursion after several steps', () => {

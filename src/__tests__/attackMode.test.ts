@@ -61,8 +61,8 @@ const initialState: AttackState = {
 // --- Tests ---
 
 describe('Attack scenario registry', () => {
-  it('has 13 scenarios', () => {
-    expect(ALL_SCENARIOS).toHaveLength(13);
+  it('has 19 scenarios', () => {
+    expect(ALL_SCENARIOS).toHaveLength(19);
   });
 
   it('each scenario has a unique id', () => {
@@ -90,6 +90,12 @@ describe('Attack scenario registry', () => {
     expect(getScenarioForDemo('groth16')?.id).toBe('groth16-corrupt-proof');
     expect(getScenarioForDemo('sumcheck')?.id).toBe('sumcheck-cheat');
     expect(getScenarioForDemo('fri')?.id).toBe('fri-degree-fraud');
+    expect(getScenarioForDemo('mle')?.id).toBe('mle-forgery');
+    expect(getScenarioForDemo('nova')?.id).toBe('nova-invalid-witness');
+    expect(getScenarioForDemo('gkr')?.id).toBe('gkr-false-output');
+    expect(getScenarioForDemo('split-accumulation')?.id).toBe('split-acc-bad-fold');
+    expect(getScenarioForDemo('rerandomization')?.id).toBe('rerand-linkability');
+    expect(getScenarioForDemo('oblivious-sync')?.id).toBe('osync-deanonymize');
   });
 
   it('returns null for demos without attack scenarios', () => {
@@ -122,7 +128,13 @@ describe('Attack scenario registry', () => {
     expect(ATTACK_DEMO_IDS).toContain('groth16');
     expect(ATTACK_DEMO_IDS).toContain('sumcheck');
     expect(ATTACK_DEMO_IDS).toContain('fri');
-    expect(ATTACK_DEMO_IDS).toHaveLength(13);
+    expect(ATTACK_DEMO_IDS).toContain('mle');
+    expect(ATTACK_DEMO_IDS).toContain('nova');
+    expect(ATTACK_DEMO_IDS).toContain('gkr');
+    expect(ATTACK_DEMO_IDS).toContain('split-accumulation');
+    expect(ATTACK_DEMO_IDS).toContain('rerandomization');
+    expect(ATTACK_DEMO_IDS).toContain('oblivious-sync');
+    expect(ATTACK_DEMO_IDS).toHaveLength(19);
   });
 });
 
@@ -166,6 +178,12 @@ describe('Attack scenario data integrity', () => {
     expect(getScenarioById('groth16-corrupt-proof')?.conclusion.succeeded).toBe(false);
     expect(getScenarioById('sumcheck-cheat')?.conclusion.succeeded).toBe(false);
     expect(getScenarioById('fri-degree-fraud')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('mle-forgery')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('nova-invalid-witness')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('gkr-false-output')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('split-acc-bad-fold')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('rerand-linkability')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('osync-deanonymize')?.conclusion.succeeded).toBe(false);
   });
 });
 
@@ -412,5 +430,75 @@ describe('Attack scenario demoActions', () => {
 
     const corruptPayload = scenario.steps.find((s) => s.demoAction?.type === 'TOGGLE_CORRUPT')?.demoAction?.payload;
     expect(corruptPayload).toBe(true);
+  });
+
+  it('MLE scenario sets the variable count, evaluates at a verifier point, then attempts a forged claim', () => {
+    const scenario = getScenarioById('mle-forgery')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('SET_VARIABLES');
+    expect(actionTypes).toContain('LOAD_ATTACK_EVALUATION');
+
+    const evalPayloads = scenario.steps
+      .filter((s) => s.demoAction?.type === 'LOAD_ATTACK_EVALUATION')
+      .map((s) => s.demoAction!.payload) as Array<{ point?: number[]; claimedValue?: number }>;
+    expect(evalPayloads).toEqual([
+      { point: [2, 3] },
+      { point: [2, 3], claimedValue: 42 },
+    ]);
+  });
+
+  it('Nova scenario loads an honest chain, then reruns with an invalid witness', () => {
+    const scenario = getScenarioById('nova-invalid-witness')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_ATTACK_CHAIN');
+
+    const payloads = scenario.steps
+      .filter((s) => s.demoAction?.type === 'LOAD_ATTACK_CHAIN')
+      .map((s) => s.demoAction!.payload) as Array<{
+        numSteps?: number;
+        baseX?: number;
+        stepDelta?: number;
+        badWitnessIndex?: number | null;
+        runAll?: boolean;
+      }>;
+    expect(payloads).toEqual([
+      { numSteps: 4, baseX: 3, stepDelta: 4, badWitnessIndex: null, runAll: true },
+      { numSteps: 4, baseX: 3, stepDelta: 4, badWitnessIndex: 1, runAll: false },
+      { numSteps: 4, baseX: 3, stepDelta: 4, badWitnessIndex: 1, runAll: true },
+    ]);
+  });
+
+  it('GKR scenario resets, runs an honest proof, then loads a forged output claim', () => {
+    const scenario = getScenarioById('gkr-false-output')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('RESET');
+    expect(actionTypes).toContain('RUN_ALL');
+    expect(actionTypes).toContain('LOAD_FORGED_OUTPUT_CLAIM');
+
+    const forgedPayload = scenario.steps.find((s) => s.demoAction?.type === 'LOAD_FORGED_OUTPUT_CLAIM')?.demoAction?.payload;
+    expect(forgedPayload).toBe(1);
+  });
+
+  it('Split accumulation scenario loads an honest trace, then reloads with a bad fold and failed settlement', () => {
+    const scenario = getScenarioById('split-acc-bad-fold')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_ATTACK_TRACE');
+
+    const payloads = scenario.steps
+      .filter((s) => s.demoAction?.type === 'LOAD_ATTACK_TRACE')
+      .map((s) => s.demoAction!.payload) as Array<{ badFoldIndex?: number | null; settled?: boolean }>;
+    expect(payloads).toEqual([
+      { badFoldIndex: null, settled: true },
+      { badFoldIndex: 2, settled: false },
+      { badFoldIndex: 2, settled: true },
+    ]);
   });
 });

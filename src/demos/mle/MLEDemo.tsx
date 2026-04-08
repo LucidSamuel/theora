@@ -16,6 +16,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   decodeState,
   decodeStatePlain,
@@ -64,6 +66,7 @@ interface MLEDemoState {
   fixedVars: bigint[];     // for partial evaluation
   evaluation: MLEEvaluation | null;
   partialResult: PartialEvalResult | null;
+  attackClaim: bigint | null;
   phase: 'viewing' | 'evaluating' | 'partial';
 }
 
@@ -76,6 +79,7 @@ type MLEAction =
   | { type: 'SET_FIXED_VAR'; index: number; value: bigint }
   | { type: 'EVALUATE' }
   | { type: 'PARTIAL_EVALUATE' }
+  | { type: 'LOAD_ATTACK_EVALUATION'; point: bigint[]; claimedValue?: bigint }
   | { type: 'RANDOMIZE' }
   | { type: 'RESET' }
   | { type: 'RESTORE'; state: Partial<MLEDemoState> };
@@ -101,6 +105,7 @@ function buildInitialState(numVars: number, fieldSize?: bigint, values?: bigint[
     fixedVars,
     evaluation: null,
     partialResult: null,
+    attackClaim: null,
     phase: 'viewing',
   };
 }
@@ -123,6 +128,7 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
         values: newValues,
         evaluation: null,
         partialResult: null,
+        attackClaim: null,
         phase: 'viewing',
       };
     }
@@ -130,7 +136,7 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
     case 'SET_EVAL_POINT_COORD': {
       const newPoint = [...state.evalPoint];
       newPoint[action.index] = mod(action.value, state.fieldSize);
-      return { ...state, evalPoint: newPoint };
+      return { ...state, evalPoint: newPoint, attackClaim: null };
     }
 
     case 'SET_FIXED_VAR': {
@@ -140,7 +146,7 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
         newFixed.push(0n);
       }
       newFixed[action.index] = mod(action.value, state.fieldSize);
-      return { ...state, fixedVars: newFixed };
+      return { ...state, fixedVars: newFixed, attackClaim: null };
     }
 
     case 'EVALUATE': {
@@ -150,6 +156,7 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
         ...state,
         evaluation,
         partialResult: null,
+        attackClaim: null,
         phase: 'evaluating',
       };
     }
@@ -165,7 +172,29 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
         ...state,
         partialResult: result,
         evaluation: null,
+        attackClaim: null,
         phase: 'partial',
+      };
+    }
+
+    case 'LOAD_ATTACK_EVALUATION': {
+      const numVars = Math.max(1, Math.min(3, action.point.length || state.numVars));
+      const attackState = buildInitialState(numVars, state.fieldSize);
+      const point = action.point
+        .slice(0, numVars)
+        .map((value) => mod(value, attackState.fieldSize));
+      if (point.length !== numVars) return state;
+      const mle = createMLE(attackState.numVars, attackState.fieldSize, attackState.values);
+      const evaluation = evaluateMLE(mle, point);
+      return {
+        ...attackState,
+        evalPoint: point,
+        evaluation,
+        partialResult: null,
+        attackClaim: typeof action.claimedValue === 'bigint'
+          ? mod(action.claimedValue, attackState.fieldSize)
+          : null,
+        phase: 'evaluating',
       };
     }
 
@@ -180,6 +209,7 @@ function reducer(state: MLEDemoState, action: MLEAction): MLEDemoState {
         values: newValues,
         evaluation: null,
         partialResult: null,
+        attackClaim: null,
         phase: 'viewing',
       };
     }
@@ -254,6 +284,53 @@ function deserializeState(raw: SerializedState): Partial<MLEDemoState> {
   return base;
 }
 
+// ── Symbolic formula builder ──────────────────────────────────────────────
+
+function buildSymbolicFormula(numVars: number, values: bigint[]): string {
+  const count = 1 << numVars;
+  const subscripts = ['\u2081', '\u2082', '\u2083'];
+  const varNames = Array.from({ length: numVars }, (_, i) => `x${subscripts[i] ?? String(i + 1)}`);
+  const terms: string[] = [];
+
+  for (let idx = 0; idx < count; idx++) {
+    const v = values[idx]!;
+    if (v === 0n) continue;
+    const bits = idx.toString(2).padStart(numVars, '0');
+    const factors: string[] = [];
+    for (let i = 0; i < numVars; i++) {
+      if (bits[i] === '1') {
+        factors.push(varNames[i]!);
+      } else {
+        factors.push(`(1-${varNames[i]!})`);
+      }
+    }
+    terms.push(`${String(v)}\u00b7${factors.join('')}`);
+  }
+
+  if (terms.length === 0) return `f\u0303(${varNames.join(',')}) = 0`;
+  return `f\u0303(${varNames.join(',')}) = ${terms.join(' + ')}`;
+}
+
+/**
+ * Check if all evaluation point coordinates are 0 or 1 (boolean).
+ * If so, return the corresponding hypercube vertex index and bit string.
+ */
+function booleanPointInfo(
+  evalPoint: bigint[],
+  fieldSize: bigint,
+): { isBool: true; bits: string; index: number } | { isBool: false } {
+  for (const coord of evalPoint) {
+    const c = ((coord % fieldSize) + fieldSize) % fieldSize;
+    if (c !== 0n && c !== 1n) return { isBool: false };
+  }
+  const bits = evalPoint.map((c) => {
+    const v = ((c % fieldSize) + fieldSize) % fieldSize;
+    return v === 1n ? '1' : '0';
+  }).join('');
+  const index = parseInt(bits, 2);
+  return { isBool: true, bits, index };
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function MLEDemo(): JSX.Element {
@@ -262,6 +339,7 @@ export function MLEDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
@@ -276,6 +354,37 @@ export function MLEDemo(): JSX.Element {
     [state.numVars, state.fieldSize, state.values],
   );
   const hypercubeSum = useMemo(() => sumOverHypercube(mle), [mle]);
+
+  // Derived symbolic formula
+  const symbolicFormula = useMemo(
+    () => buildSymbolicFormula(state.numVars, state.values),
+    [state.numVars, state.values],
+  );
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_VARIABLES: (payload) => {
+      if (typeof payload !== 'number' || !Number.isInteger(payload)) return;
+      dispatch({ type: 'RESTORE', state: buildInitialState(payload) });
+    },
+    LOAD_ATTACK_EVALUATION: (payload) => {
+      if (!payload || typeof payload !== 'object') return;
+      const point = Array.isArray((payload as { point?: unknown }).point)
+        ? (payload as { point: unknown[] }).point
+        : null;
+      if (!point || point.some((coord) => typeof coord !== 'number' || !Number.isInteger(coord))) {
+        return;
+      }
+      const claimedValue = (payload as { claimedValue?: unknown }).claimedValue;
+      dispatch({
+        type: 'LOAD_ATTACK_EVALUATION',
+        point: point.map((coord) => BigInt(coord as number)),
+        claimedValue: typeof claimedValue === 'number' && Number.isFinite(claimedValue)
+          && Number.isInteger(claimedValue)
+          ? BigInt(claimedValue)
+          : undefined,
+      });
+    },
+  }), [currentDemoAction]));
 
   // ── Restore from URL on mount ──────────────────────────────────────
   useEffect(() => {
@@ -307,12 +416,16 @@ export function MLEDemo(): JSX.Element {
   useEffect(() => {
     const phaseLabel = state.phase === 'viewing'
       ? 'Viewing hypercube'
+      : state.phase === 'evaluating' && state.attackClaim !== null
+        ? `Verifier rejected claim ${String(state.attackClaim)}`
       : state.phase === 'evaluating'
         ? `Evaluated at (${state.evalPoint.map(String).join(', ')})`
         : `Partial eval: ${state.fixedVars.length} var${state.fixedVars.length !== 1 ? 's' : ''} fixed`;
     setEntry('mle', {
       title: phaseLabel,
-      body: state.phase === 'evaluating' && state.evaluation
+      body: state.phase === 'evaluating' && state.evaluation && state.attackClaim !== null
+        ? `Claimed f̃(r) = ${String(state.attackClaim)}, but the verifier recomputed ${String(state.evaluation.value)} from the public hypercube values and rejected the forgery.`
+        : state.phase === 'evaluating' && state.evaluation
         ? `f\u0303(r) = ${String(state.evaluation.value)}. Each vertex contributes f(v)\u00B7eq(r,v) to the sum.`
         : state.phase === 'partial' && state.partialResult
           ? `Reduced to ${state.partialResult.remainingVars} variable${state.partialResult.remainingVars !== 1 ? 's' : ''} with ${state.partialResult.evaluations.length} points.`
@@ -323,7 +436,7 @@ export function MLEDemo(): JSX.Element {
         'Compare the eq-basis weights at different points',
       ],
     });
-  }, [state.phase, state.evalPoint, state.evaluation, state.partialResult, state.numVars, state.fieldSize, state.fixedVars.length, setEntry]);
+  }, [state.phase, state.evalPoint, state.evaluation, state.partialResult, state.numVars, state.fieldSize, state.fixedVars.length, state.attackClaim, setEntry]);
 
   // ── Share handlers ─────────────────────────────────────────────────
   const handleCopyShareUrl = () => {
@@ -394,6 +507,7 @@ export function MLEDemo(): JSX.Element {
           value: String(e.value),
         })),
       } : null,
+      attackClaim: state.attackClaim === null ? null : String(state.attackClaim),
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
     showToast('Audit JSON copied', 'Full MLE state including basis terms');
@@ -404,9 +518,10 @@ export function MLEDemo(): JSX.Element {
     mle,
     evaluation: state.evaluation,
     partialResult: state.partialResult,
+    attackClaim: state.attackClaim,
     hypercubeSum,
     phase: state.phase,
-  }), [mle, state.evaluation, state.partialResult, hypercubeSum, state.phase]);
+  }), [mle, state.evaluation, state.partialResult, state.attackClaim, hypercubeSum, state.phase]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
     renderMLE(ctx, frame, renderState, theme);
@@ -467,7 +582,7 @@ export function MLEDemo(): JSX.Element {
         </ControlGroup>
 
         {/* Hypercube Values */}
-        <ControlGroup label="Hypercube Values" collapsible defaultCollapsed={state.numVars === 3}>
+        <ControlGroup label="Hypercube Values" collapsible defaultCollapsed={state.numVars === 3} ariaLabel="Toggle hypercube values">
           {state.values.map((v, i) => {
             const bits = i.toString(2).padStart(state.numVars, '0');
             return (
@@ -486,6 +601,25 @@ export function MLEDemo(): JSX.Element {
           </ControlNote>
         </ControlGroup>
 
+        {/* Symbolic Formula */}
+        <ControlGroup label="Formula" collapsible ariaLabel="Toggle formula">
+          <ControlCard>
+            <span className="control-kicker">Multilinear extension</span>
+            <div
+              className="control-caption"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {symbolicFormula}
+            </div>
+          </ControlCard>
+        </ControlGroup>
+
         {/* Evaluate MLE */}
         <ControlGroup label="Evaluate MLE">
           {state.evalPoint.map((v, i) => (
@@ -502,21 +636,43 @@ export function MLEDemo(): JSX.Element {
             label="Evaluate"
             onClick={() => dispatch({ type: 'EVALUATE' })}
           />
-          {state.evaluation && state.phase === 'evaluating' && (
-            <ControlCard tone="success">
-              <span className="control-kicker">Result</span>
-              <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
-                f&#x0303;(r) = {String(state.evaluation.value)}
+          {state.evaluation && state.phase === 'evaluating' && (() => {
+            const bpInfo = booleanPointInfo(state.evalPoint, state.fieldSize);
+            return (
+              <ControlCard tone="success">
+                <span className="control-kicker">Result</span>
+                <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
+                  f&#x0303;(r) = {String(state.evaluation.value)}
+                </div>
+                <div className="control-caption">
+                  Sum of {state.evaluation.basisTerms.length} weighted terms.
+                </div>
+                {bpInfo.isBool && (
+                  <div className="control-caption" style={{ fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                    f&#x0303;({state.evalPoint.map(String).join(',')}) = f({bpInfo.bits}) = {String(state.evaluation.value)} (hypercube vertex)
+                  </div>
+                )}
+              </ControlCard>
+            );
+          })()}
+          {state.evaluation && state.phase === 'evaluating' && state.attackClaim !== null && (
+            <ControlCard tone={state.attackClaim === state.evaluation.value ? 'success' : 'error'}>
+              <span className="control-kicker">Forgery attempt</span>
+              <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>
+                Claimed f&#x0303;(r) = {String(state.attackClaim)}
+              </div>
+              <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>
+                Verifier recomputed {String(state.evaluation.value)} from the public hypercube values
               </div>
               <div className="control-caption">
-                Sum of {state.evaluation.basisTerms.length} weighted terms.
+                {state.attackClaim === state.evaluation.value ? 'Claim accepted.' : 'Claim rejected — the multilinear extension is deterministic once the cube values are fixed.'}
               </div>
             </ControlCard>
           )}
         </ControlGroup>
 
         {/* Partial Evaluation */}
-        <ControlGroup label="Partial Evaluation" collapsible>
+        <ControlGroup label="Partial Evaluation" collapsible ariaLabel="Toggle partial evaluation">
           <ControlNote>
             Fix the first k variables to field values, reducing the dimension.
           </ControlNote>

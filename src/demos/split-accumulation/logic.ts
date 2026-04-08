@@ -35,6 +35,8 @@ export interface AccumulatedStep {
   claim: Claim;
   /** Random challenge used for folding */
   challenge: string;
+  /** Whether this step contains a deliberately bad folded instance. */
+  corrupted?: boolean;
   /** Cheap field operations cost at this step */
   fieldOpsCost: number;
   /** Running accumulator after this fold */
@@ -155,6 +157,7 @@ export function buildAccumulatedSteps(claims: Claim[], msmBaseCost: number): Acc
       index: i,
       claim,
       challenge,
+      corrupted: false,
       fieldOpsCost: FIELD_OPS_PER_FOLD,
       accumulator: { ...accumulator },
       cumulativeCost: cumulative,
@@ -174,6 +177,15 @@ export function settleAccumulator(msmBaseCost: number, foldedCount: number): Set
     msmCost: msmBaseCost,
     foldedCount,
     verified: true,
+  };
+}
+
+export function settleCorruptedAccumulator(msmBaseCost: number, foldedCount: number): Settlement {
+  return {
+    msmSize: msmBaseCost,
+    msmCost: msmBaseCost,
+    foldedCount,
+    verified: false,
   };
 }
 

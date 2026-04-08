@@ -37,6 +37,17 @@ export interface NovaRenderState {
   matrices: R1CSMatrices;
 }
 
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface ChainCardLayout extends Rect {
+  step: FoldingStep;
+}
+
 // ── Main render ──────────────────────────────────────────────────────────────
 
 export function renderNova(
@@ -44,6 +55,8 @@ export function renderNova(
   frame: FrameInfo,
   state: NovaRenderState,
   theme: 'dark' | 'light',
+  worldMouseX?: number,
+  worldMouseY?: number,
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -73,8 +86,8 @@ export function renderNova(
 
   const stepCount = state.steps.length;
   const headerText = `Nova IVC \u2014 ${stepCount} folding step${stepCount !== 1 ? 's' : ''} over GF(${state.fieldSize})`;
-  ctx.font = '11px monospace';
-  const maxBadgeW = Math.max(1, width - (width > 320 ? 180 : 24));
+  ctx.font = `${width < 520 ? 10 : 11}px monospace`;
+  const maxBadgeW = Math.max(1, width - 32);
   const headerW = Math.min(ctx.measureText(headerText).width + 40, maxBadgeW);
   const headerX = width / 2 - headerW / 2;
   const headerY = 16;
@@ -113,8 +126,24 @@ export function renderNova(
   if (state.currentStep >= 0 && state.currentStep < state.steps.length) {
     drawStepDetail(ctx, width, height, state.steps[state.currentStep]!, state.currentStep, isDark);
   } else {
-    drawChainView(ctx, width, height, state, isDark);
+    drawChainView(ctx, width, height, state, isDark, worldMouseX, worldMouseY);
   }
+}
+
+export function getNovaSceneBounds(
+  width: number,
+  height: number,
+  state: NovaRenderState,
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  if (state.phase === 'setup' || state.steps.length === 0) {
+    return getSetupBounds(width, height);
+  }
+
+  if (state.currentStep >= 0 && state.currentStep < state.steps.length) {
+    return getStepDetailBounds(width, height);
+  }
+
+  return getChainBounds(width, height, state.steps);
 }
 
 // ── Setup view (no steps yet) ────────────────────────────────────────────────
@@ -148,6 +177,21 @@ function drawSetupView(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText('Press "Fold Step" or "Fold All" to begin IVC', cx, y + ch + 24);
+}
+
+function getSetupBounds(width: number, height: number): { minX: number; minY: number; maxX: number; maxY: number } {
+  const cx = width / 2;
+  const cy = height / 2;
+  const cw = 220;
+  const ch = 130;
+  const x = cx - cw / 2;
+  const y = cy - ch / 2;
+  return {
+    minX: x - 24,
+    minY: y - 24,
+    maxX: x + cw + 24,
+    maxY: y + ch + 56,
+  };
 }
 
 // ── Step detail view (one fold shown in detail) ──────────────────────────────
@@ -247,6 +291,21 @@ function drawStepDetail(
   );
 }
 
+function getStepDetailBounds(width: number, height: number): { minX: number; minY: number; maxX: number; maxY: number } {
+  const centerX = width / 2;
+  const topY = height * 0.18;
+  const spacing = CARD_W + 60;
+  const leftX = centerX - spacing / 2 - CARD_W / 2;
+  const rightX = centerX + spacing / 2 - CARD_W / 2;
+  const mergeY = topY + CARD_H + CONVERGE_GAP_Y + 60;
+  return {
+    minX: leftX - 32,
+    minY: topY - 36,
+    maxX: rightX + CARD_W + 32,
+    maxY: mergeY + 10 + MERGE_CARD_H + 36,
+  };
+}
+
 // ── Chain view (overview of all folds) ───────────────────────────────────────
 
 function drawChainView(
@@ -255,35 +314,35 @@ function drawChainView(
   height: number,
   state: NovaRenderState,
   isDark: boolean,
+  worldMouseX?: number,
+  worldMouseY?: number,
 ): void {
   const steps = state.steps;
   const n = steps.length;
   if (n === 0) return;
 
-  // Compute chain layout — each fold is a compact card in a horizontal row
-  const miniW = 130;
-  const miniH = 100;
-  const gap = STEP_GAP_X;
-  const totalW = n * miniW + (n - 1) * gap;
-  const startX = (width - totalW) / 2;
-  const rowY = (height - miniH) / 2;
+  const { cards, rowY, miniH, gap } = getChainLayout(width, height, steps);
+  const hoveredIndex = typeof worldMouseX === 'number' && typeof worldMouseY === 'number'
+    ? cards.findIndex((card) => pointInRect(worldMouseX, worldMouseY, card))
+    : -1;
 
-  steps.forEach((step, i) => {
-    const x = startX + i * (miniW + gap);
+  cards.forEach((card, i) => {
+    const { step, x, w: miniW } = card;
     const isActive = state.currentStep === i;
+    const isHovered = hoveredIndex === i;
     const statusColor = step.satisfied ? COLOR_SUCCESS : COLOR_ERROR;
 
     // Card
     const borderColor = isActive
       ? (isDark ? ZINC_100 : ZINC_600)
       : (isDark ? ZINC_600 : ZINC_300);
-    const bgAlpha = isActive ? 0.08 : 0.04;
+    const bgAlpha = isActive || isHovered ? 0.08 : 0.04;
 
     ctx.fillStyle = hexToRgba(isDark ? '#ffffff' : '#000000', bgAlpha);
     drawRoundedRect(ctx, x, rowY, miniW, miniH, 8);
     ctx.fill();
-    ctx.strokeStyle = hexToRgba(borderColor, isActive ? 0.8 : 0.4);
-    ctx.lineWidth = isActive ? 2 : 1.2;
+    ctx.strokeStyle = hexToRgba(borderColor, isActive || isHovered ? 0.8 : 0.4);
+    ctx.lineWidth = isActive || isHovered ? 2 : 1.2;
     drawRoundedRect(ctx, x, rowY, miniW, miniH, 8);
     ctx.stroke();
 
@@ -322,7 +381,7 @@ function drawChainView(
 
     // u'
     ctx.font = '8px monospace';
-    ctx.fillStyle = isDark ? ZINC_400 : ZINC_400;
+    ctx.fillStyle = ZINC_400;
     ctx.fillText("u':", cx, cy);
     ctx.font = '9px monospace';
     ctx.fillStyle = isDark ? ZINC_100 : ZINC_700;
@@ -331,16 +390,25 @@ function drawChainView(
 
     // r
     ctx.font = '8px monospace';
-    ctx.fillStyle = isDark ? ZINC_400 : ZINC_400;
+    ctx.fillStyle = ZINC_400;
     ctx.fillText('r:', cx, cy);
     ctx.font = '9px monospace';
     ctx.fillStyle = COLOR_ACCENT;
     ctx.fillText(`${step.challenge}`, cx + 20, cy, maxW - 20);
     cy += lineH;
 
+    // T
+    ctx.font = '8px monospace';
+    ctx.fillStyle = ZINC_400;
+    ctx.fillText('T:', cx, cy);
+    ctx.font = '9px monospace';
+    ctx.fillStyle = isDark ? ZINC_100 : ZINC_700;
+    ctx.fillText(`[${step.crossTerm.map(String).join(',')}]`, cx + 20, cy, maxW - 20);
+    cy += lineH;
+
     // E'
     ctx.font = '8px monospace';
-    ctx.fillStyle = isDark ? ZINC_400 : ZINC_400;
+    ctx.fillStyle = ZINC_400;
     ctx.fillText("E':", cx, cy);
     ctx.font = '9px monospace';
     ctx.fillStyle = isDark ? ZINC_100 : ZINC_700;
@@ -376,6 +444,116 @@ function drawChainView(
       : `\u2717 IVC chain broken \u2014 folding error detected`,
     width / 2, badgeY,
   );
+
+  if (hoveredIndex >= 0) {
+    drawChainTooltip(ctx, width, height, cards[hoveredIndex]!, isDark);
+  }
+}
+
+function getChainLayout(width: number, height: number, steps: FoldingStep[]): {
+  cards: ChainCardLayout[];
+  rowY: number;
+  miniW: number;
+  miniH: number;
+  gap: number;
+  totalW: number;
+  startX: number;
+} {
+  const n = steps.length;
+  const miniW = 136;
+  const miniH = 116;
+  const gap = STEP_GAP_X;
+  const totalW = n * miniW + (n - 1) * gap;
+  const startX = (width - totalW) / 2;
+  const rowY = (height - miniH) / 2;
+  return {
+    cards: steps.map((step, i) => ({
+      step,
+      x: startX + i * (miniW + gap),
+      y: rowY,
+      w: miniW,
+      h: miniH,
+    })),
+    rowY,
+    miniW,
+    miniH,
+    gap,
+    totalW,
+    startX,
+  };
+}
+
+function getChainBounds(
+  width: number,
+  height: number,
+  steps: FoldingStep[],
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  const { startX, totalW, rowY, miniH } = getChainLayout(width, height, steps);
+  return {
+    minX: startX - 28,
+    minY: rowY - 28,
+    maxX: startX + totalW + 28,
+    maxY: rowY + miniH + 52,
+  };
+}
+
+function pointInRect(x: number, y: number, rect: Rect): boolean {
+  return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+}
+
+function drawChainTooltip(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  card: ChainCardLayout,
+  isDark: boolean,
+): void {
+  const lines = [
+    `Fold ${card.step.stepNumber}`,
+    `u' = ${card.step.foldedInstance.u}`,
+    `commit' = ${card.step.foldedInstance.commitment}`,
+    `x' = [${card.step.foldedInstance.x.map(String).join(', ')}]`,
+    `E' = [${card.step.foldedWitness.E.map(String).join(', ')}]`,
+    `T = [${card.step.crossTerm.map(String).join(', ')}]`,
+    `r = ${card.step.challenge}`,
+    card.step.satisfied ? 'Status: relaxed R1CS satisfied' : 'Status: relaxed R1CS violated',
+  ];
+  const padding = 10;
+  const lineH = 14;
+
+  ctx.save();
+  ctx.font = '10px monospace';
+  const tooltipW = Math.max(...lines.map((line) => ctx.measureText(line).width)) + padding * 2;
+  const tooltipH = lines.length * lineH + padding * 2;
+
+  let tooltipX = card.x + card.w + 12;
+  if (tooltipX + tooltipW > width - 10) tooltipX = card.x - tooltipW - 12;
+  if (tooltipX < 10) tooltipX = 10;
+
+  let tooltipY = card.y + card.h / 2 - tooltipH / 2;
+  if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+  if (tooltipY < 10) tooltipY = 10;
+
+  ctx.fillStyle = hexToRgba(isDark ? ZINC_900 : '#ffffff', 0.96);
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 10);
+  ctx.fill();
+  ctx.strokeStyle = hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.7);
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 10);
+  ctx.stroke();
+
+  lines.forEach((line, index) => {
+    ctx.font = index === 0 ? 'bold 10px monospace' : '10px monospace';
+    ctx.fillStyle = index === 0
+      ? (isDark ? '#fafafa' : ZINC_900)
+      : (line.startsWith('Status:')
+          ? (card.step.satisfied ? COLOR_SUCCESS : COLOR_ERROR)
+          : (isDark ? ZINC_100 : ZINC_700));
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(line, tooltipX + padding, tooltipY + padding + index * lineH);
+  });
+  ctx.restore();
 }
 
 // ── Instance card helper ─────────────────────────────────────────────────────
@@ -450,7 +628,7 @@ function drawInstanceCard(
   ctx.textAlign = 'left';
   fields.forEach(({ label, value }) => {
     ctx.font = '8px monospace';
-    ctx.fillStyle = isDark ? ZINC_400 : ZINC_400;
+    ctx.fillStyle = ZINC_400;
     ctx.textBaseline = 'middle';
     ctx.fillText(label, cx, cy, maxW);
     cy += 11;

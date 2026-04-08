@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const SPLIT_ACCUMULATION_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'split-acc-deferred-verification',
+    demoId: 'split-accumulation',
+    difficulty: 'beginner',
+    question: 'What is the key idea behind split accumulation (deferred verification)?',
+    hint: 'Instead of verifying the expensive part immediately, what does the accumulator do?',
+    choices: [
+      { label: 'It splits the proof into two halves and verifies each separately', rationale: 'Split accumulation is not about dividing proofs in half.' },
+      { label: 'It defers expensive verification (like MSM) and accumulates cheap fold operations instead', rationale: 'Correct — instead of re-running the costly multi-scalar multiplication at each step, the accumulator folds instances cheaply and performs the MSM only once at the end.' },
+      { label: 'It uses two different proof systems simultaneously', rationale: 'Only one proof system is involved; the split is between cheap and expensive operations.' },
+      { label: 'It requires two separate trusted setups', rationale: 'Split accumulation has nothing to do with trusted setups.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Split accumulation separates proof verification into a cheap part (folding via random linear combination) and an expensive part (MSM/pairing). The cheap part runs at every step, while the expensive part is deferred and executed only once at the very end.',
+    category: 'fundamentals',
+  },
+  {
+    id: 'split-acc-cost-savings',
+    demoId: 'split-accumulation',
+    difficulty: 'intermediate',
+    question: 'After N recursive steps, how does the total verifier cost compare between naive recursion and split accumulation?',
+    hint: 'Naive recursion re-verifies everything at each step. Split accumulation folds cheaply.',
+    choices: [
+      { label: 'Both have the same cost', rationale: 'Naive recursion is much more expensive because it re-verifies at every step.' },
+      { label: 'Naive: O(N × MSM_cost), Split: O(N × fold_cost + 1 × MSM_cost)', rationale: 'Correct — naive recursion pays the full MSM cost at every step, while split accumulation pays only a cheap fold per step and one final MSM.' },
+      { label: 'Split accumulation is more expensive because it adds folding overhead', rationale: 'Folding cost is negligible compared to MSM cost.' },
+      { label: 'Naive: O(N²), Split: O(N log N)', rationale: 'The cost is linear in N for both, but with very different constants.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Naive recursion performs one full MSM verification per step, costing O(N × MSM). Split accumulation performs a cheap fold (~10 field operations) per step and one MSM at the end, costing O(N × fold + MSM). For large N and expensive MSMs, the savings are dramatic.',
+    category: 'cost-analysis',
+  },
+  {
+    id: 'split-acc-random-challenge',
+    demoId: 'split-accumulation',
+    difficulty: 'advanced',
+    question: 'Why does each fold step in split accumulation use a random challenge r?',
+    hint: 'The fold computes a random linear combination of the old accumulator and the new instance.',
+    choices: [
+      { label: 'To make the fold deterministic', rationale: 'Randomness makes it non-deterministic — that is the point.' },
+      { label: 'To ensure that a cheating prover cannot craft instances that cancel out errors in the accumulator', rationale: 'Correct — the random r prevents the prover from choosing the new instance to hide an invalid accumulator state. By Schwartz-Zippel, error cancellation fails with overwhelming probability.' },
+      { label: 'To compress the accumulator to a smaller size', rationale: 'The accumulator size stays constant; the challenge ensures soundness, not compression.' },
+      { label: 'To generate the Fiat-Shamir transcript', rationale: 'The challenge r may come from Fiat-Shamir, but its purpose is soundness, not transcript generation.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Without randomness, a malicious prover could craft a new instance that, when combined with the accumulator, hides a previous error. The random challenge r ensures that the linear combination acc\' = acc + r·new is binding: any error in acc or new survives into acc\' with high probability.',
+    category: 'security',
+  },
+  {
+    id: 'split-acc-final-check',
+    demoId: 'split-accumulation',
+    difficulty: 'beginner',
+    question: 'When does the expensive MSM verification actually happen in split accumulation?',
+    hint: 'The whole point of deferral is to postpone the expensive work.',
+    choices: [
+      { label: 'At every step, just like naive recursion', rationale: 'That would defeat the purpose of deferral.' },
+      { label: 'Only at the very end, on the final accumulated instance', rationale: 'Correct — all intermediate steps perform only cheap folds. The single MSM at the end verifies the entire accumulated chain at once.' },
+      { label: 'Never — the MSM is eliminated entirely', rationale: 'The MSM cannot be eliminated; it is the core soundness check. It is only deferred.' },
+      { label: 'At every other step', rationale: 'Split accumulation defers all MSMs, not just alternating ones.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Split accumulation defers all expensive MSM operations until the final step. The last fold produces a single accumulated instance, and one MSM on that instance checks the entire chain. This is what makes the amortized cost so low: N folds + 1 MSM instead of N MSMs.',
+    category: 'fundamentals',
+  },
+];

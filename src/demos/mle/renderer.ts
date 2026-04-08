@@ -8,6 +8,7 @@ export interface MLERenderState {
   mle: MLEFunction;
   evaluation: MLEEvaluation | null;
   partialResult: PartialEvalResult | null;
+  attackClaim: bigint | null;
   hypercubeSum: bigint;
   phase: 'viewing' | 'evaluating' | 'partial';
 }
@@ -42,6 +43,7 @@ const ZINC_400 = '#71717a';
 const ZINC_300 = '#a1a1aa';
 const ZINC_100 = '#e4e4e7';
 const COLOR_SUCCESS = '#22c55e';
+const COLOR_ERROR = '#ef4444';
 const ACCENT = '#8b5cf6'; // MLE accent (violet)
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -238,11 +240,13 @@ function drawEvalPanel(
   y: number,
   evaluation: MLEEvaluation,
   mle: MLEFunction,
+  attackClaim: bigint | null,
   isDark: boolean,
 ): void {
   const termCount = evaluation.basisTerms.length;
   const headerH = 36;
-  const panelH = headerH + termCount * EVAL_ROW_H + 44; // extra for sum row
+  const attackSectionH = attackClaim !== null ? 76 : 0;
+  const panelH = headerH + termCount * EVAL_ROW_H + 44 + attackSectionH;
 
   // Panel background
   ctx.fillStyle = hexToRgba(isDark ? ZINC_700 : '#f4f4f5', isDark ? 0.7 : 0.9);
@@ -335,6 +339,67 @@ function drawEvalPanel(
     x + EVAL_PANEL_W - EVAL_PANEL_PAD,
     rowY + EVAL_ROW_H / 2,
   );
+
+  if (attackClaim !== null) {
+    const accepted = attackClaim === evaluation.value;
+    rowY += EVAL_ROW_H + 10;
+
+    ctx.strokeStyle = hexToRgba(isDark ? ZINC_600 : ZINC_300, 0.4);
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x + 10, rowY);
+    ctx.lineTo(x + EVAL_PANEL_W - 10, rowY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    rowY += 14;
+
+    ctx.fillStyle = isDark ? ZINC_400 : ZINC_500;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('claimed', x + EVAL_PANEL_PAD, rowY + EVAL_ROW_H / 2);
+
+    ctx.fillStyle = hexToRgba(COLOR_ERROR, 0.92);
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(
+      bstr(attackClaim),
+      x + EVAL_PANEL_W - EVAL_PANEL_PAD,
+      rowY + EVAL_ROW_H / 2,
+    );
+
+    rowY += EVAL_ROW_H;
+
+    ctx.fillStyle = isDark ? ZINC_400 : ZINC_500;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('verifier', x + EVAL_PANEL_PAD, rowY + EVAL_ROW_H / 2);
+
+    ctx.fillStyle = hexToRgba(COLOR_SUCCESS, 0.95);
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(
+      bstr(evaluation.value),
+      x + EVAL_PANEL_W - EVAL_PANEL_PAD,
+      rowY + EVAL_ROW_H / 2,
+    );
+
+    rowY += EVAL_ROW_H + 2;
+
+    ctx.fillStyle = hexToRgba(accepted ? COLOR_SUCCESS : COLOR_ERROR, isDark ? 0.16 : 0.12);
+    drawRoundedRect(ctx, x + EVAL_PANEL_PAD, rowY, EVAL_PANEL_W - EVAL_PANEL_PAD * 2, 24, 6);
+    ctx.fill();
+
+    ctx.fillStyle = accepted ? COLOR_SUCCESS : COLOR_ERROR;
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      accepted ? 'ACCEPTED' : 'REJECTED',
+      x + EVAL_PANEL_W / 2,
+      rowY + 12,
+    );
+  }
 }
 
 /* ── Partial evaluation strip ────────────────────────────────────────── */
@@ -466,7 +531,7 @@ export function renderMLE(
     const rightMost = Math.max(...layouts.map(l => l.x + BOX_SIZE));
     const evalPanelX = rightMost + 40;
     const evalPanelY = cubeCenterY - 100;
-    drawEvalPanel(ctx, evalPanelX, evalPanelY, state.evaluation, state.mle, isDark);
+    drawEvalPanel(ctx, evalPanelX, evalPanelY, state.evaluation, state.mle, state.attackClaim, isDark);
   }
 
   // ── Partial evaluation strip ──────────────────────────────────────
