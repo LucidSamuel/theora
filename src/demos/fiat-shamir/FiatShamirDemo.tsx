@@ -162,8 +162,9 @@ export function FiatShamirDemo(): JSX.Element {
   }, [importedTrace, mode, proof.challenge, setEntry]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-    renderFiatShamir(ctx, frame, proof, forged, mode, theme, importedTrace);
-  }, [forged, importedTrace, mode, proof, theme]);
+    const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+    renderFiatShamir(ctx, frame, proof, forged, mode, theme, importedTrace, worldMouse.x, worldMouse.y);
+  }, [camera, interaction, forged, importedTrace, mode, proof, theme]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
@@ -244,8 +245,8 @@ export function FiatShamirDemo(): JSX.Element {
 
             <ControlGroup label="Transcript Inputs">
               <SliderControl label="Secret" value={secret} min={2} max={15} onChange={setSecret} />
-              <SliderControl label="Nonce" value={nonce} min={2} max={20} onChange={setNonce} />
-              <SliderControl label="Verifier seed" value={verifierSeed} min={1} max={40} onChange={setVerifierSeed} />
+              <SliderControl label="Nonce r (commitment randomness)" value={nonce} min={2} max={20} onChange={setNonce} />
+              <SliderControl label="Verifier seed (challenge source)" value={verifierSeed} min={1} max={40} onChange={setVerifierSeed} />
               <ControlCard>
                 <span className="control-kicker">Public statement</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -255,7 +256,7 @@ export function FiatShamirDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Forgery">
-              <ButtonControl label="Jump To Broken Mode" onClick={() => setMode('fs-broken')} />
+              <ButtonControl label="Show Forgery" onClick={() => setMode('fs-broken')} />
               <ControlNote>
                 In broken mode, the prover can predict the challenge before choosing the commitment and back-solve a convincing transcript.
               </ControlNote>

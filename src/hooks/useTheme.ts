@@ -8,6 +8,16 @@ export function useTheme() {
     applyTheme(theme);
   }, [theme]);
 
+  // Sync with theme changes from other useTheme() instances
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const next = (e as CustomEvent<Theme>).detail;
+      setTheme(next);
+    };
+    window.addEventListener('theora-theme', handler);
+    return () => window.removeEventListener('theora-theme', handler);
+  }, []);
+
   const toggle = useCallback(() => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   }, []);

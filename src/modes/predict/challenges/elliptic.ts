@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const ELLIPTIC_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'elliptic-point-addition',
+    demoId: 'elliptic',
+    difficulty: 'beginner',
+    question: 'On an elliptic curve over a finite field, what is the result of adding a point P to the point at infinity (∞)?',
+    hint: 'The point at infinity is the identity element of the group.',
+    choices: [
+      { label: 'The result is ∞', rationale: 'Adding a non-identity point to the identity returns the original point, not ∞.' },
+      { label: 'The result is P', rationale: 'Correct — ∞ is the identity element of the elliptic curve group, so P + ∞ = P.' },
+      { label: 'The result is -P (the negation)', rationale: 'Negation would be P + (-P) = ∞, not P + ∞.' },
+      { label: 'The operation is undefined', rationale: 'The point at infinity is a valid group element and addition is always defined.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The point at infinity (∞) is the identity element of the elliptic curve group. For any point P: P + ∞ = ∞ + P = P. This is analogous to 0 being the identity for addition of integers.',
+    category: 'structure',
+  },
+  {
+    id: 'elliptic-group-order',
+    demoId: 'elliptic',
+    difficulty: 'intermediate',
+    question: 'If point G generates a cyclic group of order n on an elliptic curve, what is the result of computing n·G (scalar multiplication by n)?',
+    hint: 'Think about what happens when you go around a cycle completely.',
+    choices: [
+      { label: 'n·G = G (back to the generator)', rationale: 'Going around the full cycle lands on the identity, not back to G. That would be (n+1)·G.' },
+      { label: 'n·G = ∞ (the point at infinity)', rationale: 'Correct — by definition, the order n is the smallest positive integer where n·G = ∞.' },
+      { label: 'n·G = 2G (the double)', rationale: 'The double is 2·G, which is a completely different scalar multiplication.' },
+      { label: 'n·G is undefined for finite groups', rationale: 'Scalar multiplication is always defined — it is just repeated addition.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The order of a group element G is the smallest positive integer n such that n·G = ∞ (the identity). This means G, 2G, 3G, ..., (n-1)G are all distinct non-identity points, and n·G wraps back to ∞.',
+    category: 'structure',
+  },
+  {
+    id: 'elliptic-ecdlp',
+    demoId: 'elliptic',
+    difficulty: 'advanced',
+    question: 'Given points G and Q = k·G on an elliptic curve over a large prime field, what makes finding k (the discrete logarithm) hard?',
+    hint: 'Think about why scalar multiplication is a one-way function over large fields.',
+    choices: [
+      { label: 'The curve equation is secret', rationale: 'The curve parameters are public — security comes from the hardness of reversing scalar multiplication.' },
+      { label: 'No known sub-exponential algorithm exists for general elliptic curves', rationale: 'Correct — the best known algorithms for ECDLP run in O(√n) time (e.g., Pollard rho), which is exponential in the bit length of n.' },
+      { label: 'The field size p is secret', rationale: 'The field size is public. Security relies on computational hardness, not secrecy of parameters.' },
+      { label: 'k is encrypted with AES before being used', rationale: 'Scalar multiplication does not involve symmetric encryption — hardness is purely algebraic.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The Elliptic Curve Discrete Logarithm Problem (ECDLP) is hard because no sub-exponential algorithm is known for general elliptic curves. The best attack (Pollard\'s rho) takes O(√n) group operations, requiring ~2^128 operations for a 256-bit curve — computationally infeasible.',
+    category: 'security',
+  },
+  {
+    id: 'elliptic-pairing-bilinearity',
+    demoId: 'elliptic',
+    difficulty: 'intermediate',
+    question: 'A bilinear pairing e maps two curve points to a target group element. If e(P, Q) = g, what is e(3P, 5Q)?',
+    hint: 'The bilinearity property means e(aP, bQ) = e(P, Q)^(ab).',
+    choices: [
+      { label: 'e(3P, 5Q) = 8g', rationale: 'Pairings are multiplicative (exponential), not additive. The exponent is a·b, not a+b.' },
+      { label: 'e(3P, 5Q) = g^15', rationale: 'Correct — by bilinearity: e(3P, 5Q) = e(P, Q)^(3·5) = g^15.' },
+      { label: 'e(3P, 5Q) = g^8', rationale: 'The exponent is the product of scalars (3·5=15), not the sum (3+5=8).' },
+      { label: 'e(3P, 5Q) = 15g', rationale: 'Pairings output elements of a multiplicative group, so the result is g raised to a power, not a scalar multiple.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Bilinearity means e(aP, bQ) = e(P, Q)^(ab). So e(3P, 5Q) = e(P, Q)^(3·5) = g^15. This property is what makes pairings useful for Groth16 verification, KZG commitments, and BLS signatures.',
+    category: 'pairings',
+  },
+];

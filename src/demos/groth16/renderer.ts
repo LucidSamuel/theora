@@ -28,6 +28,7 @@ export function renderGroth16(
   data: PhaseData,
   showToxic: boolean,
   theme: 'dark' | 'light',
+  phaseHighlight: boolean = false,
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -108,13 +109,17 @@ export function renderGroth16(
     drawRoundedRect(ctx, bx, by, BOX_W, BOX_H, BOX_RADIUS);
     ctx.stroke();
 
-    // Active glow
+    // Active glow — enhanced during auto-run phase transition
     if (isActive) {
+      const glowIntensity = (isActive && phaseHighlight) ? 0.6 : 0.35;
+      const glowBlur = (isActive && phaseHighlight) ? 22 : 14;
+      const glowStroke = (isActive && phaseHighlight) ? 0.4 : 0.25;
+      const glowWidth = (isActive && phaseHighlight) ? 8 : 6;
       ctx.save();
-      ctx.shadowColor = hexToRgba(borderColor, 0.35);
-      ctx.shadowBlur = 14;
-      ctx.strokeStyle = hexToRgba(borderColor, 0.25);
-      ctx.lineWidth = 6;
+      ctx.shadowColor = hexToRgba(borderColor, glowIntensity);
+      ctx.shadowBlur = glowBlur;
+      ctx.strokeStyle = hexToRgba(borderColor, glowStroke);
+      ctx.lineWidth = glowWidth;
       drawRoundedRect(ctx, bx, by, BOX_W, BOX_H, BOX_RADIUS);
       ctx.stroke();
       ctx.restore();

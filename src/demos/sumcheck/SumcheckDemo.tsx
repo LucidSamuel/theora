@@ -18,6 +18,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import {
   decodeState,
   decodeStatePlain,
@@ -51,6 +53,7 @@ const CHALLENGES_3 = [37n, 53n, 71n];
 /** Default polynomial evaluations for 2 and 3 variables. */
 const DEFAULT_VALUES_2: bigint[] = [3n, 5n, 7n, 11n];   // f(00)=3, f(01)=5, f(10)=7, f(11)=11
 const DEFAULT_VALUES_3: bigint[] = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n];
+const ATTACK_NUM_VARS: 3 = 3;
 
 // ── State types ────────────────────────────────────────────────────────────
 
@@ -259,6 +262,7 @@ export function SumcheckDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
@@ -266,6 +270,26 @@ export function SumcheckDemo(): JSX.Element {
   const [state, dispatch] = useReducer(reducer, null, () =>
     buildInitialState(2, false),
   );
+
+  const loadAttackState = useCallback((cheatMode: boolean, runAll: boolean) => {
+    dispatch({ type: 'RESTORE', state: buildInitialState(ATTACK_NUM_VARS, cheatMode) });
+    if (runAll) {
+      dispatch({ type: 'RUN_ALL' });
+    }
+  }, []);
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    RUN_HONEST: () => {
+      loadAttackState(false, true);
+    },
+    TOGGLE_CHEAT: (payload) => {
+      const enabled = typeof payload === 'boolean' ? payload : true;
+      loadAttackState(enabled, false);
+    },
+    RUN_CHEAT: () => {
+      loadAttackState(true, true);
+    },
+  }), [currentDemoAction, loadAttackState]));
 
   // ── Restore from URL on mount ──────────────────────────────────────
   useEffect(() => {
@@ -346,13 +370,37 @@ export function SumcheckDemo(): JSX.Element {
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 900;
     const h = rect.height || 600;
+
+    // Compute actual content bounds based on the renderer layout.
+    // The renderer centers (n+1) cards horizontally and adds header/verdict badges.
+    const n = state.numVariables;
+    const CARD_W = 164;
+    const CARD_H = 190;
+    const CARD_GAP = 48;
+    const cardCount = n + 1; // n round cards + 1 oracle card
+    const totalW = cardCount * CARD_W + (cardCount - 1) * CARD_GAP;
+    const startX = w / 2 - totalW / 2;
+
+    const padding = 120;
+    const contentMinX = startX - padding;
+    const contentMaxX = startX + totalW + padding;
+
+    // Vertical: header badge at y~16, cards centered, verdict badge at bottom
+    const topPadding = 70;
+    const bottomPadding = 60;
+    const availH = h - topPadding - bottomPadding;
+    const cardY = topPadding + Math.max(0, (availH - CARD_H) / 2);
+
+    const contentMinY = 0;
+    const contentMaxY = cardY + CARD_H + padding;
+
     fitCameraToBounds(
       camera,
       canvas,
-      { minX: 40, minY: 40, maxX: w - 40, maxY: h - 56 },
+      { minX: contentMinX, minY: contentMinY, maxX: contentMaxX, maxY: contentMaxY },
       options?.instant ? { durationMs: 0 } : undefined,
     );
-  }, [camera]);
+  }, [camera, state.numVariables]);
 
   const handleExportPng = () => {
     const canvas = canvasElRef.current;
@@ -455,15 +503,21 @@ export function SumcheckDemo(): JSX.Element {
             checked={state.cheatMode}
             onChange={(v) => dispatch({ type: 'SET_CHEAT_MODE', enabled: v })}
           />
+          <ControlNote>
+            Adds 1 to the claimed sum so the prover lies about the total.
+          </ControlNote>
           {state.cheatMode && (
             <ControlNote tone="error">
-              Prover claims {String(state.claimedSum)} but honest sum is {String(state.honestSum)}. The final oracle check will catch the mismatch.
+              Prover claims {String(state.claimedSum)} but honest sum is {String(state.honestSum)}. The round sum checks catch the mismatch before the oracle step.
             </ControlNote>
           )}
         </ControlGroup>
 
         {/* Polynomial values */}
-        <ControlGroup label="Polynomial Values" collapsible defaultCollapsed={state.numVariables === 3}>
+        <ControlGroup label="Polynomial Values" collapsible defaultCollapsed={state.numVariables === 3} ariaLabel="Toggle polynomial values">
+          <ControlNote>
+            Values: 0–{String(Number(state.fieldSize) - 1)} (GF({String(state.fieldSize)}))
+          </ControlNote>
           {state.values.map((v, i) => {
             const key = i.toString(2).padStart(state.numVariables, '0');
             return (

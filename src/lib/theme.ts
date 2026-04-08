@@ -22,6 +22,8 @@ export function applyTheme(theme: Theme): void {
   } catch {
     // localStorage blocked in cross-origin iframes
   }
+  // Notify all useTheme() instances so demo renderers re-draw with correct colors
+  window.dispatchEvent(new CustomEvent('theora-theme', { detail: theme }));
 }
 
 export const DEMO_COLORS = {

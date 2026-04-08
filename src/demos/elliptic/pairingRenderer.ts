@@ -31,6 +31,8 @@ export function renderPairing(
   frame: FrameInfo,
   state: PairingRenderState,
   theme: 'dark' | 'light',
+  mouseX: number = 0,
+  mouseY: number = 0,
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -87,7 +89,7 @@ export function renderPairing(
       drawBilinearity(ctx, frame, state.bilinearityDemo, isDark);
       break;
     case 'table':
-      drawPairingTable(ctx, frame, state.pairingTableData, config, isDark);
+      drawPairingTable(ctx, frame, state.pairingTableData, config, isDark, mouseX, mouseY);
       break;
     case 'groth16':
     case 'kzg':
@@ -231,6 +233,8 @@ function drawPairingTable(
   table: number[][] | null,
   config: PairingConfig,
   isDark: boolean,
+  mouseX: number = 0,
+  mouseY: number = 0,
 ): void {
   if (!table || table.length === 0) return;
   const { width, height } = frame;
@@ -305,6 +309,58 @@ function drawPairingTable(
       ctx.textBaseline = 'middle';
       ctx.fillText(`${val}`, x + cellSize / 2, y);
     }
+  }
+
+  // ── Hover detection ──────────────────────────────────────────────────
+  let hoveredI = -1;
+  let hoveredJ = -1;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const cx = startX + (j + 1) * cellSize;
+      const cy = startY + (i + 1) * cellSize;
+      if (mouseX >= cx && mouseX < cx + cellSize && mouseY >= cy && mouseY < cy + cellSize) {
+        hoveredI = i;
+        hoveredJ = j;
+      }
+    }
+  }
+
+  // Highlight hovered cell
+  if (hoveredI >= 0 && hoveredJ >= 0) {
+    const hx = startX + (hoveredJ + 1) * cellSize;
+    const hy = startY + (hoveredI + 1) * cellSize;
+    ctx.strokeStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(hx, hy, cellSize, cellSize);
+
+    // Tooltip
+    const val = table[hoveredI]![hoveredJ]!;
+    const tipText = `e(${hoveredI}G, ${hoveredJ}G) = ${val}`;
+    ctx.save();
+    ctx.font = '11px monospace';
+    const tm = ctx.measureText(tipText);
+    const tw = tm.width + 16;
+    const th = 24;
+    let tx = hx + cellSize + 4;
+    let ty2 = hy + cellSize / 2 - th / 2;
+    if (tx + tw > width - 10) tx = hx - tw - 4;
+    if (tx < 10) tx = 10;
+    if (ty2 < 10) ty2 = 10;
+    if (ty2 + th > height - 10) ty2 = height - th - 10;
+
+    ctx.fillStyle = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tx, ty2, tw, th, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tipText, tx + 8, ty2 + th / 2);
+    ctx.restore();
   }
 
   // Corner label

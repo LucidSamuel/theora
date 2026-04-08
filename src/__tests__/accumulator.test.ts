@@ -11,6 +11,9 @@ import {
   computeNonMembershipWitness,
   verifyNonMembershipWitness,
   randomPrime,
+  pickRandomAvailablePrime,
+  forgeToyMembershipWitness,
+  ACCUMULATOR_PRIME_POOL,
   getOrbitalParams,
 } from '@/demos/accumulator/logic';
 import { isPrime } from '@/lib/math';
@@ -110,6 +113,35 @@ describe('randomPrime', () => {
       expect(p).toBeLessThanOrEqual(997);
       expect(isPrime(p)).toBe(true);
     }
+  });
+});
+
+describe('pickRandomAvailablePrime', () => {
+  it('returns the only remaining prime when one candidate is left', () => {
+    const remaining = ACCUMULATOR_PRIME_POOL[0]!;
+    const used = ACCUMULATOR_PRIME_POOL.slice(1).map((prime) => BigInt(prime));
+    expect(pickRandomAvailablePrime(used)).toBe(remaining);
+  });
+
+  it('returns null when the entire pool is exhausted', () => {
+    const used = ACCUMULATOR_PRIME_POOL.map((prime) => BigInt(prime));
+    expect(pickRandomAvailablePrime(used)).toBeNull();
+  });
+});
+
+describe('forgeToyMembershipWitness', () => {
+  it('forges a valid witness for an absent prime on the toy modulus', () => {
+    const primes = [3n, 5n, 11n, 13n];
+    const acc = batchAdd(ACC_G, primes, ACC_N);
+    const forged = forgeToyMembershipWitness(acc, 17n);
+    expect(forged).not.toBeNull();
+    expect(verifyWitness(forged!, 17n, acc, ACC_N)).toBe(true);
+    expect(primes.includes(17n)).toBe(false);
+  });
+
+  it('returns null when the target has no inverse modulo φ(n)', () => {
+    const acc = batchAdd(ACC_G, [5n, 11n], ACC_N);
+    expect(forgeToyMembershipWitness(acc, 3n)).toBeNull();
   });
 });
 

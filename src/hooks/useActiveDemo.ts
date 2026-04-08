@@ -32,6 +32,22 @@ const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
   ['gkr', 'gkr'],
 ];
 
+const MODE_PARAM_KEYS = ['scenario', 'step', 'src', 'inputs', 'field'] as const;
+
+export function clearCrossDemoParams(params: URLSearchParams): URLSearchParams {
+  const next = new URLSearchParams(params);
+  for (const [paramKey] of SEARCH_PARAM_DEMO_KEYS) {
+    next.delete(paramKey);
+  }
+  for (const key of MODE_PARAM_KEYS) {
+    next.delete(key);
+  }
+  if (next.get('mode') === 'debug') {
+    next.delete('mode');
+  }
+  return next;
+}
+
 export function getActiveDemoLocation(): ActiveDemoLocation {
   const hashState = getHashState();
   if (hashState && isDemoId(hashState.demo)) {
@@ -97,6 +113,12 @@ export function useActiveDemo() {
   }, []);
 
   const switchDemo = useCallback((id: DemoId) => {
+    // Clear demo-scoped params to prevent state from leaking across demos.
+    const params = clearCrossDemoParams(new URLSearchParams(window.location.search));
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+    window.history.replaceState(null, '', nextUrl);
+
     window.location.hash = id;
     setLocation({
       activeDemo: id,

@@ -2,6 +2,9 @@ import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, hexToRgba } from '@/lib/canvas';
 import type { FiatShamirMode, ImportedTranscriptTrace, TranscriptProof } from './logic';
 
+const MODULUS = 97;
+const GENERATOR = 7;
+
 export function renderFiatShamir(
   ctx: CanvasRenderingContext2D,
   frame: FrameInfo,
@@ -9,7 +12,9 @@ export function renderFiatShamir(
   forged: TranscriptProof | null,
   mode: FiatShamirMode,
   theme: 'dark' | 'light',
-  importedTrace: ImportedTranscriptTrace | null = null
+  importedTrace: ImportedTranscriptTrace | null = null,
+  mouseX: number = 0,
+  mouseY: number = 0
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -84,6 +89,61 @@ export function renderFiatShamir(
     ctx.fillText(step.value, x + 12, y + 52);
   });
 
+  // ── Step card hover detection ────────────────────────────────────────
+  let hoveredStep: number | null = null;
+  for (let i = 0; i < steps.length; i++) {
+    const sx = 56 + i * 170;
+    const sy = 120;
+    if (mouseX >= sx && mouseX <= sx + 146 && mouseY >= sy && mouseY <= sy + 88) {
+      hoveredStep = i;
+      break;
+    }
+  }
+
+  if (hoveredStep !== null) {
+    const descriptions = importedTrace
+      ? [
+          'Prover sends a hiding commitment C',
+          'Transcript inputs bound to the challenge',
+          'Verifier challenge derived from transcript',
+          importedTrace.predictable ? 'Challenge is predictable — vulnerable' : 'Challenge is bound — secure',
+        ]
+      : [
+          `Commitment: t = g·r mod p = ${GENERATOR}·${proof.commitment > 0 ? '...' : '0'}`,
+          mode === 'interactive' ? 'Challenge from verifier randomness' : mode === 'fs-correct' ? 'c = H(statement, pubkey, commitment)' : 'c = H(statement, pubkey) — missing commitment!',
+          `Response: z = r + c·s mod p = ${proof.response}`,
+          proof.valid ? 'g·z ≡ t + c·y (mod p) — verified' : 'Verification failed',
+        ];
+
+    const tipText = descriptions[hoveredStep] ?? '';
+    const sx = 56 + hoveredStep * 170;
+
+    ctx.save();
+    ctx.font = '11px monospace';
+    const tm = ctx.measureText(tipText);
+    const tw = tm.width + 16;
+    const th = 24;
+    let tx = sx;
+    let ty = 120 + 88 + 6; // Below the card
+
+    if (tx + tw > width - 10) tx = width - tw - 10;
+    if (tx < 10) tx = 10;
+
+    ctx.fillStyle = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, tw, th, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tipText, tx + 8, ty + th / 2);
+    ctx.restore();
+  }
+
   // ── Heading ────────────────────────────────────────────────────────────────
   ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
   ctx.font = 'bold 13px monospace';
@@ -103,6 +163,70 @@ export function renderFiatShamir(
     56,
     78
   );
+
+  // ── Group parameters (top-right compact box) ──────────────────────────────
+  const paramX = width - 180;
+  ctx.fillStyle = hexToRgba(isDark ? '#111113' : '#ffffff', 0.92);
+  ctx.fillRect(paramX, 44, 140, 44);
+  ctx.strokeStyle = hexToRgba(isDark ? '#3f3f46' : '#d4d4d8', 0.5);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(paramX, 44, 140, 44);
+  ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('g = 7, p = 97', paramX + 12, 64);
+  ctx.fillText('GF(97) toy field', paramX + 12, 80);
+
+  // ── Verification equation & hash inputs ───────────────────────────────────
+  if (!importedTrace) {
+    // Verification equation
+    const eqY = 240;
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('Verification check', 56, eqY);
+
+    ctx.font = '11px monospace';
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+    ctx.fillText(`g\u00B7z mod p  \u225F  (t + c\u00B7y) mod p`, 56, eqY + 20);
+
+    const lhs = ((GENERATOR * proof.response) % MODULUS + MODULUS) % MODULUS;
+    const rhs = ((proof.commitment + proof.challenge * proof.publicKey) % MODULUS + MODULUS) % MODULUS;
+    ctx.fillStyle = isDark ? '#d4d4d8' : '#3f3f46';
+    ctx.fillText(`${GENERATOR}\u00B7${proof.response} mod ${MODULUS} = ${lhs}`, 56, eqY + 40);
+    ctx.fillText(`${proof.commitment} + ${proof.challenge}\u00B7${proof.publicKey} mod ${MODULUS} = ${rhs}`, 56, eqY + 56);
+
+    ctx.fillStyle = proof.valid ? '#22c55e' : '#ef4444';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(proof.valid ? 'Equal \u2014 proof valid' : 'Not equal \u2014 proof invalid', 56, eqY + 78);
+
+    // Hash inputs / challenge derivation
+    const hashY = eqY + 110;
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText('Challenge derivation', 56, hashY);
+
+    ctx.font = '11px monospace';
+    if (mode === 'interactive') {
+      ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+      ctx.fillText('c = verifier seed (no hash)', 56, hashY + 20);
+    } else if (mode === 'fs-correct') {
+      const hashInput = `H(${proof.statement}, ${proof.publicKey}, ${proof.commitment})`;
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText(`c = ${hashInput}`, 56, hashY + 20);
+      ctx.fillStyle = isDark ? '#a1a1aa' : '#71717a';
+      ctx.fillText('Commitment t is included \u2014 challenge depends on it', 56, hashY + 38);
+    } else {
+      const hashInputBroken = `H(${proof.statement}, ${proof.publicKey})`;
+      const hashInputCorrect = `H(${proof.statement}, ${proof.publicKey}, ${proof.commitment})`;
+      ctx.fillStyle = '#ef4444';
+      ctx.fillText(`c = ${hashInputBroken}`, 56, hashY + 20);
+      ctx.fillStyle = isDark ? '#a1a1aa' : '#71717a';
+      ctx.fillText('Commitment t is missing \u2014 challenge is predictable', 56, hashY + 38);
+      ctx.fillStyle = hexToRgba('#22c55e', 0.4);
+      ctx.fillText(`correct: c = ${hashInputCorrect}`, 56, hashY + 58);
+    }
+  }
 
   // ── Forgery panel ─────────────────────────────────────────────────────────
   if (importedTrace || forged) {

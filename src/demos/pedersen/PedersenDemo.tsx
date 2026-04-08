@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
@@ -59,7 +59,7 @@ export function PedersenDemo(): JSX.Element {
   const [randomness, setRandomness] = useState(23);
   const [value2, setValue2] = useState(5);
   const [randomness2, setRandomness2] = useState(11);
-  const [showBlinding, setShowBlinding] = useState(false);
+  const [showBlinding, setShowBlinding] = useState(true);
   const [commitment, setCommitment] = useState<Commitment | null>(null);
   const [homomorphic, setHomomorphic] = useState<HomomorphicResult | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
@@ -127,12 +127,18 @@ export function PedersenDemo(): JSX.Element {
     }
   }, [commitment, homomorphic, params, setEntry]);
 
+  // ── Draft commitment (live preview before Commit is clicked) ──────────────
+  const draftCommitment = useMemo(
+    () => commit(params, value, randomness),
+    [params, value, randomness],
+  );
+
   // ── Canvas draw ───────────────────────────────────────────────────────────
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-      renderPedersen(ctx, frame, params, commitment, homomorphic, showBlinding, theme);
+      renderPedersen(ctx, frame, params, commitment ?? draftCommitment, homomorphic, showBlinding, theme, commitment === null);
     },
-    [params, commitment, homomorphic, showBlinding, theme],
+    [params, commitment, draftCommitment, homomorphic, showBlinding, theme],
   );
 
   // ── URL sync ──────────────────────────────────────────────────────────────
@@ -222,20 +228,27 @@ export function PedersenDemo(): JSX.Element {
         setRandomness(23);
         setValue2(5);
         setRandomness2(11);
-        setShowBlinding(false);
+        setShowBlinding(true);
         setCommitment(null);
         setHomomorphic(null);
       }}
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar>
+        <ControlCard>
+          <span className="control-kicker">Group parameters</span>
+          <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+            GF({params.p}), g = {params.g}, h = {params.h}
+          </div>
+        </ControlCard>
+
         <ControlGroup label="Commitment Inputs">
-          <NumberInputControl label="Value (v)" value={value} min={0} max={95} onChange={setValue} />
+          <NumberInputControl label="Value (v)" value={value} min={0} max={96} onChange={setValue} />
           <NumberInputControl
             label="Randomness (r)"
             value={randomness}
             min={0}
-            max={95}
+            max={96}
             onChange={setRandomness}
           />
           <ToggleControl
@@ -268,12 +281,12 @@ export function PedersenDemo(): JSX.Element {
           <ControlNote>
             Add two commitments: C₁ · C₂ mod p must equal commit(v₁+v₂, r₁+r₂).
           </ControlNote>
-          <NumberInputControl label="Value 2 (v₂)" value={value2} min={0} max={95} onChange={setValue2} />
+          <NumberInputControl label="Value 2 (v₂)" value={value2} min={0} max={96} onChange={setValue2} />
           <NumberInputControl
             label="Randomness 2 (r₂)"
             value={randomness2}
             min={0}
-            max={95}
+            max={96}
             onChange={setRandomness2}
           />
           <ButtonControl label="Add Commitments" onClick={handleHomomorphicAdd} />
@@ -296,8 +309,11 @@ export function PedersenDemo(): JSX.Element {
                 className="control-value"
                 style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}
               >
-                commit({homomorphic!.sumValue}, {homomorphic!.sumRandomness})
+                commit({homomorphic!.sumValue % params.p}, {homomorphic!.sumRandomness % params.p})
               </div>
+              <span className="control-caption" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                raw sums: {homomorphic!.sumValue}, {homomorphic!.sumRandomness}
+              </span>
             </ControlCard>
             <ControlNote tone={homoValid ? 'success' : 'error'}>
               {homoValid
@@ -309,7 +325,7 @@ export function PedersenDemo(): JSX.Element {
 
         <ButtonControl label="Reset to Defaults" onClick={() => {
           setValue(7); setRandomness(23); setValue2(5); setRandomness2(11);
-          setShowBlinding(false); setCommitment(null); setHomomorphic(null);
+          setShowBlinding(true); setCommitment(null); setHomomorphic(null);
           showToast('Reset to defaults');
         }} variant="secondary" />
 

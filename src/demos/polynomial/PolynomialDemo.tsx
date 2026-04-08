@@ -231,6 +231,18 @@ function restoreBatchState(payload: SerializedBatchState): {
   }
 }
 
+export function createEmptyKzgState(): PolynomialState['kzg'] {
+  return {
+    commitment: null,
+    challengeZ: null,
+    revealedValue: null,
+    quotientPoly: null,
+    proofHash: null,
+    verified: null,
+    currentStep: 0,
+  };
+}
+
 function buildInitialNTT(): NTTState {
   const preset = NTT_PRESETS[1]!; // n=8, p=257
   const coefficients = [1n, 2n, 3n, 0n, 0n, 0n, 0n, 0n];
@@ -248,39 +260,35 @@ function buildInitialNTT(): NTTState {
 }
 
 // Initial state
-const initialState: PolynomialState = {
-  coefficients: [0, 0, 1], // x^2
-  compareEnabled: false,
-  compareCoefficients: [],
-  mode: 'coefficients',
-  lagrangePoints: [],
-  evalPoints: [],
-  kzg: {
-    commitment: null,
-    challengeZ: null,
-    revealedValue: null,
-    quotientPoly: null,
-    proofHash: null,
-    verified: null,
-    currentStep: 0,
-  },
-  viewRange: {
-    xMin: -5,
-    xMax: 5,
-    yMin: -5,
-    yMax: 25,
-  },
-  ntt: buildInitialNTT(),
-  ipa: buildInitialIPA(),
-  batch: buildInitialBatch(),
-};
+export function createInitialPolynomialState(): PolynomialState {
+  return {
+    coefficients: [0, 0, 1], // x^2
+    compareEnabled: false,
+    compareCoefficients: [],
+    mode: 'coefficients',
+    lagrangePoints: [],
+    evalPoints: [],
+    kzg: createEmptyKzgState(),
+    viewRange: {
+      xMin: -5,
+      xMax: 5,
+      yMin: -5,
+      yMax: 25,
+    },
+    ntt: buildInitialNTT(),
+    ipa: buildInitialIPA(),
+    batch: buildInitialBatch(),
+  };
+}
+
+const initialState: PolynomialState = createInitialPolynomialState();
 
 function makeCompareCoefficients(base: number[]): number[] {
   return base.map((c, i) => c + (i % 2 === 0 ? 0.6 : -0.4));
 }
 
 // Reducer
-function polynomialReducer(state: PolynomialState, action: PolynomialAction): PolynomialState {
+export function polynomialReducer(state: PolynomialState, action: PolynomialAction): PolynomialState {
   switch (action.type) {
     case 'SET_COEFFICIENTS':
       return {
@@ -305,6 +313,10 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
         mode: action.mode,
         lagrangePoints: action.mode === 'lagrange' ? [] : state.lagrangePoints,
         coefficients: action.mode === 'lagrange' ? [] : state.coefficients,
+        evalPoints: [],
+        compareEnabled: false,
+        compareCoefficients: [],
+        kzg: createEmptyKzgState(),
       };
 
     case 'ADD_LAGRANGE_POINT': {
@@ -385,15 +397,7 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
     case 'KZG_RESET':
       return {
         ...state,
-        kzg: {
-          commitment: null,
-          challengeZ: null,
-          revealedValue: null,
-          quotientPoly: null,
-          proofHash: null,
-          verified: null,
-          currentStep: 0,
-        },
+        kzg: createEmptyKzgState(),
       };
 
     case 'SET_VIEW_RANGE':
@@ -579,7 +583,7 @@ function polynomialReducer(state: PolynomialState, action: PolynomialAction): Po
       return { ...state, batch: action.batch };
 
     case 'RESET':
-      return { ...initialState };
+      return createInitialPolynomialState();
 
     default:
       return state;
@@ -598,6 +602,7 @@ export function PolynomialDemo() {
   const [pipelineHash, setPipelineHash] = useState<string | null>(null);
   const hoverKeyRef = useRef<string | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const kzgSectionRef = useRef<HTMLDivElement>(null);
 
   // Canvas size ref for coordinate transforms
   const canvasSizeRef = useRef({ width: 800, height: 600 });
@@ -861,12 +866,14 @@ export function PolynomialDemo() {
     dispatch({ type: 'KZG_RESET' });
   }, [handleKzgChallenge, handleKzgCommit, handleKzgReveal, handleKzgVerify, state.kzg.currentStep]);
 
+  const kzgModeActive = state.mode === 'coefficients' || state.mode === 'lagrange';
+
   const buildShareState = () => ({
     mode: state.mode,
     coefficients: state.coefficients,
     compareEnabled: state.compareEnabled,
     compareCoefficients: state.compareCoefficients,
-    kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
+    kzg: kzgModeActive && state.kzg.currentStep > 0 ? state.kzg : undefined,
     evalPoints: state.evalPoints.length > 0 ? state.evalPoints : undefined,
     ntt: state.mode === 'ntt' ? {
       coefficients: state.ntt.coefficients.map(Number),
@@ -977,7 +984,8 @@ export function PolynomialDemo() {
         dispatch({ type: 'SET_COMPARE_COEFFS', coefficients: payload.compareCoefficients });
       }
     }
-    if (payload.kzg) {
+    const restoredMode = payload.mode ?? 'coefficients';
+    if (payload.kzg && (restoredMode === 'coefficients' || restoredMode === 'lagrange')) {
       dispatch({ type: 'SET_KZG_STATE', kzg: payload.kzg });
     }
     if (payload.evalPoints && payload.evalPoints.length > 0) {
@@ -1021,7 +1029,7 @@ export function PolynomialDemo() {
       coefficients: state.coefficients,
       compareEnabled: state.compareEnabled,
       compareCoefficients: state.compareCoefficients,
-      kzg: state.kzg.currentStep > 0 ? state.kzg : undefined,
+      kzg: kzgModeActive && state.kzg.currentStep > 0 ? state.kzg : undefined,
       evalPoints: state.evalPoints.length > 0 ? state.evalPoints : undefined,
       ntt: state.mode === 'ntt' ? {
         coefficients: state.ntt.coefficients.map(Number),
@@ -1045,7 +1053,7 @@ export function PolynomialDemo() {
       } : undefined,
     };
     setSearchParams({ p: encodeState(payload) });
-  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients, state.kzg, state.evalPoints, state.ntt, state.ipa, state.batch, batchActiveStep]);
+  }, [state.mode, state.coefficients, state.compareEnabled, state.compareCoefficients, state.kzg, state.evalPoints, state.ntt, state.ipa, state.batch, batchActiveStep, kzgModeActive]);
 
   useEffect(() => {
     if (hoverInfo) {
@@ -1233,7 +1241,7 @@ export function PolynomialDemo() {
               <ControlCard>
                 <span className="control-kicker">Evaluation</span>
                 <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                  p({Number(state.ipa.evalPoint)}) = {Number(state.ipa.evalValue)}
+                  p({Number(state.ipa.evalPoint)}) &equiv; {Number(state.ipa.evalValue)} (mod {Number(state.ipa.fieldSize)})
                 </div>
               </ControlCard>
             </ControlGroup>
@@ -1500,6 +1508,14 @@ export function PolynomialDemo() {
                 </ControlNote>
               )}
             </ControlGroup>
+
+            {state.kzg.currentStep === 0 && (
+              <ButtonControl
+                label="Start KZG commitment flow \u2192"
+                onClick={() => kzgSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                variant="secondary"
+              />
+            )}
           </>
         ) : (
           <ControlGroup label="Lagrange Points">
@@ -1620,6 +1636,7 @@ export function PolynomialDemo() {
         </ControlGroup>
 
         {state.mode !== 'ntt' && state.mode !== 'ipa' && state.mode !== 'batch' && (
+          <div ref={kzgSectionRef}>
           <ControlGroup label="KZG Commitment">
             <ButtonControl
               label="1. Commit"
@@ -1718,6 +1735,7 @@ export function PolynomialDemo() {
               Schwartz-Zippel intuition: two distinct degree-d polynomials can agree on at most d points.
             </ControlNote>
           </ControlGroup>
+          </div>
         )}
 
         <ButtonControl label="Reset to Defaults" onClick={() => handleResetToDefaults(true)} variant="secondary" />

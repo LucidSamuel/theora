@@ -64,4 +64,17 @@ describe('circuit logic', () => {
     expect(breakdown.linear).toHaveLength(1);
     expect(breakdown.linear[0]?.equation).toContain('z - t - y');
   });
+
+  it('checks witnesses modulo the selected field', () => {
+    const witness = { x: 10, y: 5, t: 100, z: 105 };
+    const constraints = evaluateCircuit(witness, false, 97);
+
+    expect(constraints[0]?.left).toBe(3);
+    expect(constraints[0]?.right).toBe(3);
+    expect(constraints[0]?.satisfied).toBe(true);
+    expect(constraints[1]?.left).toBe(8);
+    expect(constraints[1]?.right).toBe(8);
+    expect(constraints[1]?.satisfied).toBe(true);
+    expect(witnessSatisfiesAll(witness, false, 97)).toBe(true);
+  });
 });

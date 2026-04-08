@@ -226,24 +226,47 @@ export function renderAccumulator(
 
   // 7. Draw non-membership witness box near center
   if (nonMembership && nonMembership.witness !== 0n) {
-    const boxW = 260;
-    const boxH = 54;
+    const boxW = 300;
+    const hasVerdict = nonMembership.verified !== null;
+    const boxH = hasVerdict ? 100 : 80;
     const boxX = centerX - boxW / 2;
     const boxY = centerY + 90;
     const statusColor =
       nonMembership.verified === null ? AMBER_COLOR : nonMembership.verified ? '#10b981' : '#ef4444';
+    const isDark = theme === 'dark';
 
-    ctx.fillStyle = hexToRgba(theme === 'dark' ? '#18181b' : '#f4f4f5', 0.95);
+    ctx.fillStyle = hexToRgba(isDark ? '#18181b' : '#f4f4f5', 0.95);
     ctx.fillRect(boxX, boxY, boxW, boxH);
     ctx.strokeStyle = hexToRgba(statusColor, 0.6);
     ctx.lineWidth = 1.5;
     ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-    ctx.fillStyle = theme === 'dark' ? '#fff' : '#000';
+    ctx.fillStyle = isDark ? '#fff' : '#000';
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`Non-member x = ${nonMembership.target.toString()}`, centerX, boxY + 18);
-    ctx.fillText('w^x · acc^b = g', centerX, boxY + 36);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Non-member x = ${nonMembership.target.toString()}`, centerX, boxY + 16);
+
+    // Bezout equation
+    ctx.font = 'bold 11px monospace';
+    ctx.fillStyle = isDark ? '#e4e4e7' : '#18181b';
+    ctx.fillText('w^x \u00b7 acc^b \u2261 g (mod n)', centerX, boxY + 34);
+
+    // Bezout explanation
+    ctx.font = '10px monospace';
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#71717a';
+    ctx.fillText('B\u00e9zout: a\u00b7x + b\u00b7\u220feᵢ = gcd = 1  \u2192  w = g^a', centerX, boxY + 52);
+    ctx.fillText(`b = ${truncateHash(nonMembership.b.toString(), 14)}`, centerX, boxY + 68);
+
+    // Verification status
+    if (hasVerdict) {
+      ctx.font = 'bold 10px monospace';
+      ctx.fillStyle = nonMembership.verified ? '#10b981' : '#ef4444';
+      ctx.fillText(
+        nonMembership.verified ? '\u2713 Non-membership verified' : '\u2717 Verification failed',
+        centerX, boxY + 88
+      );
+    }
   }
 
   return { hoveredIndex };

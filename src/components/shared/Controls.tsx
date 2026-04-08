@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ControlGroupProps {
   label: string;
@@ -6,9 +6,10 @@ interface ControlGroupProps {
   accent?: string;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  ariaLabel?: string;
 }
 
-export function ControlGroup({ label, children, collapsible, defaultCollapsed = false }: ControlGroupProps) {
+export function ControlGroup({ label, children, collapsible, defaultCollapsed = false, ariaLabel }: ControlGroupProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const isCollapsed = collapsible && collapsed;
 
@@ -25,6 +26,7 @@ export function ControlGroup({ label, children, collapsible, defaultCollapsed = 
         onClick={collapsible ? () => setCollapsed((v) => !v) : undefined}
         role={collapsible ? 'button' : undefined}
         aria-expanded={collapsible ? !collapsed : undefined}
+        aria-label={collapsible ? (ariaLabel ?? `Toggle ${label}`) : undefined}
         tabIndex={collapsible ? 0 : undefined}
         onKeyDown={collapsible ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed((v) => !v); } } : undefined}
       >
@@ -67,10 +69,26 @@ interface SliderControlProps {
   onChange: (v: number) => void;
   accentColor?: string;
   editable?: boolean;
+  hint?: string;
 }
 
-export function SliderControl({ label, value, min, max, step = 1, onChange, editable }: SliderControlProps) {
+export function SliderControl({ label, value, min, max, step = 1, onChange, editable, hint }: SliderControlProps) {
   const percent = ((value - min) / (max - min)) * 100;
+
+  // Local string state lets the user type freely (e.g. "-", "1.", "-0.5")
+  // without React clobbering the input on every render.
+  const [localText, setLocalText] = useState(String(value));
+  const [focused, setFocused] = useState(false);
+
+  // When the slider (or an external dispatch) changes the value, sync the
+  // display text — but only when the input is not focused, so we never
+  // interrupt in-progress typing.
+  useEffect(() => {
+    if (!focused) {
+      setLocalText(String(value));
+    }
+  }, [value, focused]);
+
   return (
     <label className="flex flex-col gap-2">
       <div className="flex justify-between text-[11px] items-center">
@@ -78,17 +96,34 @@ export function SliderControl({ label, value, min, max, step = 1, onChange, edit
         {editable ? (
           <input
             type="number"
-            value={value}
+            value={localText}
             min={min}
             max={max}
             step={step}
             onChange={(e) => {
-              const v = Number(e.target.value);
-              if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
+              const raw = e.target.value;
+              setLocalText(raw);
+              const v = Number(raw);
+              // Dispatch on every keystroke that produces a valid, in-range number.
+              if (!isNaN(v) && raw !== '' && raw !== '-') {
+                onChange(Math.min(max, Math.max(min, v)));
+              }
             }}
+            onFocus={() => setFocused(true)}
             onBlur={(e) => {
+              setFocused(false);
+              // On blur, clamp and commit whatever is in the field, then
+              // reset the display text to match the canonical external value.
               const v = Number(e.target.value);
-              if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
+              if (!isNaN(v) && e.target.value !== '') {
+                onChange(Math.min(max, Math.max(min, v)));
+              }
+              // After the onChange has updated external state, sync text.
+              // Use the incoming raw value so the display is consistent.
+              const committed = isNaN(Number(e.target.value)) || e.target.value === ''
+                ? value
+                : Math.min(max, Math.max(min, Number(e.target.value)));
+              setLocalText(String(committed));
             }}
             className="tabular-nums text-right w-16 rounded px-2 outline-none"
             style={{
@@ -118,6 +153,9 @@ export function SliderControl({ label, value, min, max, step = 1, onChange, edit
           background: `linear-gradient(to right, var(--text-secondary) 0%, var(--text-secondary) ${percent}%, var(--button-bg-strong) ${percent}%, var(--button-bg-strong) 100%)`,
         }}
       />
+      {hint && (
+        <span className="text-[10px]" style={{ color: 'var(--text-muted)', textAlign: 'center' }}>{hint}</span>
+      )}
     </label>
   );
 }

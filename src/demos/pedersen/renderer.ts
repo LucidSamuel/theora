@@ -104,6 +104,7 @@ function renderSingleCommitment(
   commitment: Commitment | null,
   showBlinding: boolean,
   isDark: boolean,
+  isDraft: boolean = false,
 ): void {
   const { width } = frame;
   const cx = width / 2;
@@ -180,18 +181,25 @@ function renderSingleCommitment(
   arrowDown(ctx, midX, midY + 20, midX, COMMIT_Y - BOX_H / 2, arrowColor);
 
   // ── Commitment box ────────────────────────────────────────────────────────
-  const committed = commitment !== null;
-  const commitVal = committed ? String(commitment.commitment) : '—';
+  const commitVal = commitment !== null ? String(commitment.commitment) : '—';
   const commitLabel = `C = (${gv} · ${showBlinding ? hr : '?'}) mod ${params.p}`;
-  const commitBorder = committed
-    ? hexToRgba(success(isDark), isDark ? 0.7 : 0.6)
-    : hexToRgba(muted(isDark), 0.4);
+  const commitBorder = isDraft
+    ? hexToRgba(isDark ? '#a1a1aa' : '#71717a', 0.4)
+    : hexToRgba(success(isDark), isDark ? 0.7 : 0.6);
 
+  if (isDraft) ctx.setLineDash([4, 4]);
   drawBox(ctx, midX, COMMIT_Y, commitLabel, commitVal, commitBorder, isDark);
+  if (isDraft) ctx.setLineDash([]);
 
-  // ── Verification status strip ─────────────────────────────────────────────
-  if (committed) {
-    const statusY = COMMIT_Y + BOX_H / 2 + 28;
+  // ── Status strip ─────────────────────────────────────────────────────────
+  const statusY = COMMIT_Y + BOX_H / 2 + 28;
+  if (isDraft) {
+    ctx.fillStyle = hexToRgba(isDark ? '#a1a1aa' : '#71717a', 0.6);
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('draft — click Commit to lock', midX, statusY);
+  } else {
     const statusColor = success(isDark);
     ctx.fillStyle = hexToRgba(statusColor, isDark ? 0.1 : 0.07);
     drawRoundedRect(ctx, midX - 100, statusY - 14, 200, 28, 6);
@@ -310,20 +318,22 @@ function renderHomomorphic(
   // ── Expected direct commit ────────────────────────────────────────────────
   const sumV = result.sumValue;
   const sumR = result.sumRandomness;
+  const sumVReduced = sumV % params.p;
+  const sumRReduced = sumR % params.p;
   const expectedY = productY + BOX_H / 2 + 54;
 
   arrowDown(ctx, resultCX, productY + BOX_H / 2, resultCX, expectedY - BOX_H / 2, arrowColor);
 
   // Show the direct recomputed commitment
-  const expectedGv = modPow(params.g, sumV, params.p);
-  const expectedHr = modPow(params.h, sumR, params.p);
+  const expectedGv = modPow(params.g, sumVReduced, params.p);
+  const expectedHr = modPow(params.h, sumRReduced, params.p);
   const expectedC = (expectedGv * expectedHr) % params.p;
 
   drawBox(
     ctx,
     resultCX,
     expectedY,
-    `commit(v₁+v₂=${sumV}, r₁+r₂=${sumR})`,
+    `commit(${sumVReduced}, ${sumRReduced})`,
     String(expectedC),
     hexToRgba(validColor, isDark ? 0.5 : 0.4),
     isDark,
@@ -409,6 +419,7 @@ export function renderPedersen(
   homomorphic: HomomorphicResult | null,
   showBlinding: boolean,
   theme: 'dark' | 'light',
+  isDraft: boolean = false,
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -435,6 +446,6 @@ export function renderPedersen(
   if (homomorphic) {
     renderHomomorphic(ctx, frame, params, homomorphic, isDark);
   } else {
-    renderSingleCommitment(ctx, frame, params, commitment, showBlinding, isDark);
+    renderSingleCommitment(ctx, frame, params, commitment, showBlinding, isDark, isDraft);
   }
 }

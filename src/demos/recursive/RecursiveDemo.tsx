@@ -15,6 +15,8 @@ import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import type { RecursiveState, ProofNode, RecursiveMode } from '@/types/recursive';
 import {
@@ -54,6 +56,7 @@ type Action =
   | { type: 'FOLD_IVC' }
   | { type: 'SET_ROOT'; root: ProofNode | null }
   | { type: 'SET_IVC_CHAIN'; chain: any }
+  | { type: 'LOAD_ATTACK_TREE'; depth: number; badProofNode: string | null }
   | { type: 'RESTORE_VERIFICATION'; verifiedNodes: string[]; failedNodes: string[] };
 
 function recursiveReducer(state: RecursiveState, action: Action): RecursiveState {
@@ -193,6 +196,24 @@ function recursiveReducer(state: RecursiveState, action: Action): RecursiveState
     case 'SET_IVC_CHAIN':
       return { ...state, ivcChain: action.chain };
 
+    case 'LOAD_ATTACK_TREE': {
+      const root = buildProofTree(action.depth, action.badProofNode);
+      const order = getVerificationOrder(root);
+      return {
+        ...state,
+        mode: 'tree',
+        treeDepth: action.depth,
+        badProofTarget: action.badProofNode,
+        root,
+        verification: {
+          ...state.verification,
+          order,
+          currentIndex: 0,
+          isRunning: false,
+        },
+      };
+    }
+
     case 'RESTORE_VERIFICATION': {
       if (!state.root) return state;
       const verifiedSet = new Set(action.verifiedNodes);
@@ -248,6 +269,7 @@ export function RecursiveDemo(): JSX.Element {
   const [state, dispatch] = useReducer(recursiveReducer, initialState);
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const interaction = useCanvasInteraction();
   const camera = useCanvasCamera();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
@@ -292,6 +314,18 @@ export function RecursiveDemo(): JSX.Element {
   useEffect(() => {
     dispatch({ type: 'BUILD_TREE' });
   }, []);
+
+  // Auto-rebuild tree when depth slider changes (after initial build)
+  const hasBuiltOnceRef = useRef(false);
+  useEffect(() => {
+    if (!hasBuiltOnceRef.current) {
+      hasBuiltOnceRef.current = true;
+      return;
+    }
+    if (state.mode === 'tree') {
+      dispatch({ type: 'BUILD_TREE' });
+    }
+  }, [state.treeDepth, state.mode]);
 
   // Auto-verify effect
   useEffect(() => {
@@ -370,7 +404,7 @@ export function RecursiveDemo(): JSX.Element {
     const bounds = computeTreeBounds(positions);
     const treeW = bounds.maxX - bounds.minX;
     const treeH = bounds.maxY - bounds.minY;
-    const padX = 60;
+    const padX = 120;
     const padTop = 40;
     const padBottom = 80; // extra room for legend
     const availH = canvasSize.height - padTop - padBottom;
@@ -411,7 +445,7 @@ export function RecursiveDemo(): JSX.Element {
         const bounds = computeTreeBounds(positions);
         const treeW = bounds.maxX - bounds.minX;
         const treeH = bounds.maxY - bounds.minY;
-        const padX = 60;
+        const padX = 120;
         const padTop = 40;
         const padBottom = 80;
         const availH = canvasSize.height - padTop - padBottom;
@@ -583,12 +617,40 @@ export function RecursiveDemo(): JSX.Element {
     () => badProofInput !== 'none' && leafNodeOptions.some((option) => option.value === badProofInput),
     [badProofInput, leafNodeOptions]
   );
+  const attackLeafId = leafNodeOptions[0]?.value ?? 'node_2_0';
 
   useEffect(() => {
     if (badProofInput !== 'none' && !leafNodeOptions.some((option) => option.value === badProofInput)) {
       setBadProofInput('none');
     }
   }, [badProofInput, leafNodeOptions]);
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    LOAD_ATTACK_TREE: (payload) => {
+      const attackPayload =
+        payload && typeof payload === 'object'
+          ? payload as { depth?: number; badProofNode?: string | null }
+          : {};
+      const nextDepth = typeof attackPayload.depth === 'number' ? attackPayload.depth : state.treeDepth;
+      dispatch({
+        type: 'LOAD_ATTACK_TREE',
+        depth: nextDepth,
+        badProofNode: attackPayload.badProofNode === undefined ? attackLeafId : attackPayload.badProofNode,
+      });
+      setTreeLens('verify');
+      setBadProofInput('none');
+      followCamera.setActive(false);
+      verificationDoneRef.current = false;
+    },
+    START_VERIFICATION: () => {
+      setTreeLens('verify');
+      if (followEnabled && state.mode === 'tree') {
+        followCamera.setActive(true);
+        verificationDoneRef.current = false;
+      }
+      dispatch({ type: 'SET_VERIFICATION', isRunning: true });
+    },
+  }), [attackLeafId, currentDemoAction, followCamera, followEnabled, state.mode, state.treeDepth]));
 
   // Initialize from URL state (hash-only preferred)
   useEffect(() => {
@@ -629,7 +691,7 @@ export function RecursiveDemo(): JSX.Element {
     if (!payload) return;
     const timers: ReturnType<typeof setTimeout>[] = [];
     if (payload.mode) dispatch({ type: 'SET_MODE', mode: payload.mode });
-    if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: Math.max(2, Math.min(5, payload.depth)) });
+    if (typeof payload.depth === 'number') dispatch({ type: 'SET_DEPTH', depth: Math.max(1, Math.min(5, payload.depth)) });
     if (typeof payload.ivcLength === 'number') dispatch({ type: 'SET_IVC_LENGTH', length: payload.ivcLength });
     if (typeof payload.showPasta === 'boolean' && payload.showPasta !== initialState.showPastaCurves) {
       dispatch({ type: 'TOGGLE_PASTA' });
@@ -893,7 +955,7 @@ export function RecursiveDemo(): JSX.Element {
               <SliderControl
                 label="Depth"
                 value={state.treeDepth}
-                min={2}
+                min={1}
                 max={5}
                 step={1}
                 onChange={(value) => dispatch({ type: 'SET_DEPTH', depth: value })}
@@ -938,7 +1000,7 @@ export function RecursiveDemo(): JSX.Element {
                 />
               </div>
               <SliderControl
-                label={`Speed (${state.verification.speed}ms)`}
+                label={`Delay: ${state.verification.speed}ms`}
                 value={1100 - state.verification.speed}
                 min={100}
                 max={1000}

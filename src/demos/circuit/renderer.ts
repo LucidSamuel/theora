@@ -1,6 +1,6 @@
 import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, drawLine, drawRoundedRect, hexToRgba } from '@/lib/canvas';
-import type { Bootle16Breakdown, ConstraintCheck, Witness } from './logic';
+import type { Bootle16Breakdown, ConstraintCheck, PlonkGate, Witness } from './logic';
 
 export function renderCircuit(
   ctx: CanvasRenderingContext2D,
@@ -8,9 +8,12 @@ export function renderCircuit(
   witness: Witness,
   constraints: ConstraintCheck[],
   bootle16: Bootle16Breakdown,
-  viewMode: 'r1cs' | 'bootle16',
+  plonkGates: PlonkGate[],
+  viewMode: 'r1cs' | 'bootle16' | 'plonk',
   broken: boolean,
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light',
+  mouseX: number = 0,
+  mouseY: number = 0
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
@@ -67,8 +70,58 @@ export function renderCircuit(
 
   ctx.textBaseline = 'alphabetic';
 
-  // ── Constraint / representation panel ────────────────────────────────────
+  // ── Node hover detection ────────────────────────────────────────────
   const panelX = width - 280;
+  let hoveredNode: typeof nodes[0] | null = null;
+  for (const node of nodes) {
+    if (mouseX >= node.x && mouseX <= node.x + node.w &&
+        mouseY >= node.y && mouseY <= node.y + node.h) {
+      hoveredNode = node;
+      break;
+    }
+  }
+
+  if (hoveredNode) {
+    const descriptions: Record<string, string> = {
+      [`x = ${witness.x}`]: `Input wire x: prover-supplied value ${witness.x}`,
+      [`y = ${witness.y}`]: `Input wire y: prover-supplied value ${witness.y}`,
+      'square': `Multiplication gate: t = x·x = ${witness.x}·${witness.x} = ${witness.t}`,
+    };
+    const outLabel = broken ? 'out ← t + y' : 'z = t + y';
+    descriptions[outLabel] = broken
+      ? `Output unconstrained: t + y = ${witness.t + witness.y}, but z = ${witness.z}`
+      : `Addition gate: z = t + y = ${witness.t} + ${witness.y} = ${witness.z}`;
+
+    const tipText = descriptions[hoveredNode.label] ?? hoveredNode.label;
+
+    ctx.save();
+    ctx.font = '11px monospace';
+    const tm = ctx.measureText(tipText);
+    const tw = Math.min(tm.width + 16, panelX - 20);
+    const th = 24;
+    let tx = hoveredNode.x + hoveredNode.w + 8;
+    let ty = hoveredNode.y + hoveredNode.h / 2 - th / 2;
+
+    if (tx + tw > panelX - 10) tx = hoveredNode.x - tw - 8;
+    if (tx < 10) tx = 10;
+    if (ty < 10) ty = 10;
+
+    ctx.fillStyle = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, tw, th, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tipText, tx + 8, ty + th / 2);
+    ctx.restore();
+  }
+
+  // ── Constraint / representation panel ────────────────────────────────────
   const panelY = 32;
   ctx.fillStyle = hexToRgba(isDark ? '#111113' : '#ffffff', 0.96);
   ctx.fillRect(panelX, panelY, 240, height - 64);
@@ -79,7 +132,11 @@ export function renderCircuit(
   ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(viewMode === 'bootle16' ? 'Bootle16 View' : 'Constraint Checks', panelX + 12, panelY + 22);
+  ctx.fillText(
+    viewMode === 'bootle16' ? 'Bootle16 View' : viewMode === 'plonk' ? 'Plonk Gates' : 'Constraint Checks',
+    panelX + 12,
+    panelY + 22
+  );
 
   if (viewMode === 'r1cs') {
     constraints.forEach((constraint, index) => {
@@ -95,6 +152,28 @@ export function renderCircuit(
       ctx.fillText(constraint.label, panelX + 20, y);
       ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
       ctx.fillText(`${constraint.left} ?= ${constraint.right}`, panelX + 20, y + 14);
+    });
+    return;
+  }
+
+  if (viewMode === 'plonk') {
+    ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+    ctx.font = '10px monospace';
+    ctx.fillText('qM\u00B7a\u00B7b + qL\u00B7a + qR\u00B7b + qO\u00B7c + qC = 0', panelX + 12, panelY + 40);
+
+    plonkGates.forEach((gate, index) => {
+      const y = panelY + 64 + index * 72;
+      ctx.fillStyle = hexToRgba(gate.satisfied ? '#22c55e' : '#ef4444', isDark ? 0.09 : 0.07);
+      ctx.fillRect(panelX + 12, y - 16, 216, 56);
+      ctx.strokeStyle = hexToRgba(gate.satisfied ? '#22c55e' : '#ef4444', isDark ? 0.55 : 0.45);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(panelX + 12, y - 16, 216, 56);
+      ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+      ctx.font = '11px monospace';
+      ctx.fillText(`a=${gate.a.wire}, b=${gate.b.wire}, c=${gate.c.wire}`, panelX + 20, y);
+      ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
+      ctx.fillText(`selectors: [${gate.qM}, ${gate.qL}, ${gate.qR}, ${gate.qO}, ${gate.qC}]`, panelX + 20, y + 16);
+      ctx.fillText(`eval: ${gate.evaluation} ${gate.satisfied ? '= 0 \u2713' : '\u2260 0 \u2717'}`, panelX + 20, y + 32);
     });
     return;
   }

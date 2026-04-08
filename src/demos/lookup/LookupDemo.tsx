@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
@@ -56,6 +58,28 @@ function parseBigIntList(input: string): bigint[] {
     .filter((v): v is bigint => v !== null);
 }
 
+/** Validate a comma-separated input and return an error message if any tokens are not valid integers. */
+function validateBigIntInput(input: string): string | null {
+  const tokens = input.split(',').map((s) => s.trim()).filter(Boolean);
+  const invalid: string[] = [];
+  for (const token of tokens) {
+    try { BigInt(token); } catch { invalid.push(token); }
+  }
+  if (invalid.length === 0) return null;
+  return `Non-integer value${invalid.length > 1 ? 's' : ''}: ${invalid.join(', ')}`;
+}
+
+/** Validate a comma-separated input of integers and return an error message for invalid tokens. */
+function validateIntegerInput(input: string): string | null {
+  const tokens = input.split(',').map((s) => s.trim()).filter(Boolean);
+  const invalid: string[] = [];
+  for (const token of tokens) {
+    if (!/^[+-]?\d+$/.test(token)) invalid.push(token);
+  }
+  if (invalid.length === 0) return null;
+  return `Non-integer value${invalid.length > 1 ? 's' : ''}: ${invalid.join(', ')}`;
+}
+
 function clampLogUpStep(value: number | undefined, maxIndex: number): number {
   if (maxIndex < 0) return -1;
   if (typeof value !== 'number' || Number.isNaN(value)) return maxIndex;
@@ -68,6 +92,7 @@ export function LookupDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
 
   // ── view tab ────────────────────────────────────────────
   const [view, setView] = useState<LookupView>('multiset');
@@ -84,9 +109,68 @@ export function LookupDemo(): JSX.Element {
   const [logupResult, setLogupResult] = useState<LogUpResult | null>(null);
   const [logupActiveStep, setLogupActiveStep] = useState(-1);
 
+  const [multisetTableError, setMultisetTableError] = useState<string | null>(null);
+  const [multisetWireError, setMultisetWireError] = useState<string | null>(null);
+  const [logupTableError, setLogupTableError] = useState<string | null>(null);
+  const [logupWireError, setLogupWireError] = useState<string | null>(null);
+
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+
+  const runLogUpCheck = useCallback(() => {
+    const nextTableError = validateBigIntInput(logupTableInput);
+    const nextWireError = validateBigIntInput(logupWireInput);
+    setLogupTableError(nextTableError);
+    setLogupWireError(nextWireError);
+
+    if (nextTableError || nextWireError) {
+      showToast('Invalid input', 'Enter only integers in the LogUp table and wire inputs');
+      return;
+    }
+
+    const tableVals = parseBigIntList(logupTableInput);
+    const wireVals = parseBigIntList(logupWireInput);
+    if (tableVals.length === 0 || wireVals.length === 0) {
+      showToast('Invalid input', 'Provide at least one table value and one wire value');
+      return;
+    }
+
+    try {
+      const result = logUpCheck({
+        tableValues: tableVals,
+        wireValues: wireVals,
+        beta: BigInt(logupBeta),
+        fieldSize: BigInt(logupFieldSize),
+      });
+      setLogupResult(result);
+      setLogupActiveStep(result.steps.length - 1);
+    } catch (err) {
+      showToast('LogUp error', err instanceof Error ? err.message : 'Computation failed');
+    }
+  }, [logupBeta, logupFieldSize, logupTableInput, logupWireInput]);
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_VIEW: (payload) => {
+      if (payload === 'multiset' || payload === 'logup') {
+        setView(payload);
+      }
+    },
+    SET_WIRE_VALUES: (payload) => {
+      if (payload !== 'inject-invalid') return;
+      setView('multiset');
+      setWireInput('2,5,99');
+      setMultisetWireError(null);
+      setLogupWireInput('2,3,99,5,1');
+      setLogupResult(null);
+      setLogupActiveStep(-1);
+      setLogupWireError(null);
+    },
+    RUN_LOGUP: () => {
+      setView('logup');
+      runLogUpCheck();
+    },
+  }), [currentDemoAction, runLogUpCheck]));
 
   // ── URL state restore ───────────────────────────────────
   useEffect(() => {
@@ -98,11 +182,23 @@ export function LookupDemo(): JSX.Element {
     const payload = decodedHash ?? decoded;
 
     if (!payload) return;
-    if (typeof payload.table === 'string') setTableInput(payload.table);
-    if (typeof payload.wires === 'string') setWireInput(payload.wires);
+    if (typeof payload.table === 'string') {
+      setTableInput(payload.table);
+      setMultisetTableError(validateIntegerInput(payload.table));
+    }
+    if (typeof payload.wires === 'string') {
+      setWireInput(payload.wires);
+      setMultisetWireError(validateIntegerInput(payload.wires));
+    }
     if (payload.view === 'multiset' || payload.view === 'logup') setView(payload.view);
-    if (typeof payload.logupTable === 'string') setLogupTableInput(payload.logupTable);
-    if (typeof payload.logupWires === 'string') setLogupWireInput(payload.logupWires);
+    if (typeof payload.logupTable === 'string') {
+      setLogupTableInput(payload.logupTable);
+      setLogupTableError(validateBigIntInput(payload.logupTable));
+    }
+    if (typeof payload.logupWires === 'string') {
+      setLogupWireInput(payload.logupWires);
+      setLogupWireError(validateBigIntInput(payload.logupWires));
+    }
     if (typeof payload.logupBeta === 'number') setLogupBeta(payload.logupBeta);
     if (typeof payload.logupFieldSize === 'number') setLogupFieldSize(payload.logupFieldSize);
 
@@ -273,24 +369,7 @@ export function LookupDemo(): JSX.Element {
 
   // ── logup run ───────────────────────────────────────────
   const handleRunLogUp = () => {
-    const tableVals = parseBigIntList(logupTableInput);
-    const wireVals = parseBigIntList(logupWireInput);
-    if (tableVals.length === 0 || wireVals.length === 0) {
-      showToast('Invalid input', 'Provide at least one table value and one wire value');
-      return;
-    }
-    try {
-      const result = logUpCheck({
-        tableValues: tableVals,
-        wireValues: wireVals,
-        beta: BigInt(logupBeta),
-        fieldSize: BigInt(logupFieldSize),
-      });
-      setLogupResult(result);
-      setLogupActiveStep(result.steps.length - 1);
-    } catch (err) {
-      showToast('LogUp error', err instanceof Error ? err.message : 'Computation failed');
-    }
+    runLogUpCheck();
   };
 
   // ── fit to view ─────────────────────────────────────────
@@ -335,6 +414,10 @@ export function LookupDemo(): JSX.Element {
 
   // ── reset ───────────────────────────────────────────────
   const handleReset = () => {
+    setMultisetTableError(null);
+    setMultisetWireError(null);
+    setLogupTableError(null);
+    setLogupWireError(null);
     if (view === 'multiset') {
       setTableInput('1,2,3,5,8,13');
       setWireInput('2,5,8');
@@ -379,13 +462,15 @@ export function LookupDemo(): JSX.Element {
           /* ── Multiset controls ── */
           <>
             <ControlGroup label="Lookup Table">
-              <TextInput value={tableInput} onChange={setTableInput} placeholder="1,2,3,5,8,13" />
+              <TextInput value={tableInput} onChange={(v) => { setTableInput(v); setMultisetTableError(validateIntegerInput(v)); }} placeholder="1,2,3,5,8,13" />
+              {multisetTableError && <p style={{ color: 'var(--red, #ef4444)', fontSize: 11, margin: '4px 0 0' }}>{multisetTableError}</p>}
             </ControlGroup>
 
             <ControlGroup label="Wire Values">
-              <TextInput value={wireInput} onChange={setWireInput} placeholder="2,5,8" />
-              <ButtonControl label="Load failing example" onClick={() => setWireInput('2,5,21')} variant="secondary" />
-              <ButtonControl label="Load repeated lookup (passes)" onClick={() => setWireInput('2,2,2,8')} variant="secondary" />
+              <TextInput value={wireInput} onChange={(v) => { setWireInput(v); setMultisetWireError(validateIntegerInput(v)); }} placeholder="2,5,8" />
+              {multisetWireError && <p style={{ color: 'var(--red, #ef4444)', fontSize: 11, margin: '4px 0 0' }}>{multisetWireError}</p>}
+              <ButtonControl label="Load failing example" onClick={() => { setWireInput('2,5,21'); setMultisetWireError(null); }} variant="secondary" />
+              <ButtonControl label="Load repeated lookup (passes)" onClick={() => { setWireInput('2,2,2,8'); setMultisetWireError(null); }} variant="secondary" />
             </ControlGroup>
 
             <ControlGroup label="Analysis">
@@ -416,9 +501,11 @@ export function LookupDemo(): JSX.Element {
                   setLogupTableInput(value);
                   setLogupResult(null);
                   setLogupActiveStep(-1);
+                  setLogupTableError(validateBigIntInput(value));
                 }}
                 placeholder="1,2,3,4,5"
               />
+              {logupTableError && <p style={{ color: 'var(--red, #ef4444)', fontSize: 11, margin: '4px 0 0' }}>{logupTableError}</p>}
               <ControlNote>
                 Comma-separated integers (BigInt). These are the allowed lookup values.
               </ControlNote>
@@ -431,13 +518,16 @@ export function LookupDemo(): JSX.Element {
                   setLogupWireInput(value);
                   setLogupResult(null);
                   setLogupActiveStep(-1);
+                  setLogupWireError(validateBigIntInput(value));
                 }}
                 placeholder="2,3,3,5,1,2"
               />
+              {logupWireError && <p style={{ color: 'var(--red, #ef4444)', fontSize: 11, margin: '4px 0 0' }}>{logupWireError}</p>}
               <ButtonControl label="Load failing example" onClick={() => {
                 setLogupWireInput('2,3,99,5,1');
                 setLogupResult(null);
                 setLogupActiveStep(-1);
+                setLogupWireError(null);
               }} variant="secondary" />
             </ControlGroup>
 

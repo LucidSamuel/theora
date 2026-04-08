@@ -6,6 +6,10 @@ describe('lookup logic', () => {
     expect(parseNumberList('1, 2, 5')).toEqual([1, 2, 5]);
   });
 
+  it('ignores non-integer numeric tokens', () => {
+    expect(parseNumberList('1, 2.5, 3e2, -4')).toEqual([1, -4]);
+  });
+
   it('passes when every wire value exists in the table', () => {
     const analysis = analyzeLookup([1, 2, 3, 5, 8], [2, 5, 8]);
     expect(analysis.passes).toBe(true);

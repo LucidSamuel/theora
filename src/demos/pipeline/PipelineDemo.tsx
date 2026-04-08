@@ -37,7 +37,7 @@ import {
   type PipelineResults,
 } from './logic';
 import { buildLinkedDemoTarget, getIssueLabel, getLinkedDemoDescriptor, getPrimaryPipelineIssue, getStageDiagnostic } from './linkedState';
-import { renderPipeline } from './renderer';
+import { renderPipeline, getStagePositions } from './renderer';
 
 // ── State ──────────────────────────────────────────────────────────
 
@@ -266,9 +266,10 @@ export function PipelineDemo() {
         }
       }
 
-      renderPipeline(ctx, frame, activeStage, state.results, state.fault, isDark);
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+      renderPipeline(ctx, frame, activeStage, state.results, state.fault, isDark, worldMouse.x, worldMouse.y);
     },
-    [theme, activeStage, state.results, state.fault]
+    [camera, interaction, theme, activeStage, state.results, state.fault]
   );
 
   // Stop GIF recording when auto-play ends
@@ -321,14 +322,29 @@ export function PipelineDemo() {
     const canvas = canvasElRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width || 800;
-    fitCameraToBounds(camera, canvas, {
-      minX: 40,
-      minY: 24,
-      maxX: width - 40,
-      maxY: 520,
-    }, options?.instant ? { durationMs: 0 } : undefined);
+    const cx = (rect.width || 800) / 2;
+    const positions = getStagePositions(cx);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const pos of positions.values()) {
+      if (pos.x < minX) minX = pos.x;
+      if (pos.y < minY) minY = pos.y;
+      if (pos.x + pos.w > maxX) maxX = pos.x + pos.w;
+      if (pos.y + pos.h > maxY) maxY = pos.y + pos.h;
+    }
+    // Include the detail panel (x=40, width=canvasWidth-80, bottom ≈ DETAIL_TOP+220)
+    minX = Math.min(minX, 40);
+    maxX = Math.max(maxX, cx * 2 - 40);
+    maxY = Math.max(maxY, 528);
+    fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
+
+  // Fit all nodes on mount
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    requestAnimationFrame(() => handleFitToView({ instant: true }));
+  }, [handleFitToView]);
 
   const handleCopyShareUrl = useCallback(() => {
     copyToClipboard(window.location.href);
@@ -370,6 +386,27 @@ export function PipelineDemo() {
     });
     dispatch({ type: 'SET_AUTO', autoPlaying: true });
   }, [camera, handleFitToView]);
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!camera.shouldHandleClick()) return;
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const wx = (sx - camera.panX) / camera.zoom;
+    const wy = (sy - camera.panY) / camera.zoom;
+
+    const cx = rect.width / 2;
+    const positions = getStagePositions(cx);
+    for (const [stage, pos] of positions.entries()) {
+      if (wx >= pos.x && wx <= pos.x + pos.w && wy >= pos.y && wy <= pos.y + pos.h) {
+        const idx = STAGES.indexOf(stage);
+        dispatch({ type: 'JUMP_TO', stageIdx: idx });
+        return;
+      }
+    }
+  }, [camera]);
 
   const handleCopyAuditSummary = useCallback(() => {
     const payload = {
@@ -467,6 +504,7 @@ export function PipelineDemo() {
             max={5}
             step={1}
             onChange={(v) => dispatch({ type: 'SET_SPEED', speed: v })}
+            hint="Slow → Fast"
           />
         </ControlGroup>
 
@@ -475,7 +513,10 @@ export function PipelineDemo() {
             label="Inject fault"
             value={state.fault}
             options={faultOptions}
-            onChange={(v) => dispatch({ type: 'SET_FAULT', fault: v as FaultType })}
+            onChange={(v) => {
+              dispatch({ type: 'SET_FAULT', fault: v as FaultType });
+              if (v !== state.fault) showToast('Pipeline reset to Stage 1', v === 'none' ? 'Fault cleared' : 'Fault injected');
+            }}
           />
           {state.fault !== 'none' && (
             <ControlNote tone="error">
@@ -583,6 +624,7 @@ export function PipelineDemo() {
           camera={camera}
           onCanvas={(c) => (canvasElRef.current = c)}
           {...mergedHandlers}
+          onClick={handleCanvasClick}
         />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:pipeline" onReset={handleFitToView} />
       </DemoCanvasArea>

@@ -12,9 +12,8 @@ export function parseNumberList(input: string): number[] {
   return input
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean)
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value));
+    .filter((value) => /^[+-]?\d+$/.test(value))
+    .map((value) => Number(value));
 }
 
 export function analyzeLookup(table: number[], wires: number[]): LookupAnalysis {

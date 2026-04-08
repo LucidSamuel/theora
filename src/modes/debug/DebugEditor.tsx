@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ParseError } from './dsl/types';
 import { DEFAULT_CIRCUITS } from './dsl/defaults';
 
@@ -18,9 +18,19 @@ const FIELD_OPTIONS = [
   { value: 251n, label: 'GF(251)' },
 ];
 
+export function getSelectedCircuitId(source: string): string {
+  return DEFAULT_CIRCUITS.find((c) => c.source === source)?.id ?? 'custom';
+}
+
 export function DebugEditor({ source, onChange, errors, fieldSize, onFieldSizeChange }: DebugEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [selectedCircuit, setSelectedCircuit] = useState<string>('basic');
+  const [selectedCircuit, setSelectedCircuit] = useState<string>(() => getSelectedCircuitId(source));
+
+  // Keep the preset selector in sync with the current source, including
+  // sources restored from URL state that match a non-default preset.
+  useEffect(() => {
+    setSelectedCircuit(getSelectedCircuitId(source));
+  }, [source]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {
@@ -67,6 +77,9 @@ export function DebugEditor({ source, onChange, errors, fieldSize, onFieldSizeCh
           {DEFAULT_CIRCUITS.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
+          {selectedCircuit === 'custom' && (
+            <option value="custom" disabled>(Custom)</option>
+          )}
         </select>
         <select
           value={String(fieldSize)}

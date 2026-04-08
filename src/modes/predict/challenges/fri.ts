@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const FRI_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'fri-folding-purpose',
+    demoId: 'fri',
+    difficulty: 'beginner',
+    question: 'What is the purpose of each folding round in the FRI protocol?',
+    hint: 'Each round halves something important about the polynomial.',
+    choices: [
+      { label: 'To encrypt the polynomial coefficients', rationale: 'FRI is not an encryption scheme.' },
+      { label: 'To halve the degree of the polynomial and the evaluation domain', rationale: 'Correct \u2014 each fold uses a random challenge \u03b1 to combine even and odd terms, halving both the degree and domain size.' },
+      { label: 'To increase the soundness error', rationale: 'More rounds improve soundness, they don\'t weaken it.' },
+      { label: 'To generate the Merkle commitment', rationale: 'Merkle commitments are built per layer, but folding is about degree reduction.' },
+    ],
+    correctIndex: 1,
+    explanation: 'FRI repeatedly folds the polynomial: given f(x) of degree d over domain D, it produces f\'(x) of degree d/2 over D\' of half the size using a random challenge \u03b1. After log(d) folds, the result is a constant, proving the original was low-degree.',
+    category: 'folding',
+  },
+  {
+    id: 'fri-query-consistency',
+    demoId: 'fri',
+    difficulty: 'intermediate',
+    question: 'During the FRI query phase, what does the verifier check at each layer?',
+    hint: 'The verifier has commitments to each layer and opens specific positions.',
+    choices: [
+      { label: 'That the polynomial evaluates to zero at the query point', rationale: 'FRI does not check for roots \u2014 it checks consistency between layers.' },
+      { label: 'That the folded value at position q in layer i+1 is consistent with values at q and q+|D|/2 in layer i', rationale: 'Correct \u2014 the verifier checks that the folding operation was applied correctly using the committed evaluations.' },
+      { label: 'That all evaluation points are distinct', rationale: 'Distinctness is guaranteed by the domain structure, not verified per query.' },
+      { label: 'That the Merkle proof is valid', rationale: 'Merkle proofs are verified, but the core check is algebraic consistency between layers.' },
+    ],
+    correctIndex: 1,
+    explanation: 'For each query position q, the verifier opens the evaluation at q and its sibling q+|D|/2 in layer i, then checks that the folded value in layer i+1 matches: f_{i+1}(q) = (f_i(q) + f_i(q+|D|/2))/2 + \u03b1\u00b7(f_i(q) - f_i(q+|D|/2))/(2\u00b7q). This ensures honest folding.',
+    category: 'queries',
+  },
+  {
+    id: 'fri-soundness-queries',
+    demoId: 'fri',
+    difficulty: 'advanced',
+    question: 'How does the number of queries affect FRI\'s soundness error?',
+    hint: 'Each query is an independent spot-check of the committed layers.',
+    choices: [
+      { label: 'More queries increase the soundness error', rationale: 'More checks make cheating harder, not easier.' },
+      { label: 'The number of queries has no effect on soundness', rationale: 'Queries are the primary source of soundness \u2014 without them, the prover could commit to anything.' },
+      { label: 'Each query reduces the soundness error multiplicatively', rationale: 'Correct \u2014 with Q independent queries, the soundness error drops to roughly (\u03c1)^Q where \u03c1 is the rate parameter, since each query catches cheating independently.' },
+      { label: 'Only 1 query is ever needed', rationale: 'One query gives only constant soundness; practical systems use many queries.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Each FRI query is an independent consistency check. If a cheating prover\'s committed function disagrees with a low-degree polynomial on a \u03b4 fraction of the domain, each query catches this with probability \u03b4. With Q queries, the probability of escaping all checks is (1-\u03b4)^Q, which shrinks exponentially.',
+    category: 'security',
+  },
+  {
+    id: 'fri-final-constant',
+    demoId: 'fri',
+    difficulty: 'beginner',
+    question: 'After all folding rounds in FRI, what should the final layer contain?',
+    hint: 'Each fold halves the degree. What has degree 0?',
+    choices: [
+      { label: 'A random polynomial', rationale: 'The result should be deterministic given the challenges, not random.' },
+      { label: 'A single constant value', rationale: 'Correct \u2014 after log(d) folds of a degree-d polynomial, the result has degree 0: a constant. The verifier checks that the final layer is indeed constant.' },
+      { label: 'The original polynomial\'s coefficients', rationale: 'FRI works with evaluations, not coefficients directly.' },
+      { label: 'A hash of the polynomial', rationale: 'FRI proves low-degree-ness, not a hash relationship.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A degree-d polynomial requires log\u2082(d+1) folds to reduce to degree 0 (a constant). The verifier checks that the final committed layer is a single constant value. If the original function wasn\'t low-degree, the final layer won\'t be constant, and the queries will catch the inconsistency.',
+    category: 'folding',
+  },
+];

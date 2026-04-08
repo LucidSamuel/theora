@@ -5,6 +5,14 @@ import { CIRCUIT_CHALLENGES } from './circuit';
 import { FIAT_SHAMIR_CHALLENGES } from './fiat-shamir';
 import { POLYNOMIAL_CHALLENGES } from './polynomial';
 import { PIPELINE_CHALLENGES } from './pipeline';
+import { ELLIPTIC_CHALLENGES } from './elliptic';
+import { ACCUMULATOR_CHALLENGES } from './accumulator';
+import { LOOKUP_CHALLENGES } from './lookup';
+import { RECURSIVE_CHALLENGES } from './recursive';
+import { PLONK_CHALLENGES } from './plonk';
+import { GROTH16_CHALLENGES } from './groth16';
+import { SUMCHECK_CHALLENGES } from './sumcheck';
+import { FRI_CHALLENGES } from './fri';
 
 export const ALL_CHALLENGES: PredictChallenge[] = [
   ...MERKLE_CHALLENGES,
@@ -12,6 +20,14 @@ export const ALL_CHALLENGES: PredictChallenge[] = [
   ...FIAT_SHAMIR_CHALLENGES,
   ...POLYNOMIAL_CHALLENGES,
   ...PIPELINE_CHALLENGES,
+  ...ELLIPTIC_CHALLENGES,
+  ...ACCUMULATOR_CHALLENGES,
+  ...LOOKUP_CHALLENGES,
+  ...RECURSIVE_CHALLENGES,
+  ...PLONK_CHALLENGES,
+  ...GROTH16_CHALLENGES,
+  ...SUMCHECK_CHALLENGES,
+  ...FRI_CHALLENGES,
 ];
 
 const CHALLENGE_MAP = new Map<string, PredictChallenge>();

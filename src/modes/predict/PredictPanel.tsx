@@ -518,7 +518,8 @@ function NoChallengePanel() {
         style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}
       >
         This demo does not have prediction challenges yet. Switch to Merkle, R1CS
-        Circuits, Fiat-Shamir, Polynomial Commitments, or Pipeline.
+        Circuits, Fiat-Shamir, Polynomial Commitments, Pipeline, Elliptic Curves,
+        or RSA Accumulators.
       </div>
     </div>
   );

@@ -140,7 +140,8 @@ export function renderNTT(
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(rightLabel, rightPanelX, startY + 12);
 
-  const outputValues = state.direction === 'forward' ? state.evaluations : state.coefficients;
+  // For forward: output is evaluations. For inverse: nttInverse result is stored in evaluations.
+  const outputValues = state.evaluations;
   for (let i = 0; i < n; i++) {
     const y = panelBoxY(i, startY);
     const label = state.direction === 'forward' ? `f(\u03c9${superscriptDigit(i)})` : `a${subscriptDigit(i)}`;
@@ -290,7 +291,8 @@ export function renderNTT(
     const midX = (colNodes[0]!.x + nextColNodes[0]!.x) / 2;
     const labelText = compactLayerLabels ? `L${col}` : `Layer ${col}`;
     const labelH = compactLayerLabels ? 18 : 20;
-    const labelY = panelBoxY(n - 1, startY) + BOX_H + 24 + (compactLayerLabels && col % 2 === 1 ? 12 : 0);
+    const baseLabelY = panelBoxY(n - 1, startY) + BOX_H + 24;
+    const labelY = Math.min(baseLabelY, height - 30) + (compactLayerLabels && col % 2 === 1 ? 12 : 0);
 
     const isActive = state.activeLayer === -1 || state.activeLayer === col;
     const layerColor = LAYER_COLORS[col % LAYER_COLORS.length]!;

@@ -251,8 +251,8 @@ function NoScenarioPanel() {
         style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}
       >
         This demo does not have an attack scenario yet. Switch to a demo with
-        an attack: Fiat-Shamir, R1CS Circuits, Pipeline, Merkle, or Polynomial
-        Commitments.
+        an attack: Fiat-Shamir, R1CS Circuits, Pipeline, Merkle, Polynomial
+        Commitments, Elliptic Curves, or RSA Accumulators.
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { beforeAll, describe, it, expect } from 'vitest';
 import {
   findSubgroupOrder,
   buildPairingConfig,
+  buildEcdlpChallenge,
   toyPairing,
   discreteLog,
   demonstrateBilinearity,
@@ -94,6 +95,27 @@ describe('buildPairingConfig', () => {
     const smallConfig = buildPairingConfig({ p: 23, a: 2, b: 3 });
     expect(smallConfig.groupOrder).toBeGreaterThan(3);
     expect(isOnCurve(smallConfig.generator, smallConfig.curve)).toBe(true);
+  });
+});
+
+describe('buildEcdlpChallenge', () => {
+  it('uses a valid generator and public point on the curve', () => {
+    const challenge = buildEcdlpChallenge(DEFAULT_CURVE, 17);
+    expect(isOnCurve(challenge.generator, challenge.curve)).toBe(true);
+    expect(isOnCurve(challenge.publicPoint, challenge.curve)).toBe(true);
+  });
+
+  it('clamps the secret scalar below the generator order', () => {
+    const challenge = buildEcdlpChallenge(DEFAULT_CURVE, 999);
+    expect(challenge.secretScalar).toBeGreaterThanOrEqual(1);
+    expect(challenge.secretScalar).toBeLessThan(challenge.groupOrder);
+  });
+
+  it('computes Q = kG for the chosen challenge scalar', () => {
+    const challenge = buildEcdlpChallenge(DEFAULT_CURVE, 17);
+    expect(challenge.publicPoint).toEqual(
+      scalarMultiply(challenge.generator, challenge.secretScalar, challenge.curve).result,
+    );
   });
 });
 

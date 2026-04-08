@@ -234,7 +234,12 @@ export function renderMerkleTree(
     // Draw leaf data if available
     if (node.data) {
       const isDup = node.id.endsWith('-dup');
-      const label = isDup ? `${node.data.slice(0, 8)} (dup)` : node.data.slice(0, 8);
+      // At 16+ leaves, show leaf index only (labels collide). Full text on hover.
+      const leafIdx = node.id.startsWith('leaf-') ? node.id.replace('leaf-', '').replace('-dup', '') : null;
+      const useIndex = leafCount >= 16 && leafIdx !== null;
+      const label = useIndex
+        ? (isDup ? `#${leafIdx}*` : `#${leafIdx}`)
+        : (isDup ? `${node.data.slice(0, 8)} (pad)` : node.data.slice(0, 8));
       ctx.save();
       ctx.fillStyle = isDup
         ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)')
@@ -268,6 +273,7 @@ export function renderMerkleTree(
     if (tooltipX + tooltipWidth > width - 10) {
       tooltipX = x - nodeRadius - tooltipWidth - 10;
     }
+    if (tooltipX < 10) tooltipX = 10;
     if (tooltipY < 10) tooltipY = 10;
     if (tooltipY + tooltipHeight > height - 10) tooltipY = height - tooltipHeight - 10;
 
@@ -289,25 +295,35 @@ export function renderMerkleTree(
 
     // Draw data tooltip if leaf
     if (hoveredNode.data) {
-      const dataText = `Data: ${hoveredNode.data}`;
+      const isDupNode = hoveredNode.id.endsWith('-dup');
+      const dataText = isDupNode
+        ? `Data: ${hoveredNode.data} (padded duplicate — tree requires power-of-2 leaves)`
+        : `Data: ${hoveredNode.data}`;
       ctx.save();
       ctx.font = '11px sans-serif';
       const dataMetrics = ctx.measureText(dataText);
       const dataTooltipWidth = dataMetrics.width + tooltipPadding * 2;
+      let dataTooltipX = tooltipX;
       const dataTooltipY = tooltipY + tooltipHeight + 5;
+
+      // Clamp data tooltip to canvas bounds
+      if (dataTooltipX + dataTooltipWidth > width - 10) {
+        dataTooltipX = x - nodeRadius - dataTooltipWidth - 10;
+      }
+      if (dataTooltipX < 10) dataTooltipX = 10;
 
       ctx.fillStyle = theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
       ctx.strokeStyle = theme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(tooltipX, dataTooltipY, dataTooltipWidth, tooltipHeight, 4);
+      ctx.roundRect(dataTooltipX, dataTooltipY, dataTooltipWidth, tooltipHeight, 4);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = theme === 'dark' ? '#ffffff' : '#000000';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(dataText, tooltipX + tooltipPadding, dataTooltipY + tooltipHeight / 2);
+      ctx.fillText(dataText, dataTooltipX + tooltipPadding, dataTooltipY + tooltipHeight / 2);
       ctx.restore();
     }
   }

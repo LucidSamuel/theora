@@ -72,10 +72,14 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           const f = new File([blob], 'paper.pdf', { type: 'application/pdf' });
           base64 = await fileToBase64(f);
         } catch (err) {
+          const pdfUrl = url;
+          const isCors = !(err instanceof Error && err.message.startsWith('Failed to fetch:') || err instanceof Error && err.message === 'Fetched URL did not return a PDF');
           setError(
             err instanceof Error && err.message === 'Fetched URL did not return a PDF'
               ? 'The URL did not return a PDF. Download it and upload directly.'
-              : 'Could not fetch the PDF. Download it and upload directly.',
+              : isCors
+                ? `Browser security (CORS) blocks direct PDF downloads from this server. Open the PDF link, save it locally, then drag it into the upload area above.\n\n${pdfUrl}`
+                : 'Could not fetch the PDF. Download it and upload directly.',
           );
           setLoading(false);
           clearInterval(progressInterval.current);
@@ -163,8 +167,38 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
           }}
         />
         {file ? (
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-            {file.name} ({(file.size / 1024).toFixed(0)} KB)
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+              {file.name} ({(file.size / 1024).toFixed(0)} KB)
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFile(null);
+                setError(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              title="Remove file"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 20,
+                height: 20,
+                borderRadius: 4,
+                border: '1px solid var(--border)',
+                background: 'var(--surface-element)',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: 12,
+                lineHeight: 1,
+                padding: 0,
+                flexShrink: 0,
+              }}
+            >
+              ×
+            </button>
           </div>
         ) : (
           <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -178,24 +212,50 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
         <div className="lp-overline" style={{ textAlign: 'center', marginBottom: 12 }}>
           or paste an eprint URL
         </div>
-        <input
-          type="text"
-          placeholder="e.g. 2019/1021 or full URL"
-          value={eprintUrl}
-          onChange={(e) => { setEprintUrl(e.target.value); setError(null); }}
-          style={{
-            width: '100%',
-            height: 40,
-            padding: '0 14px',
-            borderRadius: 8,
-            border: '1px solid var(--border)',
-            background: 'var(--bg-primary)',
-            color: 'var(--text-primary)',
-            fontSize: 13,
-            fontFamily: 'var(--font-mono)',
-            boxSizing: 'border-box',
-          }}
-        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            placeholder="e.g. 2019/1021 or full URL"
+            value={eprintUrl}
+            onChange={(e) => { setEprintUrl(e.target.value); setError(null); }}
+            style={{
+              flex: 1,
+              height: 40,
+              padding: '0 14px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              fontSize: 13,
+              fontFamily: 'var(--font-mono)',
+              boxSizing: 'border-box',
+            }}
+          />
+          {eprintUrl.trim() && (
+            <button
+              type="button"
+              onClick={() => { setEprintUrl(''); setError(null); }}
+              title="Clear URL"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 40,
+                height: 40,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'var(--surface-element)',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: 0,
+                flexShrink: 0,
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       {/* API key status */}
@@ -328,9 +388,26 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
             fontSize: 12,
             fontFamily: 'var(--font-mono)',
             lineHeight: 1.5,
+            whiteSpace: 'pre-line',
           }}
         >
-          {error}
+          {error.split('\n').map((line, i) => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+              return (
+                <a
+                  key={i}
+                  href={trimmed}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--color-error)', textDecoration: 'underline', wordBreak: 'break-all' }}
+                >
+                  {trimmed}
+                </a>
+              );
+            }
+            return <span key={i}>{line}</span>;
+          })}
         </div>
       )}
 

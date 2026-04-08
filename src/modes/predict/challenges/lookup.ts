@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const LOOKUP_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'lookup-multiset-check',
+    demoId: 'lookup',
+    difficulty: 'beginner',
+    question: 'In a multiset equality check for lookups, what must be true about the wire values and the table?',
+    hint: 'Think about what "every wire value appears in the table" means as a set relationship.',
+    choices: [
+      { label: 'Wire values must be sorted', rationale: 'Sorting is one technique but not the fundamental requirement.' },
+      { label: 'Every wire value must appear in the table with matching multiplicity', rationale: 'Correct — the multiset of wire values must be a sub-multiset of the table.' },
+      { label: 'The table must be smaller than the wire list', rationale: 'The table can be any size; what matters is containment.' },
+      { label: 'Wire values must be unique', rationale: 'Repeated wire values are allowed as long as the table contains them.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A lookup argument proves that every value in the wire column appears in the table column. The multiset check ensures frequencies match: if a wire value appears k times, the table must account for it.',
+    category: 'multiset',
+  },
+  {
+    id: 'lookup-logup-sum',
+    demoId: 'lookup',
+    difficulty: 'intermediate',
+    question: 'In the LogUp protocol, what does the final sum of inverse terms equal when the lookup is valid?',
+    hint: 'LogUp uses logarithmic derivatives: 1/(β + wᵢ) summed over wires vs table.',
+    choices: [
+      { label: '1', rationale: 'The sum is not normalized to 1.' },
+      { label: '0', rationale: 'Correct — the wire-side and table-side sums cancel, giving a net sum of zero.' },
+      { label: 'The table size', rationale: 'The sum relates to multiplicity balance, not table size.' },
+      { label: 'β', rationale: 'The random challenge β is used in denominators but is not the result.' },
+    ],
+    correctIndex: 1,
+    explanation: 'LogUp converts the multiset check into a sum of rational terms: Σ 1/(β + wᵢ) − Σ mⱼ/(β + tⱼ) = 0. When wire multiplicities match table multiplicities, the terms cancel perfectly.',
+    category: 'logup',
+  },
+  {
+    id: 'lookup-random-challenge',
+    demoId: 'lookup',
+    difficulty: 'advanced',
+    question: 'Why does LogUp need a random challenge β from the verifier?',
+    hint: 'What happens if the prover could choose β?',
+    choices: [
+      { label: 'To compress the table into fewer elements', rationale: 'β does not reduce table size.' },
+      { label: 'To make the protocol zero-knowledge', rationale: 'β provides soundness, not zero-knowledge.' },
+      { label: 'To prevent the prover from finding a β where sums cancel despite invalid lookups', rationale: 'Correct — a dishonest prover could pick β to make a false sum vanish. Verifier randomness ensures soundness.' },
+      { label: 'To determine which table entries to check', rationale: 'All entries participate; β is not a selector.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Without a random β, a cheating prover could craft values that make the sum zero even for invalid lookups. The Schwartz-Zippel lemma guarantees that a random β catches cheating with overwhelming probability.',
+    category: 'logup',
+  },
+  {
+    id: 'lookup-invalid-wire',
+    demoId: 'lookup',
+    difficulty: 'beginner',
+    question: 'If a wire column contains the value 42 but the table only has {1, 2, 3, 4, 5}, what happens?',
+    hint: 'The lookup argument is a proof that all wire values are in the table.',
+    choices: [
+      { label: 'The proof is still valid because 42 > 5', rationale: 'Ordering does not matter — containment does.' },
+      { label: 'The verifier accepts but with a warning', rationale: 'There are no warnings — the check is binary.' },
+      { label: 'The multiset check fails and the proof is rejected', rationale: 'Correct — 42 is not in the table, so the lookup argument cannot be satisfied.' },
+      { label: 'The prover adds 42 to the table automatically', rationale: 'The table is fixed by the circuit; the prover cannot modify it.' },
+    ],
+    correctIndex: 2,
+    explanation: 'A lookup argument enforces that every wire value is contained in the table. If any wire value is absent from the table, the multiset check fails and the verifier rejects the proof.',
+    category: 'multiset',
+  },
+];

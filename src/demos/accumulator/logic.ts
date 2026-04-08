@@ -1,8 +1,13 @@
 import { modPow, isPrime } from '@/lib/math';
-import { extendedGcd, modInverse } from '@/lib/math';
+import { extendedGcd, modInverse, gcd } from '@/lib/math';
 
-export const ACC_N = BigInt("1000000007") * BigInt("1000000009");
+export const ACC_P = 1000000007n;
+export const ACC_Q = 1000000009n;
+export const ACC_N = ACC_P * ACC_Q;
 export const ACC_G = 65537n;
+export const ACCUMULATOR_PRIME_POOL = Object.freeze(
+  Array.from({ length: 997 - 3 + 1 }, (_, index) => index + 3).filter((candidate) => isPrime(candidate))
+);
 
 /**
  * Add an element to the accumulator
@@ -141,6 +146,22 @@ export function randomPrime(): number {
 
   // Fallback to a known prime
   return 3;
+}
+
+export function pickRandomAvailablePrime(usedPrimes: bigint[]): number | null {
+  const used = new Set(usedPrimes.map((prime) => prime.toString()));
+  const available = ACCUMULATOR_PRIME_POOL.filter((prime) => !used.has(String(prime)));
+  if (available.length === 0) return null;
+  const index = Math.floor(Math.random() * available.length);
+  return available[index] ?? null;
+}
+
+export function forgeToyMembershipWitness(accValue: bigint, target: bigint): bigint | null {
+  if (target <= 1n) return null;
+  const phi = (ACC_P - 1n) * (ACC_Q - 1n);
+  if (gcd(target, phi) !== 1n) return null;
+  const inverse = modInverse(target, phi);
+  return modPow(accValue, inverse, ACC_N);
 }
 
 /**

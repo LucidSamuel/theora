@@ -102,6 +102,12 @@ export async function analyzePaper(
 
     if (!response.ok) {
       const errBody = await response.text();
+      if (response.status === 400 && errBody.includes('prompt is too long')) {
+        return {
+          walkthrough: null,
+          error: 'This PDF is too large for analysis (exceeds the model\'s 200k token context window). Try a shorter paper, or upload only the relevant pages as a separate PDF.',
+        };
+      }
       return { walkthrough: null, error: `API error ${response.status}: ${errBody.slice(0, 200)}` };
     }
 

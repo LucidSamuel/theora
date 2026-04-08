@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const GROTH16_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'groth16-trusted-setup',
+    demoId: 'groth16',
+    difficulty: 'beginner',
+    question: 'What happens if the "toxic waste" (\u03b1, \u03b2, \u03b3, \u03b4) from Groth16\'s trusted setup is not destroyed?',
+    hint: 'The toxic waste lets you create valid-looking proofs without knowing the witness.',
+    choices: [
+      { label: 'Nothing \u2014 the proofs are still sound', rationale: 'The toxic waste is precisely what makes forgery possible.' },
+      { label: 'The verifier can decrypt the witness', rationale: 'Groth16 is a proof system, not an encryption scheme.' },
+      { label: 'Anyone with the toxic waste can forge proofs for false statements', rationale: 'Correct \u2014 knowing \u03b1, \u03b2, \u03b3, \u03b4 lets an adversary construct valid proof elements (A, B, C) without a valid witness.' },
+      { label: 'The proof size increases', rationale: 'Proof size is fixed at 3 group elements regardless of the setup.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Groth16\'s security relies on the toxic waste being destroyed after the trusted setup ceremony. If \u03b1, \u03b2, \u03b3, \u03b4 are known, an adversary can algebraically construct proof elements that pass the pairing check e(A,B) = e(\u03b1,\u03b2)\u00b7e(pub,\u03b3)\u00b7e(C,\u03b4) for any statement.',
+    category: 'setup',
+  },
+  {
+    id: 'groth16-pairing-check',
+    demoId: 'groth16',
+    difficulty: 'intermediate',
+    question: 'How many pairing operations does the Groth16 verifier perform?',
+    hint: 'The verification equation is e(A,B) = e(\u03b1,\u03b2)\u00b7e(pub,\u03b3)\u00b7e(C,\u03b4).',
+    choices: [
+      { label: '1', rationale: 'The equation has multiple pairing terms.' },
+      { label: '3 (or 4 with the LHS)', rationale: 'Correct \u2014 the verifier computes e(A,B) on the left and e(\u03b1,\u03b2), e(pub,\u03b3), e(C,\u03b4) on the right. In practice, e(\u03b1,\u03b2) is precomputed, leaving 3 online pairings.' },
+      { label: 'N, where N is the circuit size', rationale: 'Groth16 verification is constant-time, independent of circuit size.' },
+      { label: 'log(N)', rationale: 'Verification cost does not depend on circuit size at all.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Groth16 is famous for its constant-time verification: exactly 3 pairings (plus 1 precomputed). This makes it one of the fastest proof systems to verify, regardless of how large the circuit is.',
+    category: 'verification',
+  },
+  {
+    id: 'groth16-proof-size',
+    demoId: 'groth16',
+    difficulty: 'beginner',
+    question: 'What is the size of a Groth16 proof?',
+    hint: 'The proof consists of elements A, B, and C.',
+    choices: [
+      { label: '1 group element', rationale: 'The proof has three components.' },
+      { label: '3 group elements (2 in G\u2081, 1 in G\u2082)', rationale: 'Correct \u2014 A \u2208 G\u2081, B \u2208 G\u2082, C \u2208 G\u2081. On BN254 this is about 128 bytes.' },
+      { label: 'O(n) elements for circuit size n', rationale: 'Groth16 proofs are constant-size, independent of circuit complexity.' },
+      { label: 'O(log n) elements', rationale: 'The proof is even more succinct than logarithmic \u2014 it is constant.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A Groth16 proof is exactly 3 group elements: A and C in G\u2081, B in G\u2082. This constant size (\u2248128 bytes on BN254, \u2248192 bytes on BLS12-381) makes Groth16 the most succinct general-purpose zkSNARK.',
+    category: 'proof-structure',
+  },
+  {
+    id: 'groth16-circuit-specific',
+    demoId: 'groth16',
+    difficulty: 'advanced',
+    question: 'Why does Groth16 require a new trusted setup for each circuit, unlike PLONK?',
+    hint: 'Compare what the CRS encodes in Groth16 vs PLONK.',
+    choices: [
+      { label: 'Groth16 uses a different elliptic curve for each circuit', rationale: 'The curve is fixed; only the CRS changes.' },
+      { label: 'The CRS encodes the circuit\'s R1CS structure directly into group elements', rationale: 'Correct \u2014 Groth16\'s proving and verification keys embed the specific A, B, C matrices of the R1CS. A different circuit has different matrices, requiring a new ceremony.' },
+      { label: 'Groth16 proofs are larger so they need circuit-specific compression', rationale: 'Groth16 proofs are actually the smallest among common zkSNARKs.' },
+      { label: 'It is a design choice, not a fundamental limitation', rationale: 'It is fundamental: the CRS structure mathematically ties to the circuit shape.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Groth16\'s CRS encodes the circuit\'s R1CS matrices (A, B, C) as encrypted polynomial evaluations in group elements. Changing the circuit changes these matrices, so a new setup ceremony is required. PLONK uses a universal CRS that works for any circuit up to a maximum size.',
+    category: 'setup',
+  },
+];

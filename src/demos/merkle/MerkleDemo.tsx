@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useMemo, useRef, useState } from 'react';
+import { useReducer, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
@@ -560,6 +560,20 @@ export function MerkleDemo() {
     }
   };
 
+  const handleCanvasClick = useCallback(() => {
+    if (!camera.shouldHandleClick()) return;
+    if (!hoverInfo?.data || !state.tree) return;
+    // Skip padded duplicate leaves — they aren't real user data
+    if (hoverInfo.id.endsWith('-dup')) return;
+    // Find leaf index from node id (format: "leaf-N")
+    const match = hoverInfo.id.match(/^leaf-(\d+)/);
+    if (!match) return;
+    const leafIndex = parseInt(match[1]!, 10);
+    if (leafIndex >= 0 && leafIndex < state.tree.leaves.length) {
+      dispatch({ type: 'GENERATE_PROOF', leafIndex });
+    }
+  }, [camera, hoverInfo, state.tree]);
+
   const proofSteps = state.proof ? getProofSteps(state.proof) : [];
   const handleCopyProof = () => {
     if (!state.proof) return;
@@ -869,7 +883,7 @@ export function MerkleDemo() {
       </DemoSidebar>
 
       <DemoCanvasArea>
-        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} />
+        <AnimatedCanvas draw={handleDraw} camera={camera} onCanvas={(c) => (canvasElRef.current = c)} {...mergedHandlers} onClick={handleCanvasClick} />
         <CanvasToolbar camera={camera} storageKey="theora:toolbar:merkle" onReset={handleFitToView} />
       </DemoCanvasArea>
 

@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const PLONK_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'plonk-gate-equation',
+    demoId: 'plonk',
+    difficulty: 'beginner',
+    question: 'In PLONK, what does the gate equation qM\u00b7a\u00b7b + qL\u00b7a + qR\u00b7b + qO\u00b7c + qC = 0 enforce?',
+    hint: 'Each selector (qM, qL, qR, qO, qC) can be set to 0 or 1 to configure the gate type.',
+    choices: [
+      { label: 'That all wire values are positive', rationale: 'The equation constrains relationships, not signs.' },
+      { label: 'That the wire values satisfy the gate\'s arithmetic relation', rationale: 'Correct \u2014 selectors configure the gate as add, mul, or constant, and the wire values must satisfy the resulting equation.' },
+      { label: 'That the prover knows the secret key', rationale: 'PLONK gates constrain computation, not key knowledge.' },
+      { label: 'That the polynomial degree is bounded', rationale: 'Degree bounds come from the vanishing polynomial, not individual gate equations.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The universal gate equation qM\u00b7a\u00b7b + qL\u00b7a + qR\u00b7b + qO\u00b7c + qC = 0 is PLONK\'s core: selectors configure each gate as addition (qL=qR=1, qO=-1), multiplication (qM=1, qO=-1), or constant (qC=k, qO=-1). Wire values must satisfy whichever relation the selectors define.',
+    category: 'gates',
+  },
+  {
+    id: 'plonk-permutation-argument',
+    demoId: 'plonk',
+    difficulty: 'intermediate',
+    question: 'In PLONK\'s permutation argument, what does Z(n) = 1 at the end of the grand product prove?',
+    hint: 'The grand product accumulates ratios that should telescope to 1.',
+    choices: [
+      { label: 'That all gates are satisfied', rationale: 'Gate satisfaction is checked separately by the gate equation.' },
+      { label: 'That the wire values are in the correct range', rationale: 'Range checks require lookup arguments, not permutation.' },
+      { label: 'That wires connected by copy constraints carry the same value', rationale: 'Correct \u2014 the permutation argument enforces that wires declared equal (copy constraints) actually hold identical values.' },
+      { label: 'That the polynomial is of the correct degree', rationale: 'Degree bounds are enforced by quotient polynomial checks.' },
+    ],
+    correctIndex: 2,
+    explanation: 'The grand product Z accumulates ratios involving wire values and permutation challenges. If copy constraints are satisfied (connected wires carry equal values), the product telescopes to Z(n) = 1. Any mismatch makes Z(n) \u2260 1.',
+    category: 'permutation',
+  },
+  {
+    id: 'plonk-linearization',
+    demoId: 'plonk',
+    difficulty: 'advanced',
+    question: 'Why does PLONK linearize the constraint polynomial before sending it to the verifier?',
+    hint: 'Think about the verifier\'s cost if they had to evaluate a high-degree polynomial.',
+    choices: [
+      { label: 'To make the proof smaller', rationale: 'Proof size is determined by commitments, not linearization.' },
+      { label: 'To reduce the verifier\'s work from evaluating a degree-3n polynomial to checking a degree-n opening', rationale: 'Correct \u2014 linearization combines gate, permutation, and quotient checks into a single low-degree polynomial the verifier opens once.' },
+      { label: 'To hide the witness from the verifier', rationale: 'Zero-knowledge comes from blinding, not linearization.' },
+      { label: 'To eliminate the need for a trusted setup', rationale: 'PLONK still needs a universal trusted setup regardless of linearization.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Without linearization, the verifier would need to evaluate a degree-3n constraint polynomial. Linearization pre-combines the terms at a random challenge \u03b6, producing a single polynomial of degree \u2264 n that the verifier checks via one polynomial opening. This keeps verification succinct.',
+    category: 'linearization',
+  },
+  {
+    id: 'plonk-custom-gates',
+    demoId: 'plonk',
+    difficulty: 'intermediate',
+    question: 'What is the main advantage of custom gates over standard PLONK gates?',
+    hint: 'Think about operations like x^5 (Poseidon S-box) in standard vs custom gates.',
+    choices: [
+      { label: 'Custom gates are more secure', rationale: 'Security comes from the proof system, not gate types.' },
+      { label: 'Custom gates reduce the number of rows needed for complex operations', rationale: 'Correct \u2014 a degree-5 Poseidon S-box takes 1 custom gate row vs 5 standard multiplication gates, reducing circuit size.' },
+      { label: 'Custom gates eliminate the need for copy constraints', rationale: 'Copy constraints are still needed to wire gates together.' },
+      { label: 'Custom gates make the trusted setup smaller', rationale: 'Setup size depends on the maximum circuit size, not gate types.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Custom gates allow higher-degree constraints per row. A Poseidon S-box (x^5) needs 5 standard multiplication gates but only 1 custom gate row. This reduces the total number of rows, making the circuit smaller and the proof faster.',
+    category: 'custom-gates',
+  },
+];

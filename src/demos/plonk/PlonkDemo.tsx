@@ -17,6 +17,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import {
@@ -103,6 +105,7 @@ export function PlonkDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   // Core circuit state
@@ -286,6 +289,57 @@ export function PlonkDemo(): JSX.Element {
     setCircuit((prev) => modifyWireValue(prev, 0, 'c', 99));
     showToast('Copy constraint broken', 'Gate 0 output now mismatches Gate 1 input');
   }, []);
+
+  const loadAttackCircuit = useCallback((tab: TabId, breakCopy: boolean) => {
+    setCircuit(() => {
+      const base = buildDefaultCircuit();
+      return breakCopy ? modifyWireValue(base, 0, 'c', 99) : base;
+    });
+    setActiveTab(tab);
+    setSelectedGate('0');
+    setBeta(2n);
+    setGamma(3n);
+    setSelectedStep(-1);
+    setChallengePoint(7n);
+    setCustomGateTypes(['add', 'mul', 'bool']);
+    setCustomWires([
+      { a: 3, b: 4, c: 7 },
+      { a: 3, b: 4, c: 12 },
+      { a: 1, b: 0, c: 0 },
+    ]);
+  }, []);
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    LOAD_ATTACK_CIRCUIT: (payload) => {
+      const attackPayload =
+        payload && typeof payload === 'object'
+          ? payload as { tab?: TabId; breakCopy?: boolean }
+          : {};
+      const tab = attackPayload.tab === 'gates'
+        || attackPayload.tab === 'permutation'
+        || attackPayload.tab === 'linearization'
+        || attackPayload.tab === 'custom-gates'
+        || attackPayload.tab === 'cost'
+        ? attackPayload.tab
+        : 'gates';
+      loadAttackCircuit(tab, Boolean(attackPayload.breakCopy));
+    },
+    SET_TAB: (payload) => {
+      if (
+        payload === 'gates'
+        || payload === 'permutation'
+        || payload === 'linearization'
+        || payload === 'custom-gates'
+        || payload === 'cost'
+      ) {
+        setActiveTab(payload);
+      }
+    },
+    BREAK_COPY: () => {
+      setActiveTab('permutation');
+      handleBreakCopyConstraint();
+    },
+  }), [currentDemoAction, handleBreakCopyConstraint, loadAttackCircuit]));
 
   // ── Draw callback ─────────────────────────────────────────────────────────────
 

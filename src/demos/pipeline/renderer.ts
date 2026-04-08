@@ -29,7 +29,7 @@ interface StagePos {
   h: number;
 }
 
-function getStagePositions(cx: number): Map<PipelineStage, StagePos> {
+export function getStagePositions(cx: number): Map<PipelineStage, StagePos> {
   const map = new Map<PipelineStage, StagePos>();
   const topTotal = TOP_ROW.length * NODE_W + (TOP_ROW.length - 1) * GAP_X;
   const topStartX = cx - topTotal / 2;
@@ -88,9 +88,9 @@ function getStageStatus(
   return 'complete';
 }
 
-function statusColor(status: StageStatus, time: number): string {
+function statusColor(status: StageStatus, time: number, isDark: boolean): string {
   switch (status) {
-    case 'pending': return 'rgba(255,255,255,0.15)';
+    case 'pending': return isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
     case 'active': {
       const pulse = 0.7 + 0.3 * Math.sin(time * 3);
       return hexToRgba(ACCENT, pulse);
@@ -100,9 +100,9 @@ function statusColor(status: StageStatus, time: number): string {
   }
 }
 
-function statusBg(status: StageStatus): string {
+function statusBg(status: StageStatus, isDark: boolean): string {
   switch (status) {
-    case 'pending': return 'rgba(255,255,255,0.03)';
+    case 'pending': return isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
     case 'active': return hexToRgba(ACCENT, 0.1);
     case 'complete': return hexToRgba('#22c55e', 0.06);
     case 'error': return hexToRgba('#ef4444', 0.08);
@@ -117,8 +117,10 @@ export function renderPipeline(
   activeStage: PipelineStage,
   results: PipelineResults,
   fault: FaultType,
-  isDark: boolean
-) {
+  isDark: boolean,
+  mouseX: number = 0,
+  mouseY: number = 0
+): { hoveredStage: PipelineStage | null } {
   const { width, height, time } = frame;
   const cx = width / 2;
   const positions = getStagePositions(cx);
@@ -140,13 +142,13 @@ export function renderPipeline(
   const faultIdx = faultOriginIndex(fault);
 
   // ── Connection lines ──
-  drawConnections(ctx, positions, activeStage, results, time, faultIdx);
+  drawConnections(ctx, positions, activeStage, results, time, faultIdx, isDark);
 
   // ── Stage nodes ──
   for (const stage of STAGES) {
     const pos = positions.get(stage)!;
     const status = getStageStatus(stage, activeStage, results);
-    drawStageNode(ctx, pos, stage, status, time, textPrimary, textMuted);
+    drawStageNode(ctx, pos, stage, status, time, textPrimary, textMuted, isDark);
   }
 
   // ── Flow particles ──
@@ -154,6 +156,71 @@ export function renderPipeline(
 
   // ── Detail panel ──
   drawDetailPanel(ctx, width, height, activeStage, results, fault, textPrimary, textSecondary, textMuted, isDark, time);
+
+  // ── Hover detection & tooltip ──
+  let hoveredStage: PipelineStage | null = null;
+  for (const stage of STAGES) {
+    const pos = positions.get(stage)!;
+    if (mouseX >= pos.x && mouseX <= pos.x + pos.w &&
+        mouseY >= pos.y && mouseY <= pos.y + pos.h) {
+      hoveredStage = stage;
+      break;
+    }
+  }
+
+  if (hoveredStage) {
+    const pos = positions.get(hoveredStage)!;
+    const status = getStageStatus(hoveredStage, activeStage, results);
+    const tooltipText = getStageTooltip(hoveredStage, status, results);
+
+    ctx.save();
+    ctx.font = '11px "Space Grotesk", sans-serif';
+    const metrics = ctx.measureText(tooltipText);
+    const tooltipW = metrics.width + 16;
+    const tooltipH = 24;
+    let tooltipX = pos.x + pos.w + 8;
+    let tooltipY = pos.y + pos.h / 2 - tooltipH / 2;
+
+    // Clamp to bounds
+    if (tooltipX + tooltipW > width - 10) tooltipX = pos.x - tooltipW - 8;
+    if (tooltipX < 10) tooltipX = 10;
+    if (tooltipY < 10) tooltipY = 10;
+    if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+
+    ctx.fillStyle = isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tooltipX, tooltipY, tooltipW, tooltipH, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tooltipText, tooltipX + 8, tooltipY + tooltipH / 2);
+    ctx.restore();
+  }
+
+  return { hoveredStage };
+}
+
+function getStageTooltip(stage: PipelineStage, status: StageStatus, results: PipelineResults): string {
+  const label = STAGE_LABELS[stage];
+  if (status === 'pending') return `${label} — waiting`;
+  if (status === 'active') return `${label} — processing...`;
+  if (status === 'error') return `${label} — failed`;
+  // Complete — show a brief result summary
+  switch (stage) {
+    case 'witness': return `${label} — x assigned`;
+    case 'constraints': return results.constraints?.allSatisfied ? `${label} — all satisfied` : `${label} — violation`;
+    case 'polynomial': return `${label} — degree ${results.polynomial ? results.polynomial.coefficients.length - 1 : '?'}`;
+    case 'commit': return `${label} — committed`;
+    case 'challenge': return `${label} — c = ${results.challenge?.challenge ?? '?'}`;
+    case 'open': return `${label} — evaluation sent`;
+    case 'verify': return results.verify?.passed ? `${label} — accepted` : `${label} — rejected`;
+    default: return label;
+  }
 }
 
 function drawStageNode(
@@ -163,7 +230,8 @@ function drawStageNode(
   status: StageStatus,
   time: number,
   textPrimary: string,
-  textMuted: string
+  textMuted: string,
+  isDark: boolean
 ) {
   const { x, y, w, h } = pos;
   const r = 12;
@@ -175,13 +243,13 @@ function drawStageNode(
   }
 
   // Background
-  ctx.fillStyle = statusBg(status);
+  ctx.fillStyle = statusBg(status, isDark);
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
   ctx.fill();
 
   // Border
-  ctx.strokeStyle = statusColor(status, time);
+  ctx.strokeStyle = statusColor(status, time, isDark);
   ctx.lineWidth = status === 'active' ? 2 : 1;
   ctx.stroke();
 
@@ -191,7 +259,7 @@ function drawStageNode(
   // Stage number
   const idx = STAGES.indexOf(stage);
   ctx.font = '600 9px "JetBrains Mono", monospace';
-  ctx.fillStyle = statusColor(status, time);
+  ctx.fillStyle = statusColor(status, time, isDark);
   ctx.textAlign = 'center';
   ctx.fillText(`${idx + 1}`, x + w / 2, y + 18);
 
@@ -218,7 +286,8 @@ function drawConnections(
   activeStage: PipelineStage,
   _results: PipelineResults,
   time: number,
-  faultIdx: number
+  faultIdx: number,
+  isDark: boolean
 ) {
   const activeIdx = STAGES.indexOf(activeStage);
 
@@ -230,7 +299,7 @@ function drawConnections(
     const lit = connectionIdx < activeIdx;
     const tainted = lit && faultIdx >= 0 && connectionIdx >= faultIdx;
 
-    drawArrow(ctx, from.x + from.w, from.y + from.h / 2, to.x, to.y + to.h / 2, lit, time, tainted);
+    drawArrow(ctx, from.x + from.w, from.y + from.h / 2, to.x, to.y + to.h / 2, lit, time, tainted, isDark);
   }
 
   // Vertical: commit → challenge
@@ -247,7 +316,8 @@ function drawConnections(
     challengePos.y,
     vertLit,
     time,
-    vertTainted
+    vertTainted,
+    isDark
   );
 
   // Bottom row connections: challenge→open→verify (right to left visually)
@@ -259,7 +329,7 @@ function drawConnections(
     const tainted = lit && faultIdx >= 0 && connectionIdx >= faultIdx;
 
     // Bottom row flows left
-    drawArrow(ctx, from.x, from.y + from.h / 2, to.x + to.w, to.y + to.h / 2, lit, time, tainted);
+    drawArrow(ctx, from.x, from.y + from.h / 2, to.x + to.w, to.y + to.h / 2, lit, time, tainted, isDark);
   }
 }
 
@@ -269,10 +339,11 @@ function drawArrow(
   x2: number, y2: number,
   lit: boolean,
   _time: number,
-  tainted = false
+  tainted = false,
+  isDark = true
 ) {
   const color = tainted ? '#ef4444' : ACCENT;
-  ctx.strokeStyle = lit ? hexToRgba(color, 0.6) : 'rgba(255,255,255,0.08)';
+  ctx.strokeStyle = lit ? hexToRgba(color, 0.6) : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)');
   ctx.lineWidth = lit ? 2 : 1;
   ctx.setLineDash(lit ? [] : [4, 4]);
 

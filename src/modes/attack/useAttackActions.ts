@@ -18,6 +18,12 @@ export function useAttackActions(
   const lastActionRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (mode !== 'attack' || !currentDemoAction) {
+      lastActionRef.current = null;
+    }
+  }, [mode, currentDemoAction]);
+
+  useEffect(() => {
     if (mode !== 'attack' || !currentDemoAction) return;
 
     // Deduplicate: don't re-fire the same action

@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const RECURSIVE_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'recursive-tree-nodes',
+    demoId: 'recursive',
+    difficulty: 'beginner',
+    question: 'In a binary recursive proof tree of depth 3, how many leaf proofs are there?',
+    hint: 'A binary tree of depth d has 2^d leaves.',
+    choices: [
+      { label: '3', rationale: 'That is the depth, not the leaf count.' },
+      { label: '6', rationale: 'Leaves grow exponentially, not linearly.' },
+      { label: '8', rationale: 'Correct — 2³ = 8 leaf proofs feed into the recursion.' },
+      { label: '15', rationale: 'That is the total number of nodes, not just leaves.' },
+    ],
+    correctIndex: 2,
+    explanation: 'A full binary tree of depth d has 2^d leaves. At depth 3 there are 8 leaf proofs, each verified and folded upward.',
+    category: 'tree-structure',
+  },
+  {
+    id: 'recursive-verification-order',
+    demoId: 'recursive',
+    difficulty: 'intermediate',
+    question: 'In what order does a recursive verifier process nodes in a binary proof tree?',
+    hint: 'Children must be verified before their parent can fold them.',
+    choices: [
+      { label: 'Top-down (root first)', rationale: 'The root depends on its children — it cannot be verified first.' },
+      { label: 'Bottom-up (leaves first)', rationale: 'Correct — leaves are base proofs; each parent folds two verified children.' },
+      { label: 'Left-to-right level order', rationale: 'Level order would visit parents before all children are ready.' },
+      { label: 'Random order', rationale: 'Verification has strict dependencies — random order would fail.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Recursive verification is bottom-up: leaf proofs are verified first, then each parent folds two child proofs into one, propagating to the root.',
+    category: 'verification',
+  },
+  {
+    id: 'recursive-ivc-accumulator',
+    demoId: 'recursive',
+    difficulty: 'advanced',
+    question: 'In IVC (Incrementally Verifiable Computation), what does the accumulator carry between steps?',
+    hint: 'IVC avoids re-verifying the entire history by folding.',
+    choices: [
+      { label: 'The full proof history', rationale: 'Carrying full history defeats the purpose of incremental verification.' },
+      { label: 'Only the latest witness', rationale: 'The witness alone cannot attest to prior computation.' },
+      { label: 'A succinct folded proof of all prior steps', rationale: 'Correct — the accumulator is a constant-size proof summarizing all previous steps.' },
+      { label: 'A hash chain of step outputs', rationale: 'A hash chain grows linearly and is not a proof of correctness.' },
+    ],
+    correctIndex: 2,
+    explanation: 'IVC maintains a constant-size accumulator that folds each new step\'s proof with the existing summary, so the verifier only checks one succinct object regardless of how many steps have run.',
+    category: 'ivc',
+  },
+  {
+    id: 'recursive-succinctness',
+    demoId: 'recursive',
+    difficulty: 'beginner',
+    question: 'What is the main advantage of recursive proof composition over verifying each proof individually?',
+    hint: 'Think about what happens as the number of proofs grows.',
+    choices: [
+      { label: 'It makes each individual proof smaller', rationale: 'Individual proof sizes are unchanged — composition affects verification cost.' },
+      { label: 'The verifier checks one proof instead of many', rationale: 'Correct — recursive composition compresses N proofs into a single proof the verifier checks once.' },
+      { label: 'It eliminates the need for a trusted setup', rationale: 'Trusted setup depends on the proof system, not on composition.' },
+      { label: 'It speeds up the prover', rationale: 'The prover actually does more work to compose proofs recursively.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Recursive composition lets N proofs be folded into one. The verifier does constant work regardless of how many sub-proofs were composed, achieving succinctness.',
+    category: 'fundamentals',
+  },
+];

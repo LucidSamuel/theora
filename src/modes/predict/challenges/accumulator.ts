@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const ACCUMULATOR_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'accumulator-witness-update',
+    demoId: 'accumulator',
+    difficulty: 'beginner',
+    question: 'After adding a new prime to an RSA accumulator, what happens to the existing membership witnesses?',
+    hint: 'The accumulator value changes when a new element is added.',
+    choices: [
+      { label: 'They remain valid — witnesses are independent of the set', rationale: 'Witnesses depend on the accumulator value, which changes when the set changes.' },
+      { label: 'They all become invalid and must be recomputed', rationale: 'Correct — the accumulator value changes, so w^e no longer equals the new accumulator.' },
+      { label: 'Only the new element needs a witness', rationale: 'All existing witnesses reference the old accumulator value and must be updated.' },
+      { label: 'Half of the witnesses become invalid at random', rationale: 'Witness validity is deterministic, not random. All old witnesses break.' },
+    ],
+    correctIndex: 1,
+    explanation: 'When a new prime p is added, the accumulator becomes acc\' = acc^p mod n. Every existing witness w was computed so that w^e = acc. Since acc changed to acc\', all witnesses need updating: w\' = w^p mod n.',
+    category: 'structure',
+  },
+  {
+    id: 'accumulator-non-membership',
+    demoId: 'accumulator',
+    difficulty: 'intermediate',
+    question: 'How does an RSA accumulator prove that an element x is NOT in the set?',
+    hint: 'Think about what mathematical property must hold when x is coprime to the product of all set elements.',
+    choices: [
+      { label: 'Show that x does not appear in a list of all elements', rationale: 'That would require revealing all elements, defeating the purpose of the accumulator.' },
+      { label: 'Use Bézout coefficients: find a, b such that a·x + b·∏eᵢ = 1, then verify w^x · acc^b = g', rationale: 'Correct — the extended GCD produces Bézout coefficients that prove x is coprime to the product of set elements.' },
+      { label: 'Compute x^acc and check if it equals zero', rationale: 'RSA accumulators work in Z_n* where nothing is zero. Non-membership uses coprimality.' },
+      { label: 'Divide the accumulator by x and check the remainder', rationale: 'Division is not defined for the accumulator value. Non-membership uses the extended GCD.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Non-membership proofs use the extended Euclidean algorithm to find Bézout coefficients a and b such that a·x + b·(∏eᵢ) = gcd(x, ∏eᵢ) = 1. The witness w = g^a and the verifier checks w^x · acc^b ≡ g (mod n). This works because x is coprime to the product of all set elements.',
+    category: 'proofs',
+  },
+  {
+    id: 'accumulator-rsa-assumption',
+    demoId: 'accumulator',
+    difficulty: 'advanced',
+    question: 'What cryptographic assumption makes RSA accumulators secure (i.e., prevents forging membership proofs)?',
+    hint: 'Think about what an attacker would need to compute to forge a witness.',
+    choices: [
+      { label: 'The discrete logarithm problem', rationale: 'DLP applies to elliptic curves and prime-order groups, not RSA composites.' },
+      { label: 'The strong RSA assumption: given n and u, it is hard to find (e, w) with w^e ≡ u (mod n) for any e > 1', rationale: 'Correct — forging a witness means finding an e-th root modulo n, which the strong RSA assumption says is hard.' },
+      { label: 'The collision resistance of SHA-256', rationale: 'RSA accumulators do not use hash functions — security comes from the hardness of computing roots mod n.' },
+      { label: 'The factoring problem: given n, it is hard to find p and q', rationale: 'While factoring is related, the specific assumption is stronger: it must be hard to find ANY root, not just factor n.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The strong RSA assumption states that given a random RSA modulus n and a random element u ∈ Z_n*, it is hard to find any pair (e, w) with e > 1 such that w^e ≡ u (mod n). This is strictly stronger than the standard RSA assumption (where e is fixed) and prevents an adversary from forging a membership witness for an element not in the set.',
+    category: 'security',
+  },
+  {
+    id: 'accumulator-batch-add',
+    demoId: 'accumulator',
+    difficulty: 'beginner',
+    question: 'If you add primes 3, 5, and 7 to an RSA accumulator one at a time starting from g, what is the final accumulator value?',
+    hint: 'Each addition exponentiates the current value by the new prime.',
+    choices: [
+      { label: 'g^(3+5+7) = g^15 mod n', rationale: 'Accumulator uses exponentiation (multiplication in the exponent), not addition.' },
+      { label: 'g^(3·5·7) = g^105 mod n', rationale: 'Correct — adding 3 gives g^3, then exponentiating by 5 gives g^(3·5) = g^15, then by 7 gives g^(3·5·7) = g^105.' },
+      { label: 'g^3 · g^5 · g^7 mod n', rationale: 'The operations are nested exponentiations, not multiplications of independent powers.' },
+      { label: '(g·3)·(g·5)·(g·7) mod n', rationale: 'The accumulator exponentiates, not multiplies. Each step is acc\' = acc^prime.' },
+    ],
+    correctIndex: 1,
+    explanation: 'RSA accumulator additions are nested exponentiations: g → g^3 → (g^3)^5 = g^15 → (g^15)^7 = g^105. The final value is g^(∏primes) = g^(3·5·7) = g^105 mod n. This is why batch addition computes the product of all primes first.',
+    category: 'structure',
+  },
+];

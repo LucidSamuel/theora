@@ -67,12 +67,13 @@ function drawRoundCard(
   round: IPARound,
   isActive: boolean,
   isDark: boolean,
+  cardW: number = CARD_W,
 ): void {
   const alpha = isActive ? 1.0 : 0.5;
 
   // Card background
   ctx.fillStyle = hexToRgba(isDark ? '#18181b' : '#f4f4f5', alpha);
-  drawRoundedRect(ctx, x, y, CARD_W, CARD_H, CARD_RADIUS);
+  drawRoundedRect(ctx, x, y, cardW, CARD_H, CARD_RADIUS);
   ctx.fill();
 
   // Card border
@@ -81,7 +82,7 @@ function drawRoundCard(
     : (isDark ? '#27272a' : '#d4d4d8');
   ctx.strokeStyle = hexToRgba(borderColor, alpha);
   ctx.lineWidth = isActive ? 2 : 1;
-  drawRoundedRect(ctx, x, y, CARD_W, CARD_H, CARD_RADIUS);
+  drawRoundedRect(ctx, x, y, cardW, CARD_H, CARD_RADIUS);
   ctx.stroke();
 
   // Round title
@@ -95,19 +96,19 @@ function drawRoundCard(
   const halfLen = round.aLeft.length;
   ctx.fillStyle = hexToRgba(isDark ? '#71717a' : '#a1a1aa', alpha);
   ctx.font = '9px monospace';
-  ctx.fillText(`${halfLen * 2} \u2192 ${halfLen}`, x + CARD_W - 60, y + 18);
+  ctx.fillText(`${halfLen * 2} \u2192 ${halfLen}`, x + cardW - 60, y + 18);
 
   // L and R cross products
   const rowY = y + 30;
-  const halfW = (CARD_W - 36) / 2;
+  const halfW = (cardW - 36) / 2;
   drawValueBox(ctx, x + 12, rowY, halfW, 'L', bigStr(round.L), isDark);
   drawValueBox(ctx, x + 12 + halfW + 12, rowY, halfW, 'R', bigStr(round.R), isDark);
 
   // Challenge
-  drawValueBox(ctx, x + 12, rowY + SMALL_BOX_H + 6, CARD_W - 24, 'u', bigStr(round.challenge), isDark);
+  drawValueBox(ctx, x + 12, rowY + SMALL_BOX_H + 6, cardW - 24, 'u', bigStr(round.challenge), isDark);
 
   // New commitment
-  drawValueBox(ctx, x + 12, rowY + 2 * (SMALL_BOX_H + 6), CARD_W - 24, "C'", bigStr(round.newCommitment), isDark);
+  drawValueBox(ctx, x + 12, rowY + 2 * (SMALL_BOX_H + 6), cardW - 24, "C'", bigStr(round.newCommitment), isDark);
 }
 
 /* ── Main render ─────────────────────────────────────────────────────── */
@@ -168,7 +169,7 @@ export function renderIPA(
   ctx.fillStyle = isDark ? '#71717a' : '#a1a1aa';
   ctx.font = '10px monospace';
   ctx.fillText(
-    `eval: p(${bigStr(state.evalPoint)}) = ${bigStr(state.evalValue)}`,
+    `eval: p(${bigStr(state.evalPoint)}) \u2261 ${bigStr(state.evalValue)} (mod ${bigStr(state.fieldSize)})`,
     commitX + commitBoxW / 2,
     commitY + 62,
   );
@@ -177,7 +178,12 @@ export function renderIPA(
   const numRounds = state.rounds.length;
   if (numRounds > 0) {
     const totalW = numRounds * CARD_W + (numRounds - 1) * CARD_GAP;
-    const startX = Math.max(40, (width - totalW) / 2);
+    const availableW = width - 80; // 40px margin on each side
+    const scale = totalW > availableW ? availableW / totalW : 1;
+    const effectiveCardW = Math.floor(CARD_W * scale);
+    const effectiveGap = Math.floor(CARD_GAP * scale);
+    const effectiveTotalW = numRounds * effectiveCardW + (numRounds - 1) * effectiveGap;
+    const startX = Math.max(40, (width - effectiveTotalW) / 2);
     const cardsY = commitY + commitBoxH + 40;
 
     // Arrow from commitment to first card
@@ -200,14 +206,14 @@ export function renderIPA(
     ctx.fill();
 
     for (let i = 0; i < numRounds; i++) {
-      const rx = startX + i * (CARD_W + CARD_GAP);
+      const rx = startX + i * (effectiveCardW + effectiveGap);
       const isActive = state.currentRound === -1 || state.currentRound === i;
-      drawRoundCard(ctx, rx, cardsY, state.rounds[i]!, isActive, isDark);
+      drawRoundCard(ctx, rx, cardsY, state.rounds[i]!, isActive, isDark, effectiveCardW);
 
       // Arrow between cards
       if (i < numRounds - 1) {
-        const fromX = rx + CARD_W;
-        const toX = rx + CARD_W + CARD_GAP;
+        const fromX = rx + effectiveCardW;
+        const toX = rx + effectiveCardW + effectiveGap;
         const arrowMidY = cardsY + CARD_H / 2;
         ctx.strokeStyle = hexToRgba(isDark ? '#52525b' : '#a1a1aa', 0.4);
         ctx.lineWidth = 1.5;
@@ -230,7 +236,7 @@ export function renderIPA(
     if (state.phase === 'verified' || state.phase === 'failed') {
       const finalBoxW = 280;
       const finalBoxH = 64;
-      const lastCardRight = startX + numRounds * (CARD_W + CARD_GAP) - CARD_GAP;
+      const lastCardRight = startX + numRounds * (effectiveCardW + effectiveGap) - effectiveGap;
       const finalX = Math.max(startX, Math.min((startX + lastCardRight - finalBoxW) / 2, width - finalBoxW - 40));
       const finalY = cardsY + CARD_H + 40;
 

@@ -5,6 +5,7 @@ import { useMode } from './ModeProvider';
 import { useActiveDemo } from '@/hooks/useActiveDemo';
 import { hasPredictChallenges } from './predict/challenges';
 import { hasAttackScenario } from './attack/scenarios';
+import { hasDebugSupport } from './debug/DebugPanel';
 import type { DemoId } from '@/types';
 
 const MODE_ICONS: Record<ModeId, typeof Compass> = {
@@ -18,7 +19,8 @@ const MODE_ICONS: Record<ModeId, typeof Compass> = {
 function isModeSupported(modeId: ModeId, demoId: DemoId): boolean {
   if (modeId === 'predict') return hasPredictChallenges(demoId);
   if (modeId === 'attack') return hasAttackScenario(demoId);
-  return true; // explore and debug are always available
+  if (modeId === 'debug') return hasDebugSupport(demoId);
+  return true; // explore is always available
 }
 
 export function ModeBar() {

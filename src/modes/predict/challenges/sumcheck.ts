@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const SUMCHECK_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'sumcheck-round-count',
+    demoId: 'sumcheck',
+    difficulty: 'beginner',
+    question: 'For a multilinear polynomial over n variables, how many rounds does the sumcheck protocol take?',
+    hint: 'Each round eliminates one variable by fixing it to a random challenge.',
+    choices: [
+      { label: '1', rationale: 'One round only handles one variable.' },
+      { label: 'n (one round per variable)', rationale: 'Correct — each round reduces the sum by one variable, so n rounds are needed for n variables.' },
+      { label: '2^n', rationale: 'That is the number of evaluation points, not the number of rounds.' },
+      { label: 'log(n)', rationale: 'The protocol is linear in the number of variables, not logarithmic.' },
+    ],
+    correctIndex: 1,
+    explanation: 'The sumcheck protocol runs for exactly n rounds, one per variable. In each round, the prover sends a univariate polynomial, and the verifier responds with a random challenge that fixes that variable.',
+    category: 'protocol-structure',
+  },
+  {
+    id: 'sumcheck-univariate-degree',
+    demoId: 'sumcheck',
+    difficulty: 'intermediate',
+    question: 'In each round of sumcheck over a multilinear polynomial, what is the degree of the univariate polynomial the prover sends?',
+    hint: 'Multilinear means each variable appears with degree at most 1.',
+    choices: [
+      { label: '0 (constant)', rationale: 'A constant cannot capture the variable\'s contribution.' },
+      { label: '1 (linear)', rationale: 'Correct — for a multilinear polynomial, summing out all other variables yields a degree-1 polynomial in the remaining variable.' },
+      { label: '2 (quadratic)', rationale: 'Degree 2 would require the variable to appear squared, which does not happen in a multilinear polynomial.' },
+      { label: 'n (depends on the number of variables)', rationale: 'The degree depends on the polynomial\'s degree in that variable, not the total variable count.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A multilinear polynomial has degree at most 1 in each variable. When the prover sums over all other variables, the result is a univariate polynomial of degree 1 (a line ax + b). The verifier checks that g(0) + g(1) matches the expected sum.',
+    category: 'polynomials',
+  },
+  {
+    id: 'sumcheck-soundness',
+    demoId: 'sumcheck',
+    difficulty: 'advanced',
+    question: 'What is the soundness error of the sumcheck protocol over a field F with n rounds?',
+    hint: 'Each round has a chance of catching a cheater via the Schwartz-Zippel lemma.',
+    choices: [
+      { label: '1/|F|', rationale: 'That is the error for a single round, not all n rounds.' },
+      { label: 'n\u00b7d/|F| where d is the max degree per variable', rationale: 'Correct — each round contributes at most d/|F| error, and the union bound gives n\u00b7d/|F| total.' },
+      { label: '1/2^n', rationale: 'Soundness depends on the field size, not just the number of variables.' },
+      { label: '0 (the protocol is perfectly sound)', rationale: 'No interactive proof has zero soundness error — there is always a small probability of fooling the verifier.' },
+    ],
+    correctIndex: 1,
+    explanation: 'By the Schwartz-Zippel lemma, each round catches a cheating prover with probability \u2265 1 - d/|F|. Over n rounds with max degree d per variable, the total soundness error is at most n\u00b7d/|F|. For multilinear polynomials (d=1) over GF(101), this is n/101.',
+    category: 'security',
+  },
+  {
+    id: 'sumcheck-verifier-check',
+    demoId: 'sumcheck',
+    difficulty: 'beginner',
+    question: 'What does the verifier check at the end of each sumcheck round?',
+    hint: 'The prover sends g(x). The verifier evaluates g at two points.',
+    choices: [
+      { label: 'That g(x) has the correct degree', rationale: 'Degree is checked implicitly by the number of coefficients, but the explicit check is on values.' },
+      { label: 'That g(0) + g(1) equals the expected sum for this round', rationale: 'Correct — the verifier checks that summing the univariate polynomial over {0, 1} matches the claim from the previous round.' },
+      { label: 'That g(r) equals the final oracle value', rationale: 'The oracle check happens only in the last round, not every round.' },
+      { label: 'That g(x) is a polynomial over the correct field', rationale: 'Field membership is assumed, not explicitly checked.' },
+    ],
+    correctIndex: 1,
+    explanation: 'In each round, the verifier checks g(0) + g(1) = S, where S is the claimed sum from the previous round (or the original claim in round 1). This ensures the prover\'s univariate polynomial is consistent with the running sum.',
+    category: 'verification',
+  },
+];

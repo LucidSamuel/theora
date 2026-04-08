@@ -18,6 +18,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showDownloadToast, showToast } from '@/lib/toast';
 import {
@@ -59,13 +61,16 @@ export function Groth16Demo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [secretX, setSecretX] = useState(3);
+  const [inputWarning, setInputWarning] = useState<string | null>(null);
   const [phase, setPhase] = useState<Groth16Phase>('idle');
   const [showToxic, setShowToxic] = useState(false);
   const [corrupt, setCorrupt] = useState<'none' | 'A' | 'B' | 'C'>('none');
   const [autoRunning, setAutoRunning] = useState(false);
+  const [autoPhaseHighlight, setAutoPhaseHighlight] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -140,10 +145,13 @@ export function Groth16Demo(): JSX.Element {
   }, [corrupt, phase, phaseData.verifyResult, secretX, setEntry]);
 
   // ── Auto-run ───────────────────────────────────────────────────────────────
+  const AUTO_STEP_DELAY = 500; // ms between each phase transition
+
   const stopAuto = useCallback(() => {
     if (autoRef.current) clearTimeout(autoRef.current);
     autoRef.current = null;
     setAutoRunning(false);
+    setAutoPhaseHighlight(false);
   }, []);
 
   const stepForward = useCallback((current: Groth16Phase): Groth16Phase => {
@@ -155,26 +163,45 @@ export function Groth16Demo(): JSX.Element {
   const runAuto = useCallback((current: Groth16Phase) => {
     const next = nextPhase(current);
     if (next === current) {
-      stopAuto();
+      // brief highlight on final phase before stopping
+      setAutoPhaseHighlight(true);
+      autoRef.current = setTimeout(() => {
+        setAutoPhaseHighlight(false);
+        stopAuto();
+      }, AUTO_STEP_DELAY);
       return;
     }
     setPhase(next);
-    autoRef.current = setTimeout(() => runAuto(next), 900);
+    setAutoPhaseHighlight(true);
+    autoRef.current = setTimeout(() => {
+      setAutoPhaseHighlight(false);
+      runAuto(next);
+    }, AUTO_STEP_DELAY);
   }, [stopAuto]);
+
+  const startAutoRunFromStart = useCallback(() => {
+    stopAuto();
+    setCorrupt('none');
+    setPhase('idle');
+    setAutoRunning(true);
+    setAutoPhaseHighlight(false);
+    autoRef.current = setTimeout(() => {
+      setPhase('r1cs');
+      setAutoPhaseHighlight(true);
+      autoRef.current = setTimeout(() => {
+        setAutoPhaseHighlight(false);
+        runAuto('r1cs');
+      }, AUTO_STEP_DELAY);
+    }, AUTO_STEP_DELAY);
+  }, [runAuto, stopAuto]);
 
   const handleAutoRun = useCallback(() => {
     if (autoRunning) {
       stopAuto();
       return;
     }
-    // reset to idle then run from the start
-    setPhase('idle');
-    setAutoRunning(true);
-    autoRef.current = setTimeout(() => {
-      setPhase('r1cs');
-      autoRef.current = setTimeout(() => runAuto('r1cs'), 900);
-    }, 400);
-  }, [autoRunning, runAuto, stopAuto]);
+    startAutoRunFromStart();
+  }, [autoRunning, startAutoRunFromStart, stopAuto]);
 
   // Cancel auto on unmount
   useEffect(() => () => { if (autoRef.current) clearTimeout(autoRef.current); }, []);
@@ -190,15 +217,72 @@ export function Groth16Demo(): JSX.Element {
     setPhase('idle');
     setCorrupt('none');
     setSecretX(3);
+    setInputWarning(null);
     setShowToxic(false);
     showToast('Reset to defaults');
   }, [stopAuto]);
 
   const handleSecretChange = useCallback((v: number) => {
+    if (v < 1 || v > 99) {
+      setInputWarning(`Value ${v} is outside [1, 99] — clamped to ${Math.max(1, Math.min(99, v))}`);
+    } else {
+      setInputWarning(null);
+    }
     setSecretX(Math.max(1, Math.min(99, v)));
     setPhase('idle');
     stopAuto();
   }, [stopAuto]);
+
+  useAttackActions(currentDemoAction, {
+    AUTO_RUN: () => {
+      startAutoRunFromStart();
+    },
+    SET_CORRUPT: (payload) => {
+      stopAuto();
+      const nextCorrupt =
+        payload === 'A' || payload === 'B' || payload === 'C'
+          ? payload
+          : payload && typeof payload === 'object' && ('element' in payload)
+            && (((payload as { element?: unknown }).element === 'A')
+              || ((payload as { element?: unknown }).element === 'B')
+              || ((payload as { element?: unknown }).element === 'C'))
+            ? (payload as { element: 'A' | 'B' | 'C' }).element
+            : 'A';
+      setCorrupt(nextCorrupt);
+      setPhase('prove');
+    },
+    STEP_PHASE: (payload) => {
+      stopAuto();
+      if (
+        payload === 'idle'
+        || payload === 'r1cs'
+        || payload === 'qap'
+        || payload === 'setup'
+        || payload === 'prove'
+        || payload === 'verify'
+      ) {
+        setPhase(payload);
+        return;
+      }
+      if (payload && typeof payload === 'object') {
+        const maybePhase = (payload as { phase?: unknown }).phase;
+        const maybeCorrupt = (payload as { corrupt?: unknown }).corrupt;
+        if (maybeCorrupt === 'A' || maybeCorrupt === 'B' || maybeCorrupt === 'C' || maybeCorrupt === 'none') {
+          setCorrupt(maybeCorrupt);
+        }
+        if (
+          maybePhase === 'idle'
+          || maybePhase === 'r1cs'
+          || maybePhase === 'qap'
+          || maybePhase === 'setup'
+          || maybePhase === 'prove'
+          || maybePhase === 'verify'
+        ) {
+          setPhase(maybePhase);
+        }
+      }
+    },
+  });
 
   // ── Share actions ──────────────────────────────────────────────────────────
   const handleCopyShareUrl = useCallback(() => {
@@ -262,9 +346,9 @@ export function Groth16Demo(): JSX.Element {
   // ── Draw ───────────────────────────────────────────────────────────────────
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-      renderGroth16(ctx, frame, phaseData, showToxic, theme);
+      renderGroth16(ctx, frame, phaseData, showToxic, theme, autoRunning && autoPhaseHighlight);
     },
-    [phaseData, showToxic, theme],
+    [phaseData, showToxic, theme, autoRunning, autoPhaseHighlight],
   );
 
   // ── Phase display helpers ──────────────────────────────────────────────────
@@ -288,6 +372,11 @@ export function Groth16Demo(): JSX.Element {
             max={99}
             onChange={handleSecretChange}
           />
+          {inputWarning && (
+            <ControlNote tone="error">
+              {inputWarning}
+            </ControlNote>
+          )}
           <ControlCard>
             <span className="control-kicker">Public output y</span>
             <span className="control-value">{computePublicOutput(secretX)}</span>
@@ -316,7 +405,9 @@ export function Groth16Demo(): JSX.Element {
           {phase !== 'idle' && (
             <ControlCard>
               <span className="control-kicker">Current phase</span>
-              <span className="control-value">{PHASE_LABELS[phase]}</span>
+              <span className="control-value" style={autoPhaseHighlight && autoRunning ? { color: 'var(--accent, #3b82f6)', transition: 'color 0.2s ease' } : undefined}>
+                {autoRunning ? `${PHASE_LABELS[phase]}${autoPhaseHighlight ? ' ...' : ''}` : PHASE_LABELS[phase]}
+              </span>
               {completedCount > 0 && (
                 <span className="control-caption">{completedCount} phase{completedCount !== 1 ? 's' : ''} completed</span>
               )}

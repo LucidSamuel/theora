@@ -5,6 +5,14 @@ import { UNDERCONSTRAINED_CIRCUIT } from './circuit';
 import { BREAK_THE_PIPELINE } from './pipeline';
 import { MERKLE_FORGERY } from './merkle';
 import { POLYNOMIAL_SUBSTITUTION } from './polynomial';
+import { ECDLP_TOY_FIELD } from './elliptic';
+import { FORGE_MEMBERSHIP } from './accumulator';
+import { LOOKUP_SMUGGLE } from './lookup';
+import { RECURSIVE_FORGERY } from './recursive';
+import { PLONK_PERMUTATION_BREAK } from './plonk';
+import { GROTH16_CORRUPT_PROOF } from './groth16';
+import { SUMCHECK_CHEAT } from './sumcheck';
+import { FRI_DEGREE_FRAUD } from './fri';
 
 export const ALL_SCENARIOS: AttackScenario[] = [
   FROZEN_HEART,
@@ -12,6 +20,14 @@ export const ALL_SCENARIOS: AttackScenario[] = [
   BREAK_THE_PIPELINE,
   MERKLE_FORGERY,
   POLYNOMIAL_SUBSTITUTION,
+  ECDLP_TOY_FIELD,
+  FORGE_MEMBERSHIP,
+  LOOKUP_SMUGGLE,
+  RECURSIVE_FORGERY,
+  PLONK_PERMUTATION_BREAK,
+  GROTH16_CORRUPT_PROOF,
+  SUMCHECK_CHEAT,
+  FRI_DEGREE_FRAUD,
 ];
 
 const BY_DEMO = new Map<DemoId, AttackScenario>();

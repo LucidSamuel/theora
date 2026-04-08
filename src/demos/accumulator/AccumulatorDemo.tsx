@@ -17,6 +17,9 @@ import { useCanvasCamera } from '@/hooks/useCanvasCamera';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useMode } from '@/modes/ModeProvider';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { decodeState, decodeStatePlain, encodeState, encodeStatePlain, getHashState, getSearchParam, setSearchParams } from '@/lib/urlState';
 import { createSpring2D, spring2DStep, spring2DSetTarget } from '@/lib/animation';
 import { isPrime } from '@/lib/math';
@@ -37,10 +40,17 @@ import {
   verifyWitness,
   computeNonMembershipWitness,
   verifyNonMembershipWitness,
-  randomPrime,
+  pickRandomAvailablePrime,
+  forgeToyMembershipWitness,
   getOrbitalParams,
   computeWitnessCascade,
 } from './logic';
+
+type AttackForgeryState = {
+  target: bigint;
+  witness: bigint | null;
+  verified: boolean | null;
+};
 
 type Action =
   | { type: 'ADD_ELEMENT'; prime: bigint }
@@ -364,12 +374,15 @@ const initialState: AccumulatorState = {
 export function AccumulatorDemo() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { theme } = useTheme();
+  const { mode } = useMode();
+  const { currentDemoAction } = useAttack();
   const { setEntry } = useInfoPanel();
   const [primeInput, setPrimeInput] = useState('');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const [nonMemberInput, setNonMemberInput] = useState('');
+  const [attackForgery, setAttackForgery] = useState<AttackForgeryState | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   const hoveredIndexRef = useRef<number | null>(null);
@@ -385,6 +398,41 @@ export function AccumulatorDemo() {
   const interaction = useCanvasInteraction(handleCanvasClick);
   const camera = useCanvasCamera();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
+
+  const applyAttackChallenge = useCallback((payload?: { primes?: number[]; target?: number }) => {
+    const primes = (payload?.primes ?? [3, 5, 11, 13])
+      .filter((prime) => isPrime(prime))
+      .map((prime) => BigInt(prime));
+    const target = BigInt(payload?.target ?? 17);
+    dispatch({ type: 'CLEAR' });
+    if (primes.length > 0) {
+      dispatch({ type: 'BATCH_ADD', primes });
+    }
+    setAttackForgery({
+      target,
+      witness: null,
+      verified: null,
+    });
+    setPrimeInput('');
+    setNonMemberInput('');
+  }, []);
+
+  const handleForgeMembershipAttack = useCallback(() => {
+    if (!attackForgery) return;
+    const witness = forgeToyMembershipWitness(state.accValue, attackForgery.target);
+    setAttackForgery({
+      ...attackForgery,
+      witness,
+      verified: witness ? verifyWitness(witness, attackForgery.target, state.accValue, ACC_N) : false,
+    });
+  }, [attackForgery, state.accValue]);
+
+  useAttackActions(currentDemoAction, {
+    LOAD_FORGERY_CHALLENGE: (payload) => {
+      applyAttackChallenge(payload as { primes?: number[]; target?: number } | undefined);
+    },
+    FORGE_MEMBERSHIP_WITNESS: () => handleForgeMembershipAttack(),
+  });
 
   const handleDraw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
@@ -439,7 +487,17 @@ export function AccumulatorDemo() {
     [state.elements, state.accValue, state.selectedIndex, state.witness, state.nonMembership, interaction, theme]
   );
 
+  useEffect(() => {
+    if (mode !== 'attack' && attackForgery) {
+      setAttackForgery(null);
+    }
+  }, [attackForgery, mode]);
+
   const handleAddPrime = useCallback(() => {
+    if (attackForgery) {
+      showToast('Attack mode locks the victim set', 'error');
+      return;
+    }
     if (!primeInput.trim()) {
       showToast('Enter a prime number', 'error');
       return;
@@ -456,14 +514,26 @@ export function AccumulatorDemo() {
     }
     dispatch({ type: 'ADD_ELEMENT', prime: bn });
     setPrimeInput('');
-  }, [primeInput, state.elements]);
+  }, [attackForgery, primeInput, state.elements]);
 
   const handleRandomPrime = useCallback(() => {
-    const prime = randomPrime();
+    if (attackForgery) {
+      showToast('Attack mode locks the victim set', 'error');
+      return;
+    }
+    const prime = pickRandomAvailablePrime(state.elements.map((element) => element.prime));
+    if (prime === null) {
+      showToast('All demo primes are already in the set', 'error');
+      return;
+    }
     dispatch({ type: 'ADD_ELEMENT', prime: BigInt(prime) });
-  }, []);
+  }, [attackForgery, state.elements]);
 
   const handleBatchAdd = useCallback(() => {
+    if (attackForgery) {
+      showToast('Attack mode locks the victim set', 'error');
+      return;
+    }
     const primeStrings = state.batchPrimes.split(',').map(s => s.trim()).filter(s => s.length > 0);
     const primes: bigint[] = [];
     const existingPrimes = new Set(state.elements.map((el) => el.prime));
@@ -492,7 +562,15 @@ export function AccumulatorDemo() {
     }
 
     dispatch({ type: 'BATCH_ADD', primes });
-  }, [state.batchPrimes, state.elements]);
+  }, [attackForgery, state.batchPrimes, state.elements]);
+
+  const handleRemoveElement = useCallback((index: number) => {
+    if (attackForgery) {
+      showToast('Attack mode locks the victim set', 'error');
+      return;
+    }
+    dispatch({ type: 'REMOVE_ELEMENT', index });
+  }, [attackForgery]);
 
   const handleNonMemberSet = useCallback(() => {
     const num = parseInt(nonMemberInput, 10);
@@ -586,6 +664,21 @@ export function AccumulatorDemo() {
       }
     }
 
+    if (attackForgery) {
+      const status =
+        attackForgery.verified === null
+          ? 'pending'
+          : attackForgery.verified
+            ? 'valid'
+            : 'failed';
+      setEntry('accumulator', {
+        title: 'Toy root-extraction attack',
+        body: `Target ${attackForgery.target.toString()} is not in the set, yet the forged membership witness is ${status}. Over the toy modulus you can factor n, invert x modulo φ(n), and compute an x-th root of the accumulator.`,
+        nextSteps: [attackForgery.witness ? 'Compare this with the strong RSA note' : 'Advance the attack scenario to forge the witness'],
+      });
+      return;
+    }
+
     if (state.batchMode) {
       setEntry('accumulator', {
         title: 'Batch add mode',
@@ -640,7 +733,7 @@ export function AccumulatorDemo() {
       body: `Current set size: ${state.elements.length}. Each prime exponentiates the accumulator.`,
       nextSteps: ['Add a prime', 'Select an element to compute a witness'],
     });
-  }, [hoverIndex, state.batchMode, state.witnessCascade, state.witness, state.nonMembership, state.elements.length, state.elements, setEntry]);
+  }, [hoverIndex, state.batchMode, state.witnessCascade, state.witness, state.nonMembership, attackForgery, state.elements.length, state.elements, setEntry]);
 
   const buildShareState = () => ({
     elements: state.elements.map((el: AccElement) => Number(el.prime)),
@@ -698,10 +791,28 @@ export function AccumulatorDemo() {
             verified: state.nonMembership.verified,
           }
         : null,
+      attackForgery: attackForgery
+        ? {
+            target: attackForgery.target.toString(),
+            witness: attackForgery.witness?.toString() ?? null,
+            verified: attackForgery.verified,
+          }
+        : null,
     };
     copyToClipboard(JSON.stringify(payload, null, 2));
     showToast('Audit JSON copied', 'Accumulator value, witnesses & membership proofs');
   };
+
+  const handleClearAll = useCallback(() => {
+    if (attackForgery) {
+      applyAttackChallenge({
+        primes: state.elements.map((element) => Number(element.prime)),
+        target: Number(attackForgery.target),
+      });
+      return;
+    }
+    dispatch({ type: 'CLEAR' });
+  }, [applyAttackChallenge, attackForgery, state.elements]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
@@ -735,7 +846,8 @@ export function AccumulatorDemo() {
     if (state.nonMembership && state.nonMembership.witness !== 0n) {
       minX = Math.min(minX, centerX - 150);
       maxX = Math.max(maxX, centerX + 150);
-      maxY = Math.max(maxY, centerY + 90 + 64);
+      const proofBoxHeight = state.nonMembership.verified !== null ? 100 : 80;
+      maxY = Math.max(maxY, centerY + 90 + proofBoxHeight + 12);
     }
 
     fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY }, options?.instant ? { durationMs: 0 } : undefined);
@@ -743,7 +855,7 @@ export function AccumulatorDemo() {
 
   return (
     <DemoLayout
-      onEmbedReset={() => dispatch({ type: 'CLEAR' })}
+      onEmbedReset={handleClearAll}
       onEmbedFitToView={handleFitToView}
     >
       <DemoSidebar width="compact">
@@ -757,10 +869,15 @@ export function AccumulatorDemo() {
               onSubmit={handleAddPrime}
             />
             <div className="control-button-row">
-              <ButtonControl onClick={handleAddPrime} label="Add" />
-              <ButtonControl onClick={handleRandomPrime} label="Random" />
+              <ButtonControl onClick={handleAddPrime} label="Add" disabled={Boolean(attackForgery)} />
+              <ButtonControl onClick={handleRandomPrime} label="Random" disabled={Boolean(attackForgery)} />
             </div>
           </div>
+          {attackForgery && (
+            <ControlNote>
+              Attack mode locks the victim set so you can only inspect the forged-proof flow.
+            </ControlNote>
+          )}
         </ControlGroup>
 
         <ControlGroup label="Batch Mode">
@@ -785,7 +902,7 @@ export function AccumulatorDemo() {
                   fontFamily: 'var(--font-mono)',
                 }}
               />
-              <ButtonControl onClick={handleBatchAdd} label="Batch Add" />
+              <ButtonControl onClick={handleBatchAdd} label="Batch Add" disabled={Boolean(attackForgery)} />
             </>
           )}
         </ControlGroup>
@@ -814,7 +931,7 @@ export function AccumulatorDemo() {
                       Select
                     </button>
                     <button
-                      onClick={() => dispatch({ type: 'REMOVE_ELEMENT', index })}
+                      onClick={() => handleRemoveElement(index)}
                       className="app-leaf-remove"
                       aria-label="Remove element"
                     >
@@ -846,6 +963,38 @@ export function AccumulatorDemo() {
                   )}
                 </>
               )}
+          </ControlGroup>
+        )}
+
+        {attackForgery && (
+          <ControlGroup label="Forgery Attack">
+            <ControlCard>
+              <span className="control-kicker">Target prime</span>
+              <div className="control-value" style={{ fontFamily: 'var(--font-mono)' }}>
+                x = {attackForgery.target.toString()}
+              </div>
+              <div className="control-caption">
+                x is not in the set, but the toy modulus lets the attacker extract an x-th root of the accumulator.
+              </div>
+            </ControlCard>
+            {attackForgery.witness ? (
+              <ControlCard tone={attackForgery.verified ? 'success' : 'error'}>
+                <span className="control-kicker">Forged witness</span>
+                <HashBadge hash={attackForgery.witness.toString()} truncate={14} color={attackForgery.verified ? '#22c55e' : '#ef4444'} />
+                <div className="control-caption" style={{ fontFamily: 'var(--font-mono)' }}>
+                  {`Check: w^${attackForgery.target.toString()} ≡ acc (mod n)`}
+                </div>
+              </ControlCard>
+            ) : (
+              <ButtonControl onClick={handleForgeMembershipAttack} label="Compute Forged Witness" variant="secondary" />
+            )}
+            {attackForgery.verified !== null && (
+              <ControlNote tone={attackForgery.verified ? 'success' : 'error'}>
+                {attackForgery.verified
+                  ? 'Forged membership witness verifies on the toy modulus.'
+                  : 'Root extraction failed for this target.'}
+              </ControlNote>
+            )}
           </ControlGroup>
         )}
 
@@ -893,7 +1042,18 @@ export function AccumulatorDemo() {
             </div>
           </div>
           {state.nonMembership && state.nonMembership.witness !== 0n && (
-            <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
+            <>
+              <ControlCard>
+                <span className="control-kicker">Bézout coefficients</span>
+                <div className="control-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  a·x + b·∏eᵢ = 1
+                </div>
+                <div className="control-caption">
+                  Extended GCD proves x is coprime to the product of all set elements. Witness w = g^a.
+                </div>
+              </ControlCard>
+              <ButtonControl onClick={handleNonMemberVerify} label="Verify" />
+            </>
           )}
           {state.nonMembership && state.nonMembership.verified !== null && (
             <ControlNote tone={state.nonMembership.verified ? 'success' : 'error'}>
@@ -915,8 +1075,9 @@ export function AccumulatorDemo() {
 
         <ControlGroup label="Actions">
           <ButtonControl
-            onClick={() => dispatch({ type: 'CLEAR' })}
+            onClick={handleClearAll}
             label="Clear All"
+            disabled={Boolean(attackForgery)}
           />
         </ControlGroup>
 

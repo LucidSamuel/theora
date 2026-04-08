@@ -15,6 +15,10 @@ import type { DemoId } from '@/types';
 
 const DEBUG_DEMOS = new Set<DemoId>(['circuit', 'pipeline', 'plonk', 'groth16']);
 
+export function hasDebugSupport(demoId: DemoId): boolean {
+  return DEBUG_DEMOS.has(demoId);
+}
+
 export function DebugPanel({ activeDemo }: { activeDemo: DemoId }) {
   const { setMode } = useMode();
   const {

@@ -61,8 +61,8 @@ const initialState: AttackState = {
 // --- Tests ---
 
 describe('Attack scenario registry', () => {
-  it('has 5 scenarios', () => {
-    expect(ALL_SCENARIOS).toHaveLength(5);
+  it('has 13 scenarios', () => {
+    expect(ALL_SCENARIOS).toHaveLength(13);
   });
 
   it('each scenario has a unique id', () => {
@@ -82,11 +82,17 @@ describe('Attack scenario registry', () => {
     expect(getScenarioForDemo('pipeline')?.id).toBe('break-the-pipeline');
     expect(getScenarioForDemo('merkle')?.id).toBe('merkle-forgery');
     expect(getScenarioForDemo('polynomial')?.id).toBe('polynomial-substitution');
+    expect(getScenarioForDemo('elliptic')?.id).toBe('ecdlp-toy-field');
+    expect(getScenarioForDemo('accumulator')?.id).toBe('forge-membership');
+    expect(getScenarioForDemo('lookup')?.id).toBe('lookup-smuggle');
+    expect(getScenarioForDemo('recursive')?.id).toBe('recursive-forgery');
+    expect(getScenarioForDemo('plonk')?.id).toBe('plonk-permutation-break');
+    expect(getScenarioForDemo('groth16')?.id).toBe('groth16-corrupt-proof');
+    expect(getScenarioForDemo('sumcheck')?.id).toBe('sumcheck-cheat');
+    expect(getScenarioForDemo('fri')?.id).toBe('fri-degree-fraud');
   });
 
   it('returns null for demos without attack scenarios', () => {
-    expect(getScenarioForDemo('recursive')).toBeNull();
-    expect(getScenarioForDemo('elliptic')).toBeNull();
     expect(getScenarioForDemo('pedersen')).toBeNull();
   });
 
@@ -98,7 +104,8 @@ describe('Attack scenario registry', () => {
   it('hasAttackScenario returns correct booleans', () => {
     expect(hasAttackScenario('fiat-shamir')).toBe(true);
     expect(hasAttackScenario('circuit')).toBe(true);
-    expect(hasAttackScenario('recursive')).toBe(false);
+    expect(hasAttackScenario('recursive')).toBe(true);
+    expect(hasAttackScenario('pedersen')).toBe(false);
   });
 
   it('ATTACK_DEMO_IDS lists all attack-capable demos', () => {
@@ -107,7 +114,15 @@ describe('Attack scenario registry', () => {
     expect(ATTACK_DEMO_IDS).toContain('pipeline');
     expect(ATTACK_DEMO_IDS).toContain('merkle');
     expect(ATTACK_DEMO_IDS).toContain('polynomial');
-    expect(ATTACK_DEMO_IDS).toHaveLength(5);
+    expect(ATTACK_DEMO_IDS).toContain('elliptic');
+    expect(ATTACK_DEMO_IDS).toContain('accumulator');
+    expect(ATTACK_DEMO_IDS).toContain('lookup');
+    expect(ATTACK_DEMO_IDS).toContain('recursive');
+    expect(ATTACK_DEMO_IDS).toContain('plonk');
+    expect(ATTACK_DEMO_IDS).toContain('groth16');
+    expect(ATTACK_DEMO_IDS).toContain('sumcheck');
+    expect(ATTACK_DEMO_IDS).toContain('fri');
+    expect(ATTACK_DEMO_IDS).toHaveLength(13);
   });
 });
 
@@ -146,6 +161,11 @@ describe('Attack scenario data integrity', () => {
     expect(getScenarioById('break-the-pipeline')?.conclusion.succeeded).toBe(true);
     expect(getScenarioById('merkle-forgery')?.conclusion.succeeded).toBe(false);
     expect(getScenarioById('polynomial-substitution')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('recursive-forgery')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('plonk-permutation-break')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('groth16-corrupt-proof')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('sumcheck-cheat')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('fri-degree-fraud')?.conclusion.succeeded).toBe(false);
   });
 });
 
@@ -270,5 +290,127 @@ describe('Attack scenario demoActions', () => {
     expect(actionTypes).toContain('TOGGLE_COMPARE');
     expect(actionTypes).toContain('KZG_RUN_COMMIT');
     expect(actionTypes).toContain('KZG_RUN_OPEN');
+  });
+
+  it('Elliptic scenario sets up and reveals the toy ECDLP challenge', () => {
+    const scenario = getScenarioById('ecdlp-toy-field')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_ECDLP_CHALLENGE');
+    expect(actionTypes).toContain('REVEAL_ECDLP_SOLUTION');
+
+    const setupPayload = scenario.steps.find((s) => s.demoAction?.type === 'LOAD_ECDLP_CHALLENGE')?.demoAction?.payload as
+      | { curve?: { p: number; a: number; b: number }; secretScalar?: number }
+      | undefined;
+    expect(setupPayload?.curve).toEqual({ p: 97, a: 2, b: 3 });
+    expect(setupPayload?.secretScalar).toBe(17);
+  });
+
+  it('Accumulator scenario loads a target set and forges a witness', () => {
+    const scenario = getScenarioById('forge-membership')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_FORGERY_CHALLENGE');
+    expect(actionTypes).toContain('FORGE_MEMBERSHIP_WITNESS');
+
+    const setupPayload = scenario.steps.find((s) => s.demoAction?.type === 'LOAD_FORGERY_CHALLENGE')?.demoAction?.payload as
+      | { primes?: number[]; target?: number }
+      | undefined;
+    expect(setupPayload?.primes).toEqual([3, 5, 11, 13]);
+    expect(setupPayload?.target).toBe(17);
+  });
+
+  it('Lookup scenario switches views, injects an invalid wire, and runs LogUp', () => {
+    const scenario = getScenarioById('lookup-smuggle')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('SET_VIEW');
+    expect(actionTypes).toContain('SET_WIRE_VALUES');
+    expect(actionTypes).toContain('RUN_LOGUP');
+
+    const viewPayload = scenario.steps.find((s) => s.demoAction?.type === 'SET_VIEW')?.demoAction?.payload;
+    const wirePayload = scenario.steps.find((s) => s.demoAction?.type === 'SET_WIRE_VALUES')?.demoAction?.payload;
+    expect(viewPayload).toBe('multiset');
+    expect(wirePayload).toBe('inject-invalid');
+  });
+
+  it('Recursive scenario loads an honest tree, then reloads it with a forged leaf', () => {
+    const scenario = getScenarioById('recursive-forgery')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_ATTACK_TREE');
+    expect(actionTypes).toContain('START_VERIFICATION');
+
+    const setupPayloads = scenario.steps
+      .filter((s) => s.demoAction?.type === 'LOAD_ATTACK_TREE')
+      .map((s) => s.demoAction!.payload) as Array<{ depth?: number; badProofNode?: string | null }>;
+    expect(setupPayloads).toEqual([
+      { depth: 2, badProofNode: null },
+      { depth: 2, badProofNode: 'node_2_0' },
+    ]);
+  });
+
+  it('PLONK scenario loads a clean circuit, then reloads it with a broken copy constraint', () => {
+    const scenario = getScenarioById('plonk-permutation-break')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('LOAD_ATTACK_CIRCUIT');
+
+    const payloads = scenario.steps
+      .filter((s) => s.demoAction?.type === 'LOAD_ATTACK_CIRCUIT')
+      .map((s) => s.demoAction!.payload) as Array<{ tab?: string; breakCopy?: boolean }>;
+    expect(payloads).toEqual([
+      { tab: 'gates', breakCopy: false },
+      { tab: 'permutation', breakCopy: false },
+      { tab: 'permutation', breakCopy: true },
+    ]);
+  });
+
+  it('Groth16 scenario auto-runs, corrupts A, then verifies the tampered proof', () => {
+    const scenario = getScenarioById('groth16-corrupt-proof')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('AUTO_RUN');
+    expect(actionTypes).toContain('SET_CORRUPT');
+    expect(actionTypes).toContain('STEP_PHASE');
+
+    const corruptPayload = scenario.steps.find((s) => s.demoAction?.type === 'SET_CORRUPT')?.demoAction?.payload;
+    const verifyPayload = scenario.steps.find((s) => s.demoAction?.type === 'STEP_PHASE')?.demoAction?.payload as
+      | { phase?: string; corrupt?: string }
+      | undefined;
+    expect(corruptPayload).toBe('A');
+    expect(verifyPayload).toEqual({ phase: 'verify', corrupt: 'A' });
+  });
+
+  it('Sumcheck scenario runs an honest baseline, then reruns with cheat mode enabled', () => {
+    const scenario = getScenarioById('sumcheck-cheat')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('RUN_HONEST');
+    expect(actionTypes).toContain('TOGGLE_CHEAT');
+    expect(actionTypes).toContain('RUN_CHEAT');
+
+    const cheatPayload = scenario.steps.find((s) => s.demoAction?.type === 'TOGGLE_CHEAT')?.demoAction?.payload;
+    expect(cheatPayload).toBe(true);
+  });
+
+  it('FRI scenario runs an honest baseline, then reruns with corrupted evaluations', () => {
+    const scenario = getScenarioById('fri-degree-fraud')!;
+    const actionTypes = scenario.steps
+      .filter((s) => s.demoAction)
+      .map((s) => s.demoAction!.type);
+    expect(actionTypes).toContain('RUN_HONEST');
+    expect(actionTypes).toContain('TOGGLE_CORRUPT');
+    expect(actionTypes).toContain('RUN_QUERY');
+
+    const corruptPayload = scenario.steps.find((s) => s.demoAction?.type === 'TOGGLE_CORRUPT')?.demoAction?.payload;
+    expect(corruptPayload).toBe(true);
   });
 });
