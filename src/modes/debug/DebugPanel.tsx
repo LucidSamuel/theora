@@ -13,7 +13,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { showToast } from '@/lib/toast';
 import type { DemoId } from '@/types';
 
-const DEBUG_DEMOS = new Set<DemoId>(['circuit', 'pipeline', 'plonk', 'groth16']);
+const DEBUG_DEMOS = new Set<DemoId>(['circuit']);
 
 export function hasDebugSupport(demoId: DemoId): boolean {
   return DEBUG_DEMOS.has(demoId);
@@ -40,11 +40,6 @@ export function DebugPanel({ activeDemo }: { activeDemo: DemoId }) {
 
   if (!DEBUG_DEMOS.has(activeDemo)) {
     return <NoDebugPanel />;
-  }
-
-  // For non-circuit demos, show a read-only inspector placeholder
-  if (activeDemo !== 'circuit') {
-    return <ReadOnlyInspector activeDemo={activeDemo} />;
   }
 
   const handleCopyShareUrl = () => {
@@ -236,74 +231,6 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function ReadOnlyInspector({ activeDemo }: { activeDemo: DemoId }) {
-  const { setMode } = useMode();
-  const demoLabels: Record<string, string> = {
-    pipeline: 'Proof Pipeline',
-    plonk: 'PLONK',
-    groth16: 'Groth16',
-  };
-
-  return (
-    <div
-      className="flex flex-col h-full"
-      style={{
-        padding: '16px 14px',
-        fontFamily: 'var(--font-sans)',
-      }}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <span
-          className="text-[11px] font-mono uppercase"
-          style={{ color: 'var(--text-muted)', letterSpacing: '0.06em' }}
-        >
-          Debug Mode — {demoLabels[activeDemo] ?? activeDemo}
-        </span>
-      </div>
-
-      <div
-        className="text-[12px] mb-4"
-        style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}
-      >
-        Read-only constraint inspector for {demoLabels[activeDemo] ?? activeDemo}.
-        The full circuit editor is available on the R1CS Circuits demo.
-      </div>
-
-      <div
-        className="text-[11px]"
-        style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}
-      >
-        Constraint inspector coming soon.
-      </div>
-
-      <div style={{ marginTop: 'auto', paddingTop: 16 }}>
-        <button
-          onClick={() => setMode('explore')}
-          style={{
-            width: '100%',
-            height: 34,
-            borderRadius: 7,
-            border: '1px solid var(--border)',
-            background: 'var(--button-bg)',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontFamily: 'var(--font-display)',
-            fontWeight: 500,
-          }}
-        >
-          Back to Explore
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function NoDebugPanel() {
   return (
     <div
@@ -320,7 +247,7 @@ function NoDebugPanel() {
         className="text-[11px]"
         style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}
       >
-        Debug mode is available on R1CS Circuits, Pipeline, PLONK, and Groth16.
+        Debug mode is currently available on R1CS Circuits only.
       </div>
     </div>
   );

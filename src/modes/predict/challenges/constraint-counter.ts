@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const CONSTRAINT_COUNTER_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'cc-savings-ratio',
+    demoId: 'constraint-counter',
+    difficulty: 'beginner',
+    question: 'If Pedersen hash costs 850 R1CS constraints and Poseidon costs 63, what is the approximate savings ratio?',
+    hint: 'Divide the larger constraint count by the smaller one.',
+    choices: [
+      { label: '~3x', rationale: '850 / 63 ≈ 13.5, not 3. This underestimates the gap significantly.' },
+      { label: '~7x', rationale: '850 / 63 ≈ 13.5, not 7. Poseidon is much cheaper than this suggests.' },
+      { label: '~13.5x', rationale: 'Correct — 850 / 63 ≈ 13.49, so Poseidon is roughly 13.5 times cheaper in R1CS constraints.' },
+      { label: '~50x', rationale: '850 / 63 ≈ 13.5, not 50. This overestimates the gap.' },
+    ],
+    correctIndex: 2,
+    explanation: 'Pedersen hash requires ~850 R1CS constraints while Poseidon requires only ~63. Dividing 850 by 63 gives ≈13.5, meaning Poseidon is about 13.5× cheaper per hash invocation inside a SNARK circuit.',
+    category: 'cost',
+  },
+  {
+    id: 'cc-pedersen-expensive',
+    demoId: 'constraint-counter',
+    difficulty: 'intermediate',
+    question: 'Why is Pedersen hash expensive in R1CS circuits?',
+    hint: 'Think about how elliptic-curve scalar multiplication is expressed as arithmetic constraints.',
+    choices: [
+      { label: 'It uses a large S-box lookup table', rationale: 'S-boxes are associated with symmetric ciphers like AES, not Pedersen hashing.' },
+      { label: 'It requires ~256 fixed-base scalar multiplications that each become multi-constraint operations', rationale: 'Correct — each bit of the input requires a conditional point addition, and elliptic-curve additions are expensive in R1CS.' },
+      { label: 'It needs modular inversion which R1CS cannot express efficiently', rationale: 'Modular inversion adds some cost, but the dominant expense is the large number of curve operations, not individual inversions.' },
+      { label: 'It operates over a 512-bit field, doubling the cost of every constraint', rationale: 'Pedersen operates over the same native field as the circuit. The cost comes from the number of operations, not field size.' },
+    ],
+    correctIndex: 1,
+    explanation: 'Pedersen hash works by computing a multi-scalar multiplication over an elliptic curve. For a 256-bit input, each bit requires a conditional point addition (a fixed-base scalar multiplication step). Each elliptic-curve addition decomposes into several R1CS constraints, making the total cost ~850 constraints per hash.',
+    category: 'structure',
+  },
+  {
+    id: 'cc-sha256-vs-poseidon',
+    demoId: 'constraint-counter',
+    difficulty: 'intermediate',
+    question: 'Adding SHA-256 (~25,000 R1CS constraints per hash) to the comparison, how many times more expensive is SHA-256 than Poseidon?',
+    hint: 'Divide SHA-256\'s constraint count by Poseidon\'s.',
+    choices: [
+      { label: '~40x', rationale: '25,000 / 63 ≈ 397, not 40. SHA-256 is far more expensive than this.' },
+      { label: '~100x', rationale: '25,000 / 63 ≈ 397, closer to 400× than 100×.' },
+      { label: '~400x', rationale: 'Correct — 25,000 / 63 ≈ 397, approximately 400× more expensive.' },
+      { label: '~1,000x', rationale: '25,000 / 63 ≈ 397, not 1,000. This overestimates the gap.' },
+    ],
+    correctIndex: 2,
+    explanation: 'SHA-256 requires ~25,000 R1CS constraints per invocation because its bitwise operations (rotations, XORs, additions mod 2³²) must be decomposed into field arithmetic. Poseidon at ~63 constraints is purpose-built for arithmetic circuits, yielding a ratio of 25,000 / 63 ≈ 397× — roughly 400× cheaper.',
+    category: 'cost',
+  },
+  {
+    id: 'cc-depth-scaling',
+    demoId: 'constraint-counter',
+    difficulty: 'advanced',
+    question: 'For a depth-20 Merkle tree, the full-tree Pedersen R1CS cost is ~891M constraints. Why does the savings ratio stay constant (~13.5×) regardless of tree depth?',
+    hint: 'Think about how many hashes a full binary tree requires and whether the per-hash cost changes with depth.',
+    choices: [
+      { label: 'Because deeper trees use a cheaper hash variant that compensates for the extra nodes', rationale: 'The same hash function is used at every level — there is no cheaper variant for deeper trees.' },
+      { label: 'Because both hash functions scale linearly with the number of hashes (2^d − 1), so the per-hash ratio is preserved', rationale: 'Correct — a full binary tree of depth d has 2^d − 1 internal nodes. Both Pedersen and Poseidon pay a fixed cost per hash, so the total cost ratio equals the per-hash ratio at every depth.' },
+      { label: 'Because R1CS constraint systems automatically batch repeated operations, keeping the ratio fixed', rationale: 'R1CS has no built-in batching — each hash invocation is independently constrained. The constant ratio comes from linear scaling, not from optimization.' },
+      { label: 'Because the prover amortizes the cost over all hashes using an FFT, making depth irrelevant', rationale: 'FFTs are used in the polynomial commitment phase, not in counting R1CS constraints. The constraint count scales linearly regardless of prover optimizations.' },
+    ],
+    correctIndex: 1,
+    explanation: 'A full binary tree of depth d contains 2^d − 1 internal hash nodes. The total R1CS cost for either hash is simply (2^d − 1) × (per-hash cost). Since both Pedersen and Poseidon multiply by the same node count, the ratio total_pedersen / total_poseidon = 850 / 63 ≈ 13.5× at every depth. The savings ratio is a property of the per-hash costs, not of tree structure.',
+    category: 'scaling',
+  },
+];

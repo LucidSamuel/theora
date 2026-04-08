@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { exportCanvasPng } from '@/lib/canvas';
 import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
@@ -29,6 +31,7 @@ interface UrlState {
 export function ObliviousSyncDemo(): JSX.Element {
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const camera = useCanvasCamera();
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
@@ -73,6 +76,20 @@ export function ObliviousSyncDemo(): JSX.Element {
   );
   const details = useMemo(() => getSyncRoundDetails(scenario, round as 0 | 1 | 2 | 3 | 4), [round, scenario]);
 
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    LOAD_ATTACK_ROUND: (payload) => {
+      if (!payload || typeof payload !== 'object') return;
+      const data = payload as { round?: unknown; injectSpentMatch?: unknown };
+      setWalletCount(3);
+      setServiceCount(8);
+      setAutoplay(false);
+      setInjectSpentMatch(data.injectSpentMatch === true);
+      if (typeof data.round === 'number' && Number.isFinite(data.round)) {
+        setRound(Math.max(0, Math.min(4, data.round)));
+      }
+    },
+  }), [currentDemoAction]));
+
   useEffect(() => {
     if (!autoplay) return;
     if (round >= 4) {
@@ -100,8 +117,9 @@ export function ObliviousSyncDemo(): JSX.Element {
   }, [details, setEntry]);
 
   const handleDraw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-    renderObliviousSync(ctx, frame, scenario, round, details, theme);
-  }, [details, round, scenario, theme]);
+    const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+    renderObliviousSync(ctx, frame, scenario, round, details, theme, worldMouse.x, worldMouse.y);
+  }, [camera, details, interaction.mouseX, interaction.mouseY, round, scenario, theme]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;

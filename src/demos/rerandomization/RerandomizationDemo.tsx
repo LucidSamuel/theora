@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { exportCanvasPng } from '@/lib/canvas';
 import { fitCameraToBounds } from '@/lib/cameraFit';
@@ -36,6 +38,7 @@ interface UrlState {
 export function RerandomizationDemo(): JSX.Element {
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const camera = useCanvasCamera();
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
@@ -75,6 +78,29 @@ export function RerandomizationDemo(): JSX.Element {
   const score = useMemo(() => scoreMatchingGame(matchingGame, guesses), [guesses, matchingGame]);
   const allGuessed = matchingGame.shuffled.every((card) => guesses[card.id] && guesses[card.id] !== '');
 
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    RERANDOMIZE: (payload) => {
+      if (payload && typeof payload === 'object') {
+        const data = payload as { statementIndex?: unknown; nonce?: unknown; gameSeed?: unknown };
+        if (typeof data.statementIndex === 'number' && Number.isFinite(data.statementIndex)) {
+          setStatementIndex(Math.max(0, Math.min(2, data.statementIndex)));
+        }
+        if (typeof data.nonce === 'number' && Number.isFinite(data.nonce)) {
+          setNonce(Math.max(1, data.nonce));
+        } else {
+          setNonce((value) => value + 1);
+        }
+        if (typeof data.gameSeed === 'number' && Number.isFinite(data.gameSeed)) {
+          setGameSeed(Math.max(1, data.gameSeed));
+        }
+      } else {
+        setNonce((value) => value + 1);
+      }
+      setGuesses({});
+      setRevealed(false);
+    },
+  }), [currentDemoAction]));
+
   useEffect(() => {
     setEntry('rerandomization', {
       title: 'Rerandomized proof transcript',
@@ -84,6 +110,7 @@ export function RerandomizationDemo(): JSX.Element {
   }, [setEntry]);
 
   const handleDraw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
+    const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
     renderRerandomization(
       ctx,
       frame,
@@ -97,9 +124,11 @@ export function RerandomizationDemo(): JSX.Element {
         const originalProof = matchingGame.originals.find((candidate) => candidate.id === guess);
         return originalProof ? `Guess: ${originalProof.statementLabel}` : 'Guess pending';
       }),
-      theme
+      theme,
+      worldMouse.x,
+      worldMouse.y,
     );
-  }, [changedBytes, guesses, matchingGame, original, rerandomized, theme]);
+  }, [camera, changedBytes, guesses, interaction.mouseX, interaction.mouseY, matchingGame, original, rerandomized, theme]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;

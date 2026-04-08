@@ -61,8 +61,8 @@ const initialState: AttackState = {
 // --- Tests ---
 
 describe('Attack scenario registry', () => {
-  it('has 19 scenarios', () => {
-    expect(ALL_SCENARIOS).toHaveLength(19);
+  it('has 21 scenarios', () => {
+    expect(ALL_SCENARIOS).toHaveLength(21);
   });
 
   it('each scenario has a unique id', () => {
@@ -96,10 +96,12 @@ describe('Attack scenario registry', () => {
     expect(getScenarioForDemo('split-accumulation')?.id).toBe('split-acc-bad-fold');
     expect(getScenarioForDemo('rerandomization')?.id).toBe('rerand-linkability');
     expect(getScenarioForDemo('oblivious-sync')?.id).toBe('osync-deanonymize');
+    expect(getScenarioForDemo('constraint-counter')?.id).toBe('sha256-cost-claim');
+    expect(getScenarioForDemo('pedersen')?.id).toBe('pedersen-recover-value');
   });
 
-  it('returns null for demos without attack scenarios', () => {
-    expect(getScenarioForDemo('pedersen')).toBeNull();
+  it('returns scenarios for newly supported demos', () => {
+    expect(getScenarioForDemo('pedersen')).not.toBeNull();
   });
 
   it('looks up scenario by id', () => {
@@ -111,7 +113,7 @@ describe('Attack scenario registry', () => {
     expect(hasAttackScenario('fiat-shamir')).toBe(true);
     expect(hasAttackScenario('circuit')).toBe(true);
     expect(hasAttackScenario('recursive')).toBe(true);
-    expect(hasAttackScenario('pedersen')).toBe(false);
+    expect(hasAttackScenario('pedersen')).toBe(true);
   });
 
   it('ATTACK_DEMO_IDS lists all attack-capable demos', () => {
@@ -134,7 +136,9 @@ describe('Attack scenario registry', () => {
     expect(ATTACK_DEMO_IDS).toContain('split-accumulation');
     expect(ATTACK_DEMO_IDS).toContain('rerandomization');
     expect(ATTACK_DEMO_IDS).toContain('oblivious-sync');
-    expect(ATTACK_DEMO_IDS).toHaveLength(19);
+    expect(ATTACK_DEMO_IDS).toContain('constraint-counter');
+    expect(ATTACK_DEMO_IDS).toContain('pedersen');
+    expect(ATTACK_DEMO_IDS).toHaveLength(21);
   });
 });
 
@@ -184,6 +188,8 @@ describe('Attack scenario data integrity', () => {
     expect(getScenarioById('split-acc-bad-fold')?.conclusion.succeeded).toBe(false);
     expect(getScenarioById('rerand-linkability')?.conclusion.succeeded).toBe(false);
     expect(getScenarioById('osync-deanonymize')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('sha256-cost-claim')?.conclusion.succeeded).toBe(false);
+    expect(getScenarioById('pedersen-recover-value')?.conclusion.succeeded).toBe(false);
   });
 });
 

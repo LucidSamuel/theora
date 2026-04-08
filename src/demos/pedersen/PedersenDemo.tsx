@@ -17,6 +17,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast, showDownloadToast } from '@/lib/toast';
 import { fitCameraToBounds } from '@/lib/cameraFit';
@@ -52,6 +54,7 @@ export function PedersenDemo(): JSX.Element {
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -66,6 +69,16 @@ export function PedersenDemo(): JSX.Element {
   const [embedUrl, setEmbedUrl] = useState('');
 
   const params = DEFAULT_PARAMS;
+
+  const loadAttackCommitment = useCallback((nextValue: number, nextRandomness: number, nextShowBlinding: boolean) => {
+    setValue(nextValue);
+    setRandomness(nextRandomness);
+    setValue2(5);
+    setRandomness2(11);
+    setShowBlinding(nextShowBlinding);
+    setHomomorphic(null);
+    setCommitment(commit(params, nextValue, nextRandomness));
+  }, [params]);
 
   // ── Restore from URL ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -83,6 +96,19 @@ export function PedersenDemo(): JSX.Element {
     if (typeof payload.r2 === 'number') setRandomness2(payload.r2);
     if (typeof payload.showBlinding === 'boolean') setShowBlinding(payload.showBlinding);
   }, []);
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    LOAD_ATTACK_COMMITMENT: (payload) => {
+      if (!payload || typeof payload !== 'object') return;
+      const data = payload as { value?: unknown; randomness?: unknown; showBlinding?: unknown };
+      if (typeof data.value !== 'number' || typeof data.randomness !== 'number') return;
+      loadAttackCommitment(
+        Math.max(0, Math.min(96, data.value)),
+        Math.max(0, Math.min(96, data.randomness)),
+        data.showBlinding === true,
+      );
+    },
+  }), [currentDemoAction, loadAttackCommitment]));
 
   // ── Commit action ──────────────────────────────────────────────────────────
   const handleCommit = useCallback(() => {
@@ -136,9 +162,21 @@ export function PedersenDemo(): JSX.Element {
   // ── Canvas draw ───────────────────────────────────────────────────────────
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
-      renderPedersen(ctx, frame, params, commitment ?? draftCommitment, homomorphic, showBlinding, theme, commitment === null);
+      const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
+      renderPedersen(
+        ctx,
+        frame,
+        params,
+        commitment ?? draftCommitment,
+        homomorphic,
+        showBlinding,
+        theme,
+        commitment === null,
+        worldMouse.x,
+        worldMouse.y,
+      );
     },
-    [params, commitment, draftCommitment, homomorphic, showBlinding, theme],
+    [camera, commitment, draftCommitment, homomorphic, interaction.mouseX, interaction.mouseY, params, showBlinding, theme],
   );
 
   // ── URL sync ──────────────────────────────────────────────────────────────

@@ -350,14 +350,18 @@ export function FRIDemo(): JSX.Element {
     },
   }), [currentDemoAction, loadAttackState]));
 
-  // ── Restore from URL on mount ──────────────────────────────────────
+  // ── Restore from URL on mount, or auto-run if no saved state ────
   useEffect(() => {
     const hashState = getHashState();
     const rawHash = hashState?.demo === 'fri' ? hashState.state : null;
     const decoded = decodeStatePlain<SerializedState>(rawHash)
       ?? decodeState<SerializedState>(getSearchParam('fri'));
 
-    if (!decoded) return;
+    if (!decoded) {
+      // No saved state — run the full protocol so the canvas isn't empty
+      dispatch({ type: 'RUN_ALL' });
+      return;
+    }
     const restored = deserializeState(decoded);
     dispatch({ type: 'RESTORE', state: restored });
   // eslint-disable-next-line react-hooks/exhaustive-deps

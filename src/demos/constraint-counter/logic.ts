@@ -1,5 +1,5 @@
 export interface ConstraintProfile {
-  name: 'Pedersen' | 'Poseidon';
+  name: 'SHA-256' | 'Pedersen' | 'Poseidon';
   r1csPerHash: number;
   bootle16PerHash: number;
 }
@@ -12,6 +12,11 @@ export interface ConstraintScenario {
 }
 
 const PROFILES: ConstraintProfile[] = [
+  {
+    name: 'SHA-256',
+    r1csPerHash: 25210,
+    bootle16PerHash: 22400,
+  },
   {
     name: 'Pedersen',
     r1csPerHash: 850,
@@ -56,6 +61,7 @@ export function getSavingsRatio(numerator: bigint, denominator: bigint): number 
 export function formatConstraintCount(value: bigint): string {
   if (value < 1000n) return value.toString();
   if (value < 1_000_000n) return `${(Number(value) / 1000).toFixed(1)}k`;
-  if (value < 1_000_000_000n) return `${(Number(value) / 1_000_000).toFixed(1)}m`;
-  return `${(Number(value) / 1_000_000_000).toFixed(1)}b`;
+  if (value < 1_000_000_000n) return `${(Number(value) / 1_000_000).toFixed(1)}M`;
+  if (value < 1_000_000_000_000n) return `${(Number(value) / 1_000_000_000).toFixed(1)}B`;
+  return `${(Number(value) / 1_000_000_000_000).toFixed(1)}T`;
 }

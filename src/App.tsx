@@ -6,6 +6,7 @@ import { GitHubProvider } from '@/hooks/useGitHub';
 import { ModeProvider, useMode, PlaceholderMode, AttackMode, PredictMode, DebugMode } from '@/modes';
 import { hasPredictChallenges } from '@/modes/predict/challenges';
 import { hasAttackScenario } from '@/modes/attack/scenarios';
+import { hasDebugSupport } from '@/modes/debug/DebugPanel';
 import { Layout } from '@/components/layout/Layout';
 import { DemoContainer } from '@/components/layout/DemoContainer';
 import { DemoErrorBoundary } from '@/components/shared/DemoErrorBoundary';
@@ -49,7 +50,7 @@ const DEMO_NAMES = {
   circuit: 'R1CS Circuits',
   lookup: 'Lookup Arguments',
   pedersen: 'Pedersen Commitments',
-  'constraint-counter': 'Pedersen vs Poseidon',
+  'constraint-counter': 'Pedersen vs Poseidon vs SHA-256',
   plonk: 'PLONK Arithmetization',
   groth16: 'Groth16 zkSNARK',
   sumcheck: 'Sumcheck Protocol',
@@ -176,6 +177,7 @@ function AppContent({
   useEffect(() => {
     if (mode === 'predict' && !hasPredictChallenges(activeDemo)) setMode('explore');
     if (mode === 'attack' && !hasAttackScenario(activeDemo)) setMode('explore');
+    if (mode === 'debug' && !hasDebugSupport(activeDemo)) setMode('explore');
   }, [activeDemo, mode, setMode]);
 
   if (mode === 'attack') {

@@ -27,7 +27,7 @@ export const RERAND_LINKABILITY: AttackScenario = {
       instruction: 'Compare the original and rerandomized proofs byte-by-byte. Count how many bytes differ.',
       observation: 'Nearly every byte has changed. The commitment, evaluation, and IPA components are all different. Only the proof length remains the same.',
       adversaryNarration: 'The byte-level content is completely different. I cannot find any shared subsequence or pattern between the two proofs.',
-      demoAction: { type: 'RERANDOMIZE', payload: undefined },
+      demoAction: { type: 'RERANDOMIZE', payload: { statementIndex: 0, nonce: 2, gameSeed: 5 } },
     },
     {
       id: 'check-statement',

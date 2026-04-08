@@ -19,6 +19,8 @@ import { GKR_CHALLENGES } from './gkr';
 import { SPLIT_ACCUMULATION_CHALLENGES } from './split-accumulation';
 import { OBLIVIOUS_SYNC_CHALLENGES } from './oblivious-sync';
 import { RERANDOMIZATION_CHALLENGES } from './rerandomization';
+import { CONSTRAINT_COUNTER_CHALLENGES } from './constraint-counter';
+import { PEDERSEN_CHALLENGES } from './pedersen';
 
 export const ALL_CHALLENGES: PredictChallenge[] = [
   ...MERKLE_CHALLENGES,
@@ -40,6 +42,8 @@ export const ALL_CHALLENGES: PredictChallenge[] = [
   ...SPLIT_ACCUMULATION_CHALLENGES,
   ...OBLIVIOUS_SYNC_CHALLENGES,
   ...RERANDOMIZATION_CHALLENGES,
+  ...CONSTRAINT_COUNTER_CHALLENGES,
+  ...PEDERSEN_CHALLENGES,
 ];
 
 const CHALLENGE_MAP = new Map<string, PredictChallenge>();

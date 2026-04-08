@@ -2,6 +2,60 @@ import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawRoundedRect, hexToRgba } from '@/lib/canvas';
 import type { SyncRoundDetails, SyncScenario } from './logic';
 
+interface HoverRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  title: string;
+  body: string;
+}
+
+function drawTooltip(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  region: HoverRegion,
+  theme: 'dark' | 'light'
+) {
+  const isDark = theme === 'dark';
+  const padding = 10;
+  const lineHeight = 14;
+
+  ctx.save();
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  const titleWidth = ctx.measureText(region.title).width;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  const bodyWidth = ctx.measureText(region.body).width;
+  const tooltipW = Math.max(titleWidth, bodyWidth) + padding * 2;
+  const tooltipH = padding * 2 + lineHeight * 2 + 4;
+
+  let tooltipX = region.x + region.w + 10;
+  if (tooltipX + tooltipW > width - 10) tooltipX = region.x - tooltipW - 10;
+  if (tooltipX < 10) tooltipX = 10;
+
+  let tooltipY = region.y + region.h / 2 - tooltipH / 2;
+  if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+  if (tooltipY < 10) tooltipY = 10;
+
+  ctx.fillStyle = isDark ? 'rgba(24,24,27,0.96)' : 'rgba(255,255,255,0.96)';
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.fill();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.stroke();
+
+  ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  ctx.fillText(region.title, tooltipX + padding, tooltipY + padding + 10);
+
+  ctx.fillStyle = isDark ? '#d4d4d8' : '#52525b';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillText(region.body, tooltipX + padding, tooltipY + padding + 10 + lineHeight + 4);
+  ctx.restore();
+}
+
 function drawPanel(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -32,10 +86,13 @@ export function renderObliviousSync(
   scenario: SyncScenario,
   round: number,
   details: SyncRoundDetails,
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light',
+  mouseX?: number,
+  mouseY?: number
 ) {
   const { width, height } = frame;
   const isDark = theme === 'dark';
+  const hoverRegions: HoverRegion[] = [];
   const bg = ctx.createLinearGradient(0, 0, width, height);
   bg.addColorStop(0, isDark ? '#09090b' : '#ffffff');
   bg.addColorStop(1, isDark ? '#111113' : '#fafafa');
@@ -65,6 +122,22 @@ export function renderObliviousSync(
 
   drawPanel(ctx, walletX, panelY, panelW, panelH, 'Wallet', '#38bdf8', theme);
   drawPanel(ctx, serviceX, panelY, panelW, panelH, 'Remote Service', '#a78bfa', theme);
+  hoverRegions.push({
+    x: walletX,
+    y: panelY,
+    w: panelW,
+    h: panelH,
+    title: 'Wallet',
+    body: details.walletAction,
+  });
+  hoverRegions.push({
+    x: serviceX,
+    y: panelY,
+    w: panelW,
+    h: panelH,
+    title: 'Remote Service',
+    body: details.serviceAction,
+  });
 
   const walletLines = scenario.walletQueries.slice(0, 4).map((query, index) =>
     round === 0
@@ -113,12 +186,36 @@ export function renderObliviousSync(
     ctx.fillStyle = isDark ? '#e4e4e7' : '#18181b';
     ctx.font = '11px "Space Grotesk", sans-serif';
     ctx.fillText(message, cardX + 12, cardY + 21);
+    hoverRegions.push({
+      x: cardX,
+      y: cardY,
+      w: laneW - 48,
+      h: 34,
+      title: `Round ${round + 1} message`,
+      body: message,
+    });
   });
 
   const learnY = panelY + panelH + 28;
   const learnH = 132;
   drawPanel(ctx, 40, learnY, width / 2 - 52, learnH, 'Wallet learns', '#38bdf8', theme);
   drawPanel(ctx, width / 2 + 12, learnY, width / 2 - 52, learnH, 'Service learns', '#a78bfa', theme);
+  hoverRegions.push({
+    x: 40,
+    y: learnY,
+    w: width / 2 - 52,
+    h: learnH,
+    title: 'Wallet learns',
+    body: details.walletLearns[0] ?? 'Local verification result',
+  });
+  hoverRegions.push({
+    x: width / 2 + 12,
+    y: learnY,
+    w: width / 2 - 52,
+    h: learnH,
+    title: 'Service learns',
+    body: details.serviceLearns[0] ?? 'Only blinded metadata',
+  });
 
   ctx.font = '11px "Space Grotesk", sans-serif';
   details.walletLearns.slice(0, 3).forEach((line, index) => {
@@ -139,4 +236,13 @@ export function renderObliviousSync(
   ctx.font = '700 12px "Space Grotesk", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(scenario.verified ? 'No spent notes revealed' : 'Spent note collision detected', statusX + 100, statusY + 22);
+
+  if (typeof mouseX === 'number' && typeof mouseY === 'number') {
+    const hovered = hoverRegions.find((region) =>
+      mouseX >= region.x && mouseX <= region.x + region.w && mouseY >= region.y && mouseY <= region.y + region.h
+    );
+    if (hovered) {
+      drawTooltip(ctx, width, height, hovered, theme);
+    }
+  }
 }

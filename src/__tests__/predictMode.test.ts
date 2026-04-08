@@ -55,8 +55,8 @@ const initialState: PredictState = {
 // --- Tests ---
 
 describe('Predict challenge registry', () => {
-  it('has challenges for 19 demos', () => {
-    expect(PREDICT_DEMO_IDS).toHaveLength(19);
+  it('has challenges for 21 demos', () => {
+    expect(PREDICT_DEMO_IDS).toHaveLength(21);
     expect(PREDICT_DEMO_IDS).toContain('merkle');
     expect(PREDICT_DEMO_IDS).toContain('circuit');
     expect(PREDICT_DEMO_IDS).toContain('fiat-shamir');
@@ -76,6 +76,8 @@ describe('Predict challenge registry', () => {
     expect(PREDICT_DEMO_IDS).toContain('split-accumulation');
     expect(PREDICT_DEMO_IDS).toContain('rerandomization');
     expect(PREDICT_DEMO_IDS).toContain('oblivious-sync');
+    expect(PREDICT_DEMO_IDS).toContain('constraint-counter');
+    expect(PREDICT_DEMO_IDS).toContain('pedersen');
   });
 
   it('has at least 4 challenges per demo', () => {
@@ -103,9 +105,9 @@ describe('Predict challenge registry', () => {
     }
   });
 
-  it('returns null for demos without challenges', () => {
-    expect(hasPredictChallenges('pedersen')).toBe(false);
-    expect(getRandomChallenge('pedersen')).toBeNull();
+  it('returns random challenges for newly supported demos', () => {
+    expect(hasPredictChallenges('pedersen')).toBe(true);
+    expect(getRandomChallenge('pedersen')).not.toBeNull();
   });
 
   it('hasPredictChallenges returns correct booleans', () => {
@@ -113,7 +115,7 @@ describe('Predict challenge registry', () => {
     expect(hasPredictChallenges('circuit')).toBe(true);
     expect(hasPredictChallenges('recursive')).toBe(true);
     expect(hasPredictChallenges('nova')).toBe(true);
-    expect(hasPredictChallenges('pedersen')).toBe(false);
+    expect(hasPredictChallenges('pedersen')).toBe(true);
   });
 
   it('getChallengeById works', () => {

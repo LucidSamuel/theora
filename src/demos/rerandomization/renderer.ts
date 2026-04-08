@@ -2,6 +2,15 @@ import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawRoundedRect, hexToRgba } from '@/lib/canvas';
 import type { MatchCard, ProofArtifact } from './logic';
 
+interface HoverRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  title: string;
+  body: string;
+}
+
 function formatByte(value: number): string {
   return value.toString(16).padStart(2, '0');
 }
@@ -29,7 +38,8 @@ function drawProofBytes(
   proof: ProofArtifact,
   comparison: ProofArtifact | null,
   accent: string,
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light',
+  hoverRegions: HoverRegion[]
 ) {
   ctx.fillStyle = theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.88)';
   drawRoundedRect(ctx, x, y, width, 212, 14);
@@ -74,8 +84,62 @@ function drawProofBytes(
         : (theme === 'dark' ? '#e4e4e7' : '#18181b');
       ctx.font = '10px "JetBrains Mono", monospace';
       ctx.fillText(formatByte(byte), byteX + 3, byteY + 14);
+      hoverRegions.push({
+        x: byteX,
+        y: byteY,
+        w: 22,
+        h: 22,
+        title: `${title} • ${component.label}`,
+        body: changed && compareByte !== undefined
+          ? `byte ${byteIndex}: 0x${formatByte(byte)} ≠ 0x${formatByte(compareByte)}`
+          : `byte ${byteIndex}: 0x${formatByte(byte)} unchanged`,
+      });
     });
   });
+}
+
+function drawTooltip(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  region: HoverRegion,
+  theme: 'dark' | 'light'
+) {
+  const isDark = theme === 'dark';
+  const padding = 10;
+  const lineHeight = 14;
+
+  ctx.save();
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  const titleWidth = ctx.measureText(region.title).width;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  const bodyWidth = ctx.measureText(region.body).width;
+  const tooltipW = Math.max(titleWidth, bodyWidth) + padding * 2;
+  const tooltipH = padding * 2 + lineHeight * 2 + 4;
+
+  let tooltipX = region.x + region.w + 10;
+  if (tooltipX + tooltipW > width - 10) tooltipX = region.x - tooltipW - 10;
+  if (tooltipX < 10) tooltipX = 10;
+
+  let tooltipY = region.y + region.h / 2 - tooltipH / 2;
+  if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+  if (tooltipY < 10) tooltipY = 10;
+
+  ctx.fillStyle = isDark ? 'rgba(24,24,27,0.96)' : 'rgba(255,255,255,0.96)';
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.fill();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.stroke();
+
+  ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  ctx.fillText(region.title, tooltipX + padding, tooltipY + padding + 10);
+  ctx.fillStyle = isDark ? '#d4d4d8' : '#52525b';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillText(region.body, tooltipX + padding, tooltipY + padding + 10 + lineHeight + 4);
+  ctx.restore();
 }
 
 export function renderRerandomization(
@@ -86,10 +150,13 @@ export function renderRerandomization(
   changedBytes: number,
   cards: MatchCard[],
   guessLabels: string[],
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light',
+  mouseX?: number,
+  mouseY?: number
 ) {
   const { width, height } = frame;
   const isDark = theme === 'dark';
+  const hoverRegions: HoverRegion[] = [];
   const bg = ctx.createLinearGradient(0, 0, width, height);
   bg.addColorStop(0, isDark ? '#09090b' : '#ffffff');
   bg.addColorStop(1, isDark ? '#111113' : '#fafafa');
@@ -112,8 +179,8 @@ export function renderRerandomization(
   ctx.fillText(truncateText(ctx, subtitle, width - 80), 40, 66);
 
   const panelWidth = (width - 120) / 2;
-  drawProofBytes(ctx, 40, 92, panelWidth, 'Original proof', original, rerandomized, '#38bdf8', theme);
-  drawProofBytes(ctx, 80 + panelWidth, 92, panelWidth, 'Rerandomized proof', rerandomized, original, '#a78bfa', theme);
+  drawProofBytes(ctx, 40, 92, panelWidth, 'Original proof', original, rerandomized, '#38bdf8', theme, hoverRegions);
+  drawProofBytes(ctx, 80 + panelWidth, 92, panelWidth, 'Rerandomized proof', rerandomized, original, '#a78bfa', theme, hoverRegions);
 
   ctx.fillStyle = hexToRgba('#22c55e', 0.2);
   drawRoundedRect(ctx, 40, 322, width - 80, 40, 999);
@@ -146,5 +213,22 @@ export function renderRerandomization(
     ctx.fillStyle = isDark ? '#a1a1aa' : '#52525b';
     ctx.font = '11px "Space Grotesk", sans-serif';
     ctx.fillText(guessLabels[index] ?? 'No guess yet', 56, y + 40);
+    hoverRegions.push({
+      x: 40,
+      y,
+      w: width - 80,
+      h: 52,
+      title: card.proof.statementLabel,
+      body: guessLabels[index] ?? 'No guess yet',
+    });
   });
+
+  if (typeof mouseX === 'number' && typeof mouseY === 'number') {
+    const hovered = hoverRegions.find((region) =>
+      mouseX >= region.x && mouseX <= region.x + region.w && mouseY >= region.y && mouseY <= region.y + region.h
+    );
+    if (hovered) {
+      drawTooltip(ctx, width, height, hovered, theme);
+    }
+  }
 }

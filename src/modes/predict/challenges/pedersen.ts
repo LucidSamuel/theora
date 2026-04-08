@@ -1,0 +1,68 @@
+import type { PredictChallenge } from '../types';
+
+export const PEDERSEN_CHALLENGES: PredictChallenge[] = [
+  {
+    id: 'pedersen-hiding',
+    demoId: 'pedersen',
+    difficulty: 'beginner',
+    question: 'In a Pedersen commitment C = g^v · h^r mod p, what is the main purpose of the blinding factor r?',
+    hint: 'Think about what prevents the commitment from revealing the value v directly.',
+    choices: [
+      { label: 'It makes the commitment perfectly hiding', rationale: 'Correct — fresh randomness r makes the commitment distribution independent of the committed value.' },
+      { label: 'It reduces the group order so verification is faster', rationale: 'r does not change the group order or speed up verification.' },
+      { label: 'It lets the prover avoid modular arithmetic', rationale: 'Pedersen commitments still rely on modular exponentiation.' },
+      { label: 'It turns the commitment into a signature', rationale: 'A commitment hides a value; it is not a signature scheme.' },
+    ],
+    correctIndex: 0,
+    explanation: 'The random blinding factor r hides the value v. For any fixed v, varying r changes the commitment unpredictably, so the commitment leaks nothing about the committed value by itself.',
+    category: 'hiding',
+  },
+  {
+    id: 'pedersen-homomorphic',
+    demoId: 'pedersen',
+    difficulty: 'beginner',
+    question: 'If C1 = commit(v1, r1) and C2 = commit(v2, r2), what does C1 · C2 represent?',
+    hint: 'Multiply the exponents in the group separately for g and h.',
+    choices: [
+      { label: 'commit(v1 + v2, r1 + r2)', rationale: 'Correct — multiplying commitments adds both the committed values and the blindings in the exponent.' },
+      { label: 'commit(v1 · v2, r1 · r2)', rationale: 'Pedersen commitments are additively homomorphic in the exponent, not multiplicatively homomorphic.' },
+      { label: 'A random group element unrelated to either input', rationale: 'The result is structured: it is exactly the commitment to the summed value and randomness.' },
+      { label: 'A valid opening only if r1 = r2', rationale: 'The homomorphic property does not require the same blinding factor.' },
+    ],
+    correctIndex: 0,
+    explanation: 'Because exponents add when group elements are multiplied, C1 · C2 = g^(v1+v2) · h^(r1+r2), which is exactly a Pedersen commitment to the sum.',
+    category: 'homomorphism',
+  },
+  {
+    id: 'pedersen-same-value-different-randomness',
+    demoId: 'pedersen',
+    difficulty: 'intermediate',
+    question: 'Two commitments hide the same value v but use different blindings r and r\'. What should you expect?',
+    hint: 'Fresh randomness changes the h^r factor.',
+    choices: [
+      { label: 'The commitments should usually be different while still hiding the same value', rationale: 'Correct — changing r changes the h^r term, so the byte-level commitment changes even though the value is the same.' },
+      { label: 'The commitments must be identical because the value is identical', rationale: 'That would destroy hiding. Different randomness should produce a different commitment.' },
+      { label: 'Both commitments become invalid unless r = r\'', rationale: 'Any valid randomness produces a valid commitment.' },
+      { label: 'The verifier can recover v by subtracting the commitments', rationale: 'Without the openings, the verifier still cannot extract v from the commitments alone.' },
+    ],
+    correctIndex: 0,
+    explanation: 'The commitment depends on both v and r. Keeping v fixed but changing r changes the group element, which is why commitments to the same value are unlinkable without the opening data.',
+    category: 'hiding',
+  },
+  {
+    id: 'pedersen-opening',
+    demoId: 'pedersen',
+    difficulty: 'advanced',
+    question: 'What extra information is needed to verify that a commitment opens to a claimed value v?',
+    hint: 'The verifier must recompute g^v · h^r.',
+    choices: [
+      { label: 'The blinding factor r used in the opening', rationale: 'Correct — the verifier needs both v and r to recompute the commitment and check it matches C.' },
+      { label: 'A second independent commitment to the same value', rationale: 'A second commitment is unnecessary if the opening data is provided.' },
+      { label: 'The discrete logarithm relation between g and h', rationale: 'That relation should remain unknown; revealing it would weaken binding.' },
+      { label: 'Only the value v, because r cancels out during verification', rationale: 'r does not cancel out. It is part of the committed group element.' },
+    ],
+    correctIndex: 0,
+    explanation: 'A Pedersen opening consists of both the committed value and the blinding factor. The verifier checks that C = g^v · h^r mod p using the claimed opening pair.',
+    category: 'verification',
+  },
+];

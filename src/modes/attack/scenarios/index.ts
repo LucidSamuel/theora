@@ -19,6 +19,8 @@ import { GKR_FALSE_OUTPUT } from './gkr';
 import { SPLIT_ACC_BAD_FOLD } from './split-accumulation';
 import { OSYNC_DEANONYMIZE } from './oblivious-sync';
 import { RERAND_LINKABILITY } from './rerandomization';
+import { CONSTRAINT_COUNTER_COST_ATTACK } from './constraint-counter';
+import { PEDERSEN_HIDING_ATTACK } from './pedersen';
 
 export const ALL_SCENARIOS: AttackScenario[] = [
   FROZEN_HEART,
@@ -40,6 +42,8 @@ export const ALL_SCENARIOS: AttackScenario[] = [
   SPLIT_ACC_BAD_FOLD,
   OSYNC_DEANONYMIZE,
   RERAND_LINKABILITY,
+  CONSTRAINT_COUNTER_COST_ATTACK,
+  PEDERSEN_HIDING_ATTACK,
 ];
 
 const BY_DEMO = new Map<DemoId, AttackScenario>();

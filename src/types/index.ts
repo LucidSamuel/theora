@@ -135,10 +135,10 @@ export const DEMOS: DemoMeta[] = [
   },
   {
     id: 'constraint-counter',
-    title: 'Pedersen vs Poseidon',
-    subtitle: 'Quantify how Merkle-hash choice changes R1CS and Bootle16 cost.',
+    title: 'Pedersen vs Poseidon vs SHA-256',
+    subtitle: 'Quantify how Merkle-hash choice changes R1CS and Bootle16 cost on logarithmic bars.',
     description:
-      'Pedersen commitments are flexible, but Pedersen hashing is expensive inside zk circuits. This demo compares Pedersen and Poseidon side by side, then extrapolates the difference over Merkle paths and full trees to make the savings immediate and quantitative.',
+      'Pedersen hashing is viable inside zk circuits, Poseidon is purpose-built for them, and SHA-256 is dramatically more expensive. This demo compares all three side by side, then extrapolates the gap over Merkle paths and full trees so the savings are immediate and quantitative.',
     accent: '#38bdf8',
   },
   {

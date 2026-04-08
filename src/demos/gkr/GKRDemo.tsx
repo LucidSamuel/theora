@@ -452,13 +452,17 @@ export function GKRDemo(): JSX.Element {
     const rect = canvas.getBoundingClientRect();
     const w = rect.width || 900;
     const h = rect.height || 600;
+    // Compute bottom extent from proof panel cards (each ~80-100px tall)
+    const proofLayers = state.proof ? state.proof.layerProofs.length : 0;
+    const proofPanelH = proofLayers > 0 ? 100 + (proofLayers + 2) * 100 : 0;
+    const maxY = Math.max(h - 56, 70 + proofPanelH);
     fitCameraToBounds(
       camera,
       canvas,
-      { minX: 40, minY: 40, maxX: w - 40, maxY: h - 56 },
+      { minX: 20, minY: 20, maxX: w - 20, maxY },
       options?.instant ? { durationMs: 0 } : undefined,
     );
-  }, [camera]);
+  }, [camera, state.proof]);
 
   const handleExportPng = () => {
     const canvas = canvasElRef.current;

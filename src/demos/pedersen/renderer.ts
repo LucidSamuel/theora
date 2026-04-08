@@ -2,6 +2,15 @@ import type { FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { drawGrid, drawArrow, hexToRgba, drawRoundedRect } from '@/lib/canvas';
 import type { PedersenParams, Commitment, HomomorphicResult } from './logic';
 
+interface HoverRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  title: string;
+  body: string;
+}
+
 // ── Layout constants ──────────────────────────────────────────────────────────
 const BOX_W = 148;
 const BOX_H = 56;
@@ -40,9 +49,22 @@ function drawBox(
   valueText: string,
   borderColor: string,
   isDark: boolean,
+  hoverRegions?: HoverRegion[],
+  hoverInfo?: { title: string; body: string },
 ): void {
   const x = cx - BOX_W / 2;
   const y = cy - BOX_H / 2;
+
+  if (hoverRegions) {
+    hoverRegions.push({
+      x,
+      y,
+      w: BOX_W,
+      h: BOX_H,
+      title: hoverInfo?.title ?? label,
+      body: hoverInfo?.body ?? valueText,
+    });
+  }
 
   // Background
   ctx.fillStyle = boxBg(isDark);
@@ -95,6 +117,50 @@ function operatorText(
   ctx.fillText(text, x, y);
 }
 
+function drawTooltip(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  region: HoverRegion,
+  isDark: boolean,
+): void {
+  const padding = 10;
+  const lineHeight = 14;
+
+  ctx.save();
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  const titleWidth = ctx.measureText(region.title).width;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  const bodyWidth = ctx.measureText(region.body).width;
+  const tooltipW = Math.max(titleWidth, bodyWidth) + padding * 2;
+  const tooltipH = padding * 2 + lineHeight * 2 + 4;
+
+  let tooltipX = region.x + region.w + 10;
+  if (tooltipX + tooltipW > width - 10) tooltipX = region.x - tooltipW - 10;
+  if (tooltipX < 10) tooltipX = 10;
+
+  let tooltipY = region.y + region.h / 2 - tooltipH / 2;
+  if (tooltipY + tooltipH > height - 10) tooltipY = height - tooltipH - 10;
+  if (tooltipY < 10) tooltipY = 10;
+
+  ctx.fillStyle = isDark ? 'rgba(24,24,27,0.96)' : 'rgba(255,255,255,0.96)';
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.fill();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = 1;
+  drawRoundedRect(ctx, tooltipX, tooltipY, tooltipW, tooltipH, 8);
+  ctx.stroke();
+
+  ctx.fillStyle = isDark ? '#fafafa' : '#09090b';
+  ctx.font = '700 11px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(region.title, tooltipX + padding, tooltipY + padding + 10);
+  ctx.fillStyle = isDark ? '#d4d4d8' : '#52525b';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillText(region.body, tooltipX + padding, tooltipY + padding + 10 + lineHeight + 4);
+  ctx.restore();
+}
+
 // ── Single-commitment layout ──────────────────────────────────────────────────
 
 function renderSingleCommitment(
@@ -105,6 +171,7 @@ function renderSingleCommitment(
   showBlinding: boolean,
   isDark: boolean,
   isDraft: boolean = false,
+  hoverRegions: HoverRegion[],
 ): void {
   const { width } = frame;
   const cx = width / 2;
@@ -128,12 +195,22 @@ function renderSingleCommitment(
   const v = commitment?.value ?? 0;
   const r = commitment?.randomness ?? 0;
 
-  drawBox(ctx, leftCX, ROW_Y, 'value (v)', String(v), hexToRgba(accent(isDark), 0.45), isDark);
+  drawBox(ctx, leftCX, ROW_Y, 'value (v)', String(v), hexToRgba(accent(isDark), 0.45), isDark, hoverRegions);
   if (showBlinding) {
-    drawBox(ctx, rightCX, ROW_Y, 'blinding (r)', String(r), hexToRgba(muted(isDark), 0.55), isDark);
+    drawBox(ctx, rightCX, ROW_Y, 'blinding (r)', String(r), hexToRgba(muted(isDark), 0.55), isDark, hoverRegions);
   } else {
     // Hidden blinding factor — show as masked
-    drawBox(ctx, rightCX, ROW_Y, 'blinding (r)', '●●●', hexToRgba(muted(isDark), 0.35), isDark);
+    drawBox(
+      ctx,
+      rightCX,
+      ROW_Y,
+      'blinding (r)',
+      '●●●',
+      hexToRgba(muted(isDark), 0.35),
+      isDark,
+      hoverRegions,
+      { title: 'blinding (r)', body: 'Hidden — toggle reveal to inspect the opening randomness.' },
+    );
   }
 
   // ── Arrows: value → g^v, randomness → h^r ─────────────────────────────────
@@ -149,7 +226,7 @@ function renderSingleCommitment(
   const gv = modPow(params.g, v, params.p);
   const hr = modPow(params.h, r, params.p);
 
-  drawBox(ctx, leftCX, PRODUCT_Y, gvLabel, `≡ ${gv}`, hexToRgba(accent(isDark), 0.35), isDark);
+  drawBox(ctx, leftCX, PRODUCT_Y, gvLabel, `≡ ${gv}`, hexToRgba(accent(isDark), 0.35), isDark, hoverRegions);
   drawBox(
     ctx,
     rightCX,
@@ -158,6 +235,8 @@ function renderSingleCommitment(
     showBlinding ? `≡ ${hr}` : '≡ ?',
     hexToRgba(muted(isDark), 0.35),
     isDark,
+    hoverRegions,
+    showBlinding ? undefined : { title: hrLabel, body: 'Hidden until the blinding factor is revealed.' },
   );
 
   // ── Converging arrows → commitment ────────────────────────────────────────
@@ -188,7 +267,7 @@ function renderSingleCommitment(
     : hexToRgba(success(isDark), isDark ? 0.7 : 0.6);
 
   if (isDraft) ctx.setLineDash([4, 4]);
-  drawBox(ctx, midX, COMMIT_Y, commitLabel, commitVal, commitBorder, isDark);
+  drawBox(ctx, midX, COMMIT_Y, commitLabel, commitVal, commitBorder, isDark, hoverRegions);
   if (isDraft) ctx.setLineDash([]);
 
   // ── Status strip ─────────────────────────────────────────────────────────
@@ -224,6 +303,7 @@ function renderHomomorphic(
   params: PedersenParams,
   result: HomomorphicResult,
   isDark: boolean,
+  hoverRegions: HoverRegion[],
 ): void {
   const { width } = frame;
   const { modPow } = await_modPow();
@@ -251,14 +331,14 @@ function renderHomomorphic(
   const gv1 = modPow(params.g, v1, params.p);
   const hr1 = modPow(params.h, r1, params.p);
 
-  drawBox(ctx, col1X, ROW_Y, 'value v₁', String(v1), hexToRgba(accent(isDark), 0.45), isDark);
-  drawBox(ctx, col1X + 130, ROW_Y, 'random r₁', String(r1), hexToRgba(muted(isDark), 0.4), isDark);
+  drawBox(ctx, col1X, ROW_Y, 'value v₁', String(v1), hexToRgba(accent(isDark), 0.45), isDark, hoverRegions);
+  drawBox(ctx, col1X + 130, ROW_Y, 'random r₁', String(r1), hexToRgba(muted(isDark), 0.4), isDark, hoverRegions);
 
   arrowDown(ctx, col1X, ROW_Y + BOX_H / 2, col1X, PRODUCT_Y - BOX_H / 2, arrowColor);
   arrowDown(ctx, col1X + 130, ROW_Y + BOX_H / 2, col1X + 130, PRODUCT_Y - BOX_H / 2, arrowColor);
 
-  drawBox(ctx, col1X, PRODUCT_Y, `g^${v1}`, `≡ ${gv1}`, hexToRgba(accent(isDark), 0.3), isDark);
-  drawBox(ctx, col1X + 130, PRODUCT_Y, `h^${r1}`, `≡ ${hr1}`, hexToRgba(muted(isDark), 0.3), isDark);
+  drawBox(ctx, col1X, PRODUCT_Y, `g^${v1}`, `≡ ${gv1}`, hexToRgba(accent(isDark), 0.3), isDark, hoverRegions);
+  drawBox(ctx, col1X + 130, PRODUCT_Y, `h^${r1}`, `≡ ${hr1}`, hexToRgba(muted(isDark), 0.3), isDark, hoverRegions);
 
   // converging to C1
   const midC1 = col1X + 65;
@@ -266,7 +346,7 @@ function renderHomomorphic(
   drawElbow(ctx, col1X + BOX_W / 2, PRODUCT_Y + BOX_H / 2, midC1, midC1Y + 18, arrowColor);
   drawElbow(ctx, col1X + 130 - BOX_W / 2, PRODUCT_Y + BOX_H / 2, midC1, midC1Y + 18, arrowColor);
   arrowDown(ctx, midC1, midC1Y + 20, midC1, COMMIT_Y - BOX_H / 2, arrowColor);
-  drawBox(ctx, midC1, COMMIT_Y, `C₁ = ${gv1}·${hr1} mod p`, String(result.c1.commitment), hexToRgba(accent(isDark), 0.45), isDark);
+  drawBox(ctx, midC1, COMMIT_Y, `C₁ = ${gv1}·${hr1} mod p`, String(result.c1.commitment), hexToRgba(accent(isDark), 0.45), isDark, hoverRegions);
 
   // ── Commitment 2 column ──────────────────────────────────────────────────
   const v2 = result.c2.value;
@@ -274,21 +354,21 @@ function renderHomomorphic(
   const gv2 = modPow(params.g, v2, params.p);
   const hr2 = modPow(params.h, r2, params.p);
 
-  drawBox(ctx, col2X - 130, ROW_Y, 'value v₂', String(v2), hexToRgba(accent(isDark), 0.45), isDark);
-  drawBox(ctx, col2X, ROW_Y, 'random r₂', String(r2), hexToRgba(muted(isDark), 0.4), isDark);
+  drawBox(ctx, col2X - 130, ROW_Y, 'value v₂', String(v2), hexToRgba(accent(isDark), 0.45), isDark, hoverRegions);
+  drawBox(ctx, col2X, ROW_Y, 'random r₂', String(r2), hexToRgba(muted(isDark), 0.4), isDark, hoverRegions);
 
   arrowDown(ctx, col2X - 130, ROW_Y + BOX_H / 2, col2X - 130, PRODUCT_Y - BOX_H / 2, arrowColor);
   arrowDown(ctx, col2X, ROW_Y + BOX_H / 2, col2X, PRODUCT_Y - BOX_H / 2, arrowColor);
 
-  drawBox(ctx, col2X - 130, PRODUCT_Y, `g^${v2}`, `≡ ${gv2}`, hexToRgba(accent(isDark), 0.3), isDark);
-  drawBox(ctx, col2X, PRODUCT_Y, `h^${r2}`, `≡ ${hr2}`, hexToRgba(muted(isDark), 0.3), isDark);
+  drawBox(ctx, col2X - 130, PRODUCT_Y, `g^${v2}`, `≡ ${gv2}`, hexToRgba(accent(isDark), 0.3), isDark, hoverRegions);
+  drawBox(ctx, col2X, PRODUCT_Y, `h^${r2}`, `≡ ${hr2}`, hexToRgba(muted(isDark), 0.3), isDark, hoverRegions);
 
   const midC2 = col2X - 65;
   const midC2Y = midC1Y;
   drawElbow(ctx, col2X - 130 + BOX_W / 2, PRODUCT_Y + BOX_H / 2, midC2, midC2Y + 18, arrowColor);
   drawElbow(ctx, col2X - BOX_W / 2, PRODUCT_Y + BOX_H / 2, midC2, midC2Y + 18, arrowColor);
   arrowDown(ctx, midC2, midC2Y + 20, midC2, COMMIT_Y - BOX_H / 2, arrowColor);
-  drawBox(ctx, midC2, COMMIT_Y, `C₂ = ${gv2}·${hr2} mod p`, String(result.c2.commitment), hexToRgba(accent(isDark), 0.45), isDark);
+  drawBox(ctx, midC2, COMMIT_Y, `C₂ = ${gv2}·${hr2} mod p`, String(result.c2.commitment), hexToRgba(accent(isDark), 0.45), isDark, hoverRegions);
 
   // ── Product section ────────────────────────────────────────────────────────
   const productY = COMMIT_Y + BOX_H / 2 + 60;
@@ -313,6 +393,7 @@ function renderHomomorphic(
     String(result.combined),
     hexToRgba(validColor, isDark ? 0.7 : 0.6),
     isDark,
+    hoverRegions,
   );
 
   // ── Expected direct commit ────────────────────────────────────────────────
@@ -337,6 +418,7 @@ function renderHomomorphic(
     String(expectedC),
     hexToRgba(validColor, isDark ? 0.5 : 0.4),
     isDark,
+    hoverRegions,
   );
 
   // ── Match badge ───────────────────────────────────────────────────────────
@@ -420,9 +502,12 @@ export function renderPedersen(
   showBlinding: boolean,
   theme: 'dark' | 'light',
   isDraft: boolean = false,
+  mouseX?: number,
+  mouseY?: number,
 ): void {
   const { width, height } = frame;
   const isDark = theme === 'dark';
+  const hoverRegions: HoverRegion[] = [];
 
   // ── Background ─────────────────────────────────────────────────────────────
   const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -444,8 +529,17 @@ export function renderPedersen(
 
   // ── Dispatch to sub-renderer ───────────────────────────────────────────────
   if (homomorphic) {
-    renderHomomorphic(ctx, frame, params, homomorphic, isDark);
+    renderHomomorphic(ctx, frame, params, homomorphic, isDark, hoverRegions);
   } else {
-    renderSingleCommitment(ctx, frame, params, commitment, showBlinding, isDark, isDraft);
+    renderSingleCommitment(ctx, frame, params, commitment, showBlinding, isDark, isDraft, hoverRegions);
+  }
+
+  if (typeof mouseX === 'number' && typeof mouseY === 'number') {
+    const hovered = hoverRegions.find((region) =>
+      mouseX >= region.x && mouseX <= region.x + region.w && mouseY >= region.y && mouseY <= region.y + region.h
+    );
+    if (hovered) {
+      drawTooltip(ctx, width, height, hovered, isDark);
+    }
   }
 }

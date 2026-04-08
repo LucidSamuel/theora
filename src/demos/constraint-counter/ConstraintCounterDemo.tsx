@@ -10,6 +10,8 @@ import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { mergeCanvasHandlers } from '@/hooks/useMergedHandlers';
 import { useTheme } from '@/hooks/useTheme';
 import { useInfoPanel } from '@/components/layout/InfoContext';
+import { useAttack } from '@/modes/attack/AttackProvider';
+import { useAttackActions } from '@/modes/attack/useAttackActions';
 import { copyToClipboard } from '@/lib/clipboard';
 import { exportCanvasPng } from '@/lib/canvas';
 import { fitCameraToBounds } from '@/lib/cameraFit';
@@ -24,6 +26,7 @@ import {
   getSavingsRatio,
 } from './logic';
 import { renderConstraintCounter } from './renderer';
+import type { BarEntry } from './renderer';
 
 interface UrlState {
   depth?: number;
@@ -32,6 +35,7 @@ interface UrlState {
 export function ConstraintCounterDemo(): JSX.Element {
   const { theme } = useTheme();
   const { setEntry } = useInfoPanel();
+  const { currentDemoAction } = useAttack();
   const camera = useCanvasCamera();
   const interaction = useCanvasInteraction();
   const mergedHandlers = mergeCanvasHandlers(interaction, camera);
@@ -58,85 +62,76 @@ export function ConstraintCounterDemo(): JSX.Element {
   }, [buildShareState]);
 
   const scenario = useMemo(() => buildConstraintScenario(depth), [depth]);
-  const [pedersen, poseidon] = getConstraintProfiles();
-  const pedersenPathR1cs = getPathConstraintCost(pedersen!, scenario.depth, 'r1cs');
-  const poseidonPathR1cs = getPathConstraintCost(poseidon!, scenario.depth, 'r1cs');
-  const pedersenPathBootle = getPathConstraintCost(pedersen!, scenario.depth, 'bootle16');
-  const poseidonPathBootle = getPathConstraintCost(poseidon!, scenario.depth, 'bootle16');
-  const pedersenTreeR1cs = getFullTreeConstraintCost(pedersen!, scenario.internalHashes, 'r1cs');
-  const poseidonTreeR1cs = getFullTreeConstraintCost(poseidon!, scenario.internalHashes, 'r1cs');
-  const pedersenTreeBootle = getFullTreeConstraintCost(pedersen!, scenario.internalHashes, 'bootle16');
-  const poseidonTreeBootle = getFullTreeConstraintCost(poseidon!, scenario.internalHashes, 'bootle16');
+  const profiles = getConstraintProfiles();
+
+  useAttackActions(currentDemoAction, useMemo(() => ({
+    SET_DEPTH: (payload) => {
+      if (typeof payload === 'number' && Number.isFinite(payload)) {
+        setDepth(Math.max(2, Math.min(32, payload)));
+      }
+    },
+  }), [currentDemoAction]));
+
+  // Compute costs for all 3 profiles
+  const costs = useMemo(() => {
+    return profiles.map((profile) => ({
+      profile,
+      pathR1cs: getPathConstraintCost(profile, scenario.depth, 'r1cs'),
+      pathBootle: getPathConstraintCost(profile, scenario.depth, 'bootle16'),
+      treeR1cs: getFullTreeConstraintCost(profile, scenario.internalHashes, 'r1cs'),
+      treeBootle: getFullTreeConstraintCost(profile, scenario.internalHashes, 'bootle16'),
+    }));
+  }, [profiles, scenario]);
 
   useEffect(() => {
     setEntry('constraint-counter', {
       title: `Depth-${scenario.depth} Merkle cost comparison`,
-      body: `Poseidon keeps both R1CS and Bootle16 counts dramatically below Pedersen. On a depth-${scenario.depth} path the savings are already large; over an entire tree build they compound into orders of magnitude fewer constraints.`,
-      nextSteps: ['Increase the tree depth', 'Compare path cost against full-tree cost', 'Use this to explain why Poseidon replaced Pedersen in zk-heavy Merkle paths'],
+      body: `Three hash functions compared: SHA-256 (~25k R1CS/hash) is impractical in circuits. Pedersen (~850) is viable but expensive. Poseidon (~63) uses native field operations for dramatic savings. At depth ${scenario.depth}, the difference compounds across ${formatConstraintCount(scenario.internalHashes)} internal hashes.`,
+      nextSteps: ['Drag the depth slider to see costs scale', 'Compare the log-scale bars at depth 32', 'Note that SHA-256 is ~400x more expensive than Poseidon'],
     });
-  }, [scenario.depth, setEntry]);
+  }, [scenario.depth, scenario.internalHashes, setEntry]);
+
+  const perHashEntries: BarEntry[] = useMemo(() => costs.map((c) => ({
+    profile: c.profile,
+    r1cs: String(c.profile.r1csPerHash),
+    bootle16: String(c.profile.bootle16PerHash),
+    weight: c.profile.r1csPerHash,
+  })), [costs]);
+
+  const pathEntries: BarEntry[] = useMemo(() => costs.map((c) => ({
+    profile: c.profile,
+    r1cs: formatConstraintCount(c.pathR1cs),
+    bootle16: formatConstraintCount(c.pathBootle),
+    weight: Number(c.pathR1cs),
+  })), [costs]);
+
+  const treeEntries: BarEntry[] = useMemo(() => costs.map((c) => ({
+    profile: c.profile,
+    r1cs: formatConstraintCount(c.treeR1cs),
+    bootle16: formatConstraintCount(c.treeBootle),
+    weight: Number(c.treeR1cs),
+  })), [costs]);
 
   const handleDraw = useCallback((ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
+    const worldMouse = camera.toWorld(interaction.mouseX, interaction.mouseY);
     renderConstraintCounter(
       ctx,
       frame,
-      scenario.profiles,
-      scenario.profiles.map((profile) => ({
-        profile,
-        r1cs: String(profile.r1csPerHash),
-        bootle16: String(profile.bootle16PerHash),
-      })),
-      [
-        {
-          profile: pedersen!,
-          r1cs: formatConstraintCount(pedersenPathR1cs),
-          bootle16: formatConstraintCount(pedersenPathBootle),
-          pathWeight: Number(pedersenPathR1cs),
-        },
-        {
-          profile: poseidon!,
-          r1cs: formatConstraintCount(poseidonPathR1cs),
-          bootle16: formatConstraintCount(poseidonPathBootle),
-          pathWeight: Number(poseidonPathR1cs),
-        },
-      ],
-      [
-        {
-          profile: pedersen!,
-          r1cs: formatConstraintCount(pedersenTreeR1cs),
-          bootle16: formatConstraintCount(pedersenTreeBootle),
-          treeWeight: Number(pedersenTreeR1cs),
-        },
-        {
-          profile: poseidon!,
-          r1cs: formatConstraintCount(poseidonTreeR1cs),
-          bootle16: formatConstraintCount(poseidonTreeBootle),
-          treeWeight: Number(poseidonTreeR1cs),
-        },
-      ],
+      profiles,
+      perHashEntries,
+      pathEntries,
+      treeEntries,
       scenario.depth,
-      theme
+      theme,
+      worldMouse.x,
+      worldMouse.y,
     );
-  }, [
-    pedersen,
-    pedersenPathBootle,
-    pedersenPathR1cs,
-    pedersenTreeBootle,
-    pedersenTreeR1cs,
-    poseidon,
-    poseidonPathBootle,
-    poseidonPathR1cs,
-    poseidonTreeBootle,
-    poseidonTreeR1cs,
-    scenario.depth,
-    scenario.profiles,
-    theme,
-  ]);
+  }, [camera, interaction.mouseX, interaction.mouseY, pathEntries, perHashEntries, profiles, scenario.depth, theme, treeEntries]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
-    fitCameraToBounds(camera, canvas, { minX: 20, minY: 20, maxX: 860, maxY: 760 }, options?.instant ? { durationMs: 0 } : undefined);
+    fitCameraToBounds(camera, canvas, { minX: 20, minY: 20, maxX: 860, maxY: 820 }, options?.instant ? { durationMs: 0 } : undefined);
   }, [camera]);
 
   const handleCopyShareUrl = useCallback(() => {
@@ -167,44 +162,29 @@ export function ConstraintCounterDemo(): JSX.Element {
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-constraint-counter.png', showDownloadToast);
   }, [camera, handleFitToView]);
 
-
   const handleAuditJson = useCallback(() => {
-    copyToClipboard(JSON.stringify({
-      demo: 'constraint-counter',
-      depth: scenario.depth,
-      pedersen: {
-        perHash: pedersen,
-        pathR1cs: pedersenPathR1cs.toString(),
-        pathBootle16: pedersenPathBootle.toString(),
-        treeR1cs: pedersenTreeR1cs.toString(),
-        treeBootle16: pedersenTreeBootle.toString(),
-      },
-      poseidon: {
-        perHash: poseidon,
-        pathR1cs: poseidonPathR1cs.toString(),
-        pathBootle16: poseidonPathBootle.toString(),
-        treeR1cs: poseidonTreeR1cs.toString(),
-        treeBootle16: poseidonTreeBootle.toString(),
-      },
-    }, null, 2));
+    const audit: Record<string, unknown> = { demo: 'constraint-counter', depth: scenario.depth };
+    for (const c of costs) {
+      audit[c.profile.name.toLowerCase().replace('-', '')] = {
+        perHash: { r1cs: c.profile.r1csPerHash, bootle16: c.profile.bootle16PerHash },
+        pathR1cs: c.pathR1cs.toString(),
+        pathBootle16: c.pathBootle.toString(),
+        treeR1cs: c.treeR1cs.toString(),
+        treeBootle16: c.treeBootle.toString(),
+      };
+    }
+    copyToClipboard(JSON.stringify(audit, null, 2));
     showToast('Audit JSON copied');
-  }, [
-    pedersen,
-    pedersenPathBootle,
-    pedersenPathR1cs,
-    pedersenTreeBootle,
-    pedersenTreeR1cs,
-    poseidon,
-    poseidonPathBootle,
-    poseidonPathR1cs,
-    poseidonTreeBootle,
-    poseidonTreeR1cs,
-    scenario.depth,
-  ]);
+  }, [costs, scenario.depth]);
+
+  // Savings ratios: Pedersen vs Poseidon (R1CS path) and SHA-256 vs Poseidon (R1CS path)
+  const pedersenCost = costs[1]!;
+  const poseidonCost = costs[2]!;
+  const sha256Cost = costs[0]!;
 
   return (
     <DemoLayout onEmbedFitToView={handleFitToView}>
-      <DemoSidebar width="compact">
+      <DemoSidebar width="compact" resetScrollKey={`${depth}`}>
         <ControlGroup label="Merkle Depth">
           <SliderControl label="Tree depth" value={depth} min={2} max={32} step={1} onChange={setDepth} editable />
           <ControlCard>
@@ -217,6 +197,15 @@ export function ConstraintCounterDemo(): JSX.Element {
             <div className="control-value">{formatConstraintCount(scenario.internalHashes)}</div>
             <div className="control-caption">Internal hashes across the whole tree</div>
           </ControlCard>
+        </ControlGroup>
+
+        <ControlGroup label="Constraint Systems" ariaLabel="Toggle constraint systems info">
+          <ControlNote>
+            <strong>R1CS</strong> (Rank-1 Constraint System) is the standard arithmetic circuit format used by Groth16, Marlin, and most SNARKs.
+          </ControlNote>
+          <ControlNote>
+            <strong>Bootle16</strong> is an inner-product argument system (Bootle et al. 2016) that achieves logarithmic proof size — the basis for Bulletproofs-style protocols.
+          </ControlNote>
         </ControlGroup>
 
         <ShareSaveDropdown
@@ -235,30 +224,38 @@ export function ConstraintCounterDemo(): JSX.Element {
       </DemoCanvasArea>
 
       <DemoAside width="narrow">
-        <ControlGroup label="Savings">
+        <ControlGroup label="Savings (R1CS)">
           <ControlCard>
-            <div className="control-kicker">Path savings</div>
+            <div className="control-kicker">Pedersen → Poseidon</div>
             <div className="control-value" style={{ color: '#38bdf8' }}>
-              {getSavingsRatio(pedersenPathR1cs, poseidonPathR1cs).toFixed(1)}x
+              {getSavingsRatio(pedersenCost.pathR1cs, poseidonCost.pathR1cs).toFixed(1)}x
             </div>
-            <div className="control-caption">R1CS reduction on the Merkle path</div>
+            <div className="control-caption">Path reduction</div>
           </ControlCard>
           <ControlCard>
-            <div className="control-kicker">Tree-build savings</div>
+            <div className="control-kicker">SHA-256 → Poseidon</div>
             <div className="control-value" style={{ color: '#38bdf8' }}>
-              {getSavingsRatio(pedersenTreeBootle, poseidonTreeBootle).toFixed(1)}x
+              {getSavingsRatio(sha256Cost.pathR1cs, poseidonCost.pathR1cs).toFixed(1)}x
             </div>
-            <div className="control-caption">Bootle16 reduction over the full tree</div>
+            <div className="control-caption">Path reduction</div>
+          </ControlCard>
+          <ControlCard>
+            <div className="control-kicker">Full-tree savings</div>
+            <div className="control-value" style={{ color: '#38bdf8' }}>
+              {getSavingsRatio(sha256Cost.treeR1cs, poseidonCost.treeR1cs).toFixed(1)}x
+            </div>
+            <div className="control-caption">SHA-256 vs Poseidon over whole tree</div>
           </ControlCard>
         </ControlGroup>
 
         <ControlNote>
-          Pedersen is a good commitment, but it is a poor Merkle hash inside zk circuits.
-          Poseidon keeps the same two-input Merkle structure while dramatically reducing constraint count, which compounds at every tree level.
+          SHA-256 decomposes bitwise ops (XOR, rotate, shift) into ~25,000 R1CS constraints per hash.
+          Pedersen uses ~256 fixed-base scalar multiplications (~850).
+          Poseidon operates natively over the proof field (~63).
         </ControlNote>
       </DemoAside>
 
-      <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Pedersen vs Poseidon" />
+      <EmbedModal isOpen={embedOpen} onClose={() => setEmbedOpen(false)} embedUrl={embedUrl} demoName="Pedersen vs Poseidon vs SHA-256" />
     </DemoLayout>
   );
 }

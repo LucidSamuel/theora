@@ -331,8 +331,9 @@ export function PipelineDemo() {
       if (pos.x + pos.w > maxX) maxX = pos.x + pos.w;
       if (pos.y + pos.h > maxY) maxY = pos.y + pos.h;
     }
-    // Include the detail panel (x=40, width=canvasWidth-80, bottom ≈ DETAIL_TOP+220)
+    // Include title area (y≈16) and detail panel (bottom ≈ DETAIL_TOP+220)
     minX = Math.min(minX, 40);
+    minY = Math.min(minY, 16);
     maxX = Math.max(maxX, cx * 2 - 40);
     maxY = Math.max(maxY, 528);
     fitCameraToBounds(camera, canvas, { minX, minY, maxX, maxY }, options?.instant ? { durationMs: 0 } : undefined);
