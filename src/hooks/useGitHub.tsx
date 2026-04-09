@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { GitHubUser } from '@/lib/githubImport';
 import { fetchGitHubSession, logoutGitHubSession, startGitHubOAuth as startGitHubOAuthFlow } from '@/lib/githubApi';
 import { showToast } from '@/lib/toast';
+import { trackGitHubConnected } from '@/lib/analytics';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -113,6 +114,7 @@ export function GitHubProvider({ children }: { children: ReactNode }) {
           setStatus('connected');
           setError(null);
           if (connected) {
+            trackGitHubConnected();
             showToast(`Connected as ${session.user.login}`);
           }
           return;

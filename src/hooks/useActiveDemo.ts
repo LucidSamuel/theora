@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { DemoId } from '@/types';
 import { isDemoId } from '@/types';
 import { getSearchParam, getHashState } from '@/lib/urlState';
+import { trackDemoOpened } from '@/lib/analytics';
 
 export interface ActiveDemoLocation {
   activeDemo: DemoId;
@@ -85,8 +86,8 @@ export function getActiveDemoLocation(): ActiveDemoLocation {
   }
 
   return {
-    activeDemo: 'merkle',
-    locationKey: 'merkle',
+    activeDemo: 'pipeline',
+    locationKey: 'pipeline',
   };
 }
 
@@ -119,6 +120,7 @@ export function useActiveDemo() {
     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
     window.history.replaceState(null, '', nextUrl);
 
+    trackDemoOpened(id, 'sidebar');
     window.location.hash = id;
     setLocation({
       activeDemo: id,

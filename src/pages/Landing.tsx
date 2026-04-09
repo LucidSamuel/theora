@@ -5,6 +5,7 @@ import { DemoIcon } from "@/components/shared/DemoIcon";
 import { DEMO_GROUPS } from "@/content/demoGroups";
 import { useTheme } from "@/hooks/useTheme";
 import { DEMOS, type DemoId } from "@/types";
+import { trackLandingCta } from "@/lib/analytics";
 
 const GITHUB_URL = "https://github.com/LucidSamuel/theora";
 const TWITTER_URL = "https://x.com/lucidzk";
@@ -305,7 +306,7 @@ export function Landing() {
               {theme === "dark" ? "☀" : "☾"}
             </button>
             <button
-              onClick={() => navigate(appHref)}
+              onClick={() => { trackLandingCta('launch_app_nav'); navigate(appHref); }}
               className="lp-btn-primary"
             >
               Launch App
@@ -369,7 +370,7 @@ export function Landing() {
 
             <div className="lp-hero-ctas">
               <button
-                onClick={() => navigate("/app#pipeline")}
+                onClick={() => { trackLandingCta('explore_demos'); navigate("/app#pipeline"); }}
                 className="lp-btn-primary lp-btn-lg"
               >
                 Explore Demos →
@@ -377,6 +378,7 @@ export function Landing() {
               <a
                 href="/research"
                 className="lp-btn-ghost lp-btn-lg"
+                onClick={() => trackLandingCta('explore_paper')}
               >
                 Explore a paper →
               </a>
@@ -650,7 +652,7 @@ export function Landing() {
                 included.
               </p>
               <div className="lp-callout-cta">
-                <a href="/research" className="lp-btn-primary lp-btn-lg">
+                <a href="/research" className="lp-btn-primary lp-btn-lg" onClick={() => trackLandingCta('research_workspace')}>
                   Open Research Workspace →
                 </a>
               </div>

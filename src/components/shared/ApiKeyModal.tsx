@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useModalA11y } from '@/hooks/useModalA11y';
 import { ApiKeyStore } from '@/modes/predict/ai/apiKeyStore';
 import type { KeyStoragePreference } from '@/modes/predict/types';
+import { trackApiKeySaved, trackApiKeyCleared } from '@/lib/analytics';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
     }
     ApiKeyStore.setPreference(pref);
     ApiKeyStore.set(key);
+    trackApiKeySaved(pref);
     setKey('');
     setError(null);
     setHasKey(true);
@@ -49,6 +51,7 @@ export function ApiKeyModal({ isOpen, onClose }: ApiKeyModalProps) {
 
   const handleClear = () => {
     ApiKeyStore.clear();
+    trackApiKeyCleared();
     setKey('');
     setError(null);
     setHasKey(false);

@@ -4,6 +4,7 @@ import { getScenarioForDemo, getScenarioById } from './scenarios';
 import { useMode } from '@/modes/ModeProvider';
 import type { DemoId } from '@/types';
 import { getSearchParam } from '@/lib/urlState';
+import { trackAttackStarted, trackAttackResult } from '@/lib/analytics';
 
 const initialState: AttackState = {
   scenario: null,
@@ -27,6 +28,7 @@ function attackReducer(state: AttackState, action: AttackAction): AttackState {
       if (!state.scenario) return state;
       const nextStep = state.currentStep + 1;
       if (nextStep >= state.scenario.steps.length) {
+        trackAttackResult(state.scenario.demoId, state.scenario.id, state.scenario.conclusion.succeeded);
         return { ...state, phase: 'result', succeeded: state.scenario.conclusion.succeeded };
       }
       return { ...state, phase: 'attempt', currentStep: nextStep };
@@ -40,6 +42,7 @@ function attackReducer(state: AttackState, action: AttackAction): AttackState {
       return { ...state, attempts: [...state.attempts, action.attempt] };
     case 'SHOW_RESULT':
       if (!state.scenario) return state;
+      trackAttackResult(state.scenario.demoId, state.scenario.id, state.scenario.conclusion.succeeded);
       return { ...state, phase: 'result', succeeded: state.scenario.conclusion.succeeded };
     case 'RESET':
       return initialState;
@@ -129,7 +132,10 @@ export function AttackProvider({ activeDemo, children }: { activeDemo: DemoId; c
         : null
   );
 
-  const startScenario = useCallback((s: AttackScenario) => dispatch({ type: 'START_SCENARIO', scenario: s }), []);
+  const startScenario = useCallback((s: AttackScenario) => {
+    trackAttackStarted(s.demoId, s.id);
+    dispatch({ type: 'START_SCENARIO', scenario: s });
+  }, []);
   const advanceStep = useCallback(() => dispatch({ type: 'ADVANCE_STEP' }), []);
   const goToStep = useCallback((step: number) => dispatch({ type: 'GO_TO_STEP', step }), []);
   const submitAttempt = useCallback((a: AttackAttempt) => dispatch({ type: 'SUBMIT_ATTEMPT', attempt: a }), []);

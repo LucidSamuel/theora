@@ -7,6 +7,7 @@ import { WalkthroughGallery } from './WalkthroughGallery';
 import { WalkthroughViewer } from './WalkthroughViewer';
 import { PaperUpload } from './PaperUpload';
 import type { Walkthrough } from './types';
+import { trackWalkthroughOpened } from '@/lib/analytics';
 import './ResearchPage.css';
 
 const GITHUB_URL = "https://github.com/LucidSamuel/theora";
@@ -59,6 +60,7 @@ export function ResearchPage() {
   const handleSelectWalkthrough = useCallback((id: string) => {
     const w = getCuratedWalkthrough(id);
     if (w) {
+      trackWalkthroughOpened(id, 'curated');
       setActiveWalkthrough(w);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -70,6 +72,7 @@ export function ResearchPage() {
   }, []);
 
   const handleAiWalkthrough = useCallback((w: Walkthrough) => {
+    trackWalkthroughOpened(w.id, 'ai');
     setActiveWalkthrough(w);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

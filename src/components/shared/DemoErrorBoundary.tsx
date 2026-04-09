@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { trackDemoError } from '@/lib/analytics';
 
 interface Props {
   children: ReactNode;
@@ -19,6 +20,10 @@ export class DemoErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    trackDemoError(this.props.demoName, error.message);
   }
 
   handleReset = () => {

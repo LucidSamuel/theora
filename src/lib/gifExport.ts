@@ -1,4 +1,5 @@
 import GIF from 'gif.js';
+import { trackGifCompleted } from '@/lib/analytics';
 
 const FPS = 15;
 const FRAME_INTERVAL = 1000 / FPS;
@@ -202,6 +203,7 @@ export function startGifRecording({
     gif.on('finished', (blob) => {
       overlay.destroy();
       camera.setPanZoom(prevPanX, prevPanY, prevZoom);
+      trackGifCompleted(filename.replace(/\.gif$/i, ''), framesCaptured);
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ModeId } from './types';
 import { isModeId } from './types';
 import { getSearchParam } from '@/lib/urlState';
+import { trackModeChanged } from '@/lib/analytics';
 
 function getModeFromUrl(): ModeId {
   const param = getSearchParam('mode');
@@ -13,7 +14,10 @@ export function useActiveMode() {
   const [mode, setModeState] = useState<ModeId>(getModeFromUrl);
 
   const setMode = useCallback((id: ModeId) => {
-    setModeState(id);
+    setModeState((prev) => {
+      if (prev !== id) trackModeChanged(prev, id, new URLSearchParams(window.location.search).get('embed') ?? (window.location.hash.replace('#', '') || 'unknown'));
+      return id;
+    });
     const params = new URLSearchParams(window.location.search);
     if (id === 'explore') {
       params.delete('mode');

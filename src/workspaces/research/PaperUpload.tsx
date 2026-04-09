@@ -4,6 +4,7 @@ import { ApiKeyModal } from '@/components/shared/ApiKeyModal';
 import { analyzePaper, fileToBase64 } from './paperAnalyzer';
 import type { Walkthrough } from './types';
 import { isPdfResponse, normalizePaperPdfUrl } from './urls';
+import { trackPaperAnalysis } from '@/lib/analytics';
 
 interface PaperUploadProps {
   onWalkthroughGenerated: (walkthrough: Walkthrough) => void;
@@ -89,8 +90,10 @@ export function PaperUpload({ onWalkthroughGenerated }: PaperUploadProps) {
 
       const result = await analyzePaper(base64, key);
       if (result.error) {
+        trackPaperAnalysis(file ? 'file' : 'eprint', false);
         setError(result.error);
       } else if (result.walkthrough) {
+        trackPaperAnalysis(file ? 'file' : 'eprint', true);
         onWalkthroughGenerated(result.walkthrough);
       }
     } catch (err) {

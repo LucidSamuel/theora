@@ -6,6 +6,7 @@ import { getCurrentExportEnvelope } from '@/lib/githubImport';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast } from '@/lib/toast';
 import type { DemoId } from '@/types';
+import { trackShare } from '@/lib/analytics';
 
 interface ShareSaveDropdownProps {
   demoId: DemoId;
@@ -103,6 +104,7 @@ export function ShareSaveDropdown({
       const trimmedName = saveName.trim();
       const result = await createGitHubSave(envelope, trimmedName || undefined);
       copyToClipboard(result.url);
+      trackShare(demoId, 'github_save');
       showToast('Saved to GitHub', `${trimmedName || 'Unlisted Gist'} created and URL copied`);
     } catch (err) {
       if (err instanceof GitHubSessionError) {
@@ -178,35 +180,35 @@ export function ShareSaveDropdown({
             <ActionRow
               icon={<Link size={14} />}
               label="Copy Link"
-              onClick={wrap(onCopyShareUrl)}
+              onClick={wrap(() => { trackShare(demoId, 'link'); onCopyShareUrl(); })}
             />
             <ActionRow
               icon={<Hash size={14} />}
               label="Hash URL"
-              onClick={wrap(onCopyHashUrl)}
+              onClick={wrap(() => { trackShare(demoId, 'hash'); onCopyHashUrl(); })}
             />
             <ActionRow
               icon={<Code size={14} />}
               label="Embed Code"
-              onClick={wrap(onCopyEmbed)}
+              onClick={wrap(() => { trackShare(demoId, 'embed'); onCopyEmbed(); })}
             />
             <ActionRow
               icon={<Image size={14} />}
               label="Export PNG"
-              onClick={wrap(onExportPng)}
+              onClick={wrap(() => { trackShare(demoId, 'png'); onExportPng(); })}
             />
             {onExportGif && (
               <ActionRow
                 icon={<Film size={14} />}
                 label="Export GIF"
-                onClick={wrap(onExportGif)}
+                onClick={wrap(() => { trackShare(demoId, 'gif'); onExportGif(); })}
               />
             )}
             {onCopyAudit && (
               <ActionRow
                 icon={<FileJson size={14} />}
                 label="Audit JSON"
-                onClick={wrap(onCopyAudit)}
+                onClick={wrap(() => { trackShare(demoId, 'audit'); onCopyAudit(); })}
               />
             )}
           </div>

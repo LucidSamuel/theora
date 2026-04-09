@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
 import { showToast } from '@/lib/toast';
+import { trackShare } from '@/lib/analytics';
 
 interface EmbedModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function EmbedModal({ isOpen, onClose, embedUrl, demoName }: EmbedModalPr
 
   const handleCopy = () => {
     copyToClipboard(iframeCode);
+    trackShare(demoName, 'embed');
     setCopied(true);
     showToast('Embed code copied', 'Paste into any HTML page to embed this visualization');
     setTimeout(() => setCopied(false), 2000);

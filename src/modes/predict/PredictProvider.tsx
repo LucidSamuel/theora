@@ -7,6 +7,7 @@ import { generateAiChallenge, AiClientError } from './ai/client';
 import { validateAiPrediction } from './ai/validator';
 import { useMode } from '@/modes/ModeProvider';
 import type { DemoId } from '@/types';
+import { trackPredictReveal, trackPredictAiGenerated } from '@/lib/analytics';
 
 const initialState: PredictState = {
   challenge: null,
@@ -160,6 +161,12 @@ export function PredictProvider({ activeDemo, children }: { activeDemo: DemoId; 
       state.challenge.demoId === activeDemo
     ) {
       recordAnswer(state.correct, state.challenge.category, state.challenge.difficulty);
+      trackPredictReveal(
+        activeDemo,
+        state.challenge.id,
+        state.correct,
+        state.challenge.id.startsWith('ai-') ? 'ai' : 'procedural',
+      );
       setSeenIds((prev) => [...prev, state.challenge!.id]);
     }
   }, [activeDemo, state.phase, state.correct, state.challenge, recordAnswer]);
@@ -203,6 +210,7 @@ export function PredictProvider({ activeDemo, children }: { activeDemo: DemoId; 
         explanation: prediction.explanation,
         category: prediction.targetMisconception ?? 'ai-generated',
       };
+      trackPredictAiGenerated(activeDemo, difficulty);
       dispatch({ type: 'START_CHALLENGE', challenge: aiChallenge });
     } catch (err) {
       if (err instanceof AiClientError) {
