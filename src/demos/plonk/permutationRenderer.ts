@@ -299,14 +299,36 @@ export function renderPermutation(
     return Math.max(0.02, Math.log(1 + Number(v)) / Math.log(1 + Number(maxVal)));
   };
 
+  // Find the first gate where the product diverges (num/den ratio != 1)
+  // This is the gate whose contribution broke the running product.
+  let divergenceStep = -1;
+  if (!result.satisfied) {
+    for (let si = 0; si < result.steps.length; si++) {
+      const step = result.steps[si]!;
+      // Check if this step's per-gate contribution is not identity
+      const isIdentity =
+        step.numerators.a === step.denominators.a &&
+        step.numerators.b === step.denominators.b &&
+        step.numerators.c === step.denominators.c;
+      if (!isIdentity && step.productAfter !== step.productBefore) {
+        // First step where product actually changes away from expected value
+        divergenceStep = si;
+        break;
+      }
+    }
+  }
+
   zEntries.forEach((entry, ei) => {
     const barY = startY + TABLE_HEADER_H + ei * (BAR_H + BAR_GAP);
     const isSelected = entry.stepIdx === selectedStep;
     const isFinal = ei === zEntries.length - 1;
+    const isDivergence = entry.stepIdx === divergenceStep;
 
-    // Determine color: final=1 → green, final≠1 → red, selected → accent, else neutral
+    // Determine color: divergence → amber, final=1 → green, final≠1 → red, selected → accent, else neutral
     let barColor: string;
-    if (isFinal) {
+    if (isDivergence) {
+      barColor = '#f59e0b'; // amber — highlight the exact gate that broke it
+    } else if (isFinal) {
       barColor = result.satisfied ? '#22c55e' : '#ef4444';
     } else if (isSelected) {
       barColor = '#818cf8';
@@ -347,6 +369,16 @@ export function renderPermutation(
     ctx.font = `${isFinal ? 'bold ' : ''}9px monospace`;
     ctx.textAlign = 'left';
     ctx.fillText(valText, barSectionX + BAR_LABEL_W + barW + 5, barY + BAR_H / 2);
+
+    // Divergence marker
+    if (isDivergence) {
+      const markerX = barSectionX + BAR_LABEL_W + BAR_MAX_W + 8;
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('\u25C0 diverges here', markerX, barY + BAR_H / 2);
+    }
   });
 
   // ── Verdict badge (Z(n) == 1 check) ─────────────────────────────────────────

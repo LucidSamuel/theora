@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { startGifRecording, type GifRecorder } from '@/lib/gifExport';
 import { AnimatedCanvas, type FrameInfo } from '@/components/shared/AnimatedCanvas';
 import { CanvasToolbar } from '@/components/shared/CanvasToolbar';
 import { DemoLayout, DemoSidebar, DemoCanvasArea } from '@/components/shared/DemoLayout';
@@ -132,6 +133,19 @@ export function PlonkDemo(): JSX.Element {
     { a: 3, b: 4, c: 12 },
     { a: 1, b: 0, c: 0 },
   ]);
+
+  // Auto-play state for GIF export (permutation divergence animation)
+  const [autoPlaying, setAutoPlaying] = useState(false);
+  const autoPlayingRef = useRef(false);
+  autoPlayingRef.current = autoPlaying;
+  const lastAutoStepRef = useRef(0);
+  const gifRecorderRef = useRef<GifRecorder | null>(null);
+
+  // Animation phases: 'valid' steps through gates with valid circuit,
+  // 'break' injects the broken wire, 'diverged' steps through with broken circuit,
+  // 'verdict' holds on final violated state before stopping
+  const autoPhaseRef = useRef<'valid' | 'break' | 'diverged' | 'verdict'>('valid');
+  const autoGateRef = useRef(0);
 
   // Restore URL state on mount
   useEffect(() => {
@@ -341,10 +355,75 @@ export function PlonkDemo(): JSX.Element {
     },
   }), [currentDemoAction, handleBreakCopyConstraint, loadAttackCircuit]));
 
+  // ── Auto-play animation (permutation divergence) ──────────────────────────────
+
+  // Animation sequence:
+  //   Phase 'valid':  step through each gate (0→n-1) with valid circuit, pause on verdict
+  //   Phase 'break':  break copy constraint, brief pause
+  //   Phase 'diverged': step through gates again showing Z diverge, end on violated verdict
+  const STEP_INTERVAL = 1.5; // seconds between steps
+  const VERDICT_PAUSE = 2.0; // seconds to hold on final verdict
+
+  // Stop GIF recording when auto-play ends
+  useEffect(() => {
+    if (!autoPlaying && gifRecorderRef.current) {
+      gifRecorderRef.current.stop();
+      gifRecorderRef.current = null;
+    }
+  }, [autoPlaying]);
+
   // ── Draw callback ─────────────────────────────────────────────────────────────
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, frame: FrameInfo) => {
+      // Auto-play: drive the permutation divergence animation from the draw loop
+      if (autoPlayingRef.current && activeTab === 'permutation') {
+        const elapsed = frame.time - lastAutoStepRef.current;
+        const n = circuit.gates.length;
+        const phase = autoPhaseRef.current;
+        const gate = autoGateRef.current;
+
+        if (phase === 'valid') {
+          if (elapsed > STEP_INTERVAL) {
+            lastAutoStepRef.current = frame.time;
+            if (gate < n - 1) {
+              // Step to next gate
+              autoGateRef.current = gate + 1;
+              setSelectedStep(gate + 1);
+            } else {
+              // Finished stepping through valid circuit — show verdict, then break
+              autoPhaseRef.current = 'break';
+              setSelectedStep(-1); // deselect to show verdict clearly
+            }
+          }
+        } else if (phase === 'break') {
+          if (elapsed > VERDICT_PAUSE) {
+            lastAutoStepRef.current = frame.time;
+            // Break the copy constraint
+            setCircuit((prev) => modifyWireValue(prev, 0, 'c', 99));
+            autoPhaseRef.current = 'diverged';
+            autoGateRef.current = 0;
+            setSelectedStep(0);
+          }
+        } else if (phase === 'diverged') {
+          if (elapsed > STEP_INTERVAL) {
+            lastAutoStepRef.current = frame.time;
+            if (gate < n - 1) {
+              autoGateRef.current = gate + 1;
+              setSelectedStep(gate + 1);
+            } else {
+              // Show final violated verdict
+              setSelectedStep(-1);
+              autoPhaseRef.current = 'verdict';
+            }
+          }
+        } else if (phase === 'verdict') {
+          if (elapsed > VERDICT_PAUSE) {
+            setAutoPlaying(false);
+          }
+        }
+      }
+
       if (activeTab === 'gates') {
         renderPlonk(ctx, frame, analysis, theme);
       } else if (activeTab === 'permutation') {
@@ -402,7 +481,6 @@ export function PlonkDemo(): JSX.Element {
     if (!canvas) return;
     exportCanvasPng(canvas, camera, handleFitToView, 'theora-plonk.png', showDownloadToast);
   };
-
 
   const handleCopyAuditSummary = () => {
     const payload = {
@@ -525,6 +603,48 @@ export function PlonkDemo(): JSX.Element {
   useEffect(() => {
     handleFitToView({ instant: true });
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── GIF export and auto-play handlers ─────────────────────────────────────────
+
+  const resetForDivergenceAnimation = useCallback(() => {
+    setCircuit(buildDefaultCircuit());
+    setActiveTab('permutation');
+    setBeta(2n);
+    setGamma(3n);
+    setSelectedStep(0);
+    autoPhaseRef.current = 'valid';
+    autoGateRef.current = 0;
+    lastAutoStepRef.current = 0;
+  }, []);
+
+  const handleExportGif = useCallback(() => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+
+    resetForDivergenceAnimation();
+
+    // Defer recording start so React flushes the state updates and
+    // handleFitToView sees the permutation tab bounds.
+    requestAnimationFrame(() => {
+      gifRecorderRef.current = startGifRecording({
+        canvas,
+        camera,
+        fitToView: handleFitToView,
+        filename: 'theora-plonk-permutation.gif',
+        onDone: () => showDownloadToast('theora-plonk-permutation.gif'),
+      });
+      setAutoPlaying(true);
+    });
+  }, [camera, handleFitToView, resetForDivergenceAnimation]);
+
+  const handleToggleAutoPlay = useCallback(() => {
+    if (autoPlaying) {
+      setAutoPlaying(false);
+      return;
+    }
+    resetForDivergenceAnimation();
+    setAutoPlaying(true);
+  }, [autoPlaying, resetForDivergenceAnimation]);
 
   // ── Tab styles removed — now handled by .demo-tab-bar / .demo-tab-btn CSS classes
 
@@ -740,6 +860,10 @@ export function PlonkDemo(): JSX.Element {
             </ControlGroup>
 
             <ControlGroup label="Actions">
+              <ButtonControl
+                label={autoPlaying ? 'Stop animation' : 'Animate divergence'}
+                onClick={handleToggleAutoPlay}
+              />
               <ButtonControl label="Reset to Defaults" onClick={handleReset} variant="secondary" />
               <ButtonControl
                 label="Break a copy constraint"
@@ -1062,6 +1186,7 @@ export function PlonkDemo(): JSX.Element {
           onCopyHashUrl={handleCopyHashUrl}
           onCopyEmbed={handleCopyEmbed}
           onExportPng={handleExportPng}
+          onExportGif={handleExportGif}
           onCopyAudit={handleCopyAuditSummary}
         />
       </DemoSidebar>
