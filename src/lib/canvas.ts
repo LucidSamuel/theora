@@ -119,6 +119,48 @@ export function drawGrid(
   }
 }
 
+export const LANDSCAPE_EXPORT_WIDTH = 800;
+export const LANDSCAPE_EXPORT_HEIGHT = 450;
+
+interface ExportSurface {
+  width: number;
+  height: number;
+  restore: () => void;
+}
+
+/**
+ * Temporarily forces the live canvas onto a stable 16:9 landscape surface so
+ * export flows can fit content against the exported frame rather than the
+ * current in-app panel layout.
+ */
+export function prepareLandscapeExportCanvas(
+  canvas: HTMLCanvasElement,
+  width = LANDSCAPE_EXPORT_WIDTH,
+  height = LANDSCAPE_EXPORT_HEIGHT,
+): ExportSurface {
+  const dpr = window.devicePixelRatio || 1;
+  const previousWidth = canvas.width;
+  const previousHeight = canvas.height;
+  const previousStyleWidth = canvas.style.width;
+  const previousStyleHeight = canvas.style.height;
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  return {
+    width,
+    height,
+    restore() {
+      canvas.width = previousWidth;
+      canvas.height = previousHeight;
+      canvas.style.width = previousStyleWidth;
+      canvas.style.height = previousStyleHeight;
+    },
+  };
+}
+
 /**
  * Export a canvas as a PNG with fit-to-view before capture.
  * Saves camera state, fits instantly for capture, waits one frame, captures, then restores.
@@ -133,18 +175,22 @@ export function exportCanvasPng(
   const prevPanX = camera.panX;
   const prevPanY = camera.panY;
   const prevZoom = camera.zoom;
+  const exportSurface = prepareLandscapeExportCanvas(canvas);
 
   fitToView({ instant: true });
 
   requestAnimationFrame(() => {
-    const data = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = filename;
-    a.click();
-    toast(filename);
-
-    camera.setPanZoom(prevPanX, prevPanY, prevZoom);
+    try {
+      const data = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = data;
+      a.download = filename;
+      a.click();
+      toast(filename);
+    } finally {
+      exportSurface.restore();
+      camera.setPanZoom(prevPanX, prevPanY, prevZoom);
+    }
   });
 }
 

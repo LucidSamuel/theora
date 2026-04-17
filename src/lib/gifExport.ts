@@ -1,5 +1,6 @@
 import GIF from 'gif.js';
 import { trackGifCompleted } from '@/lib/analytics';
+import { prepareLandscapeExportCanvas } from '@/lib/canvas';
 
 const FPS = 15;
 const FRAME_INTERVAL = 1000 / FPS;
@@ -158,6 +159,7 @@ export function startGifRecording({
   const prevPanX = camera.panX;
   const prevPanY = camera.panY;
   const prevZoom = camera.zoom;
+  const exportSurface = prepareLandscapeExportCanvas(canvas);
 
   fitToView({ instant: true });
 
@@ -191,6 +193,7 @@ export function startGifRecording({
 
     if (framesCaptured === 0) {
       overlay.destroy();
+      exportSurface.restore();
       camera.setPanZoom(prevPanX, prevPanY, prevZoom);
       return;
     }
@@ -202,6 +205,7 @@ export function startGifRecording({
 
     gif.on('finished', (blob) => {
       overlay.destroy();
+      exportSurface.restore();
       camera.setPanZoom(prevPanX, prevPanY, prevZoom);
       trackGifCompleted(filename.replace(/\.gif$/i, ''), framesCaptured);
 
