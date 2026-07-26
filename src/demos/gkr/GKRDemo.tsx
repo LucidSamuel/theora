@@ -421,6 +421,11 @@ export function GKRDemo(): JSX.Element {
         'Step through to watch each sumcheck',
         'Change input values and re-prove',
       ],
+      securityState: {
+        fieldSize: state.circuit.fieldSize,
+        degree: 1,
+        numLayers: state.circuit.numLayers - 1,
+      },
     });
   }, [state.circuit, state.currentStep, state.inputValues.length, state.phase, state.proof, state.verification, setEntry]);
 

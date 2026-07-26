@@ -400,8 +400,13 @@ export function FRIDemo(): JSX.Element {
         'Inspect query consistency checks',
         'Try different domain sizes',
       ],
+      securityState: {
+        fieldSize: state.fieldSize,
+        degree: state.degree - 1,
+        numQueries: state.queryIndices.length,
+      },
     });
-  }, [state.accepted, state.commitPhase?.layers.length, state.degree, state.phase, setEntry]);
+  }, [state.accepted, state.commitPhase?.layers.length, state.degree, state.fieldSize, state.phase, state.queryIndices.length, setEntry]);
 
   // ── Share handlers ─────────────────────────────────────────────────
   const handleCopyShareUrl = () => {

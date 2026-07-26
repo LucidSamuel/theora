@@ -1,0 +1,192 @@
+/*
+ * theora — design tokens (Tailwind 4 theme layer)
+ *
+ * Single source of truth for spacing, type, radius, and color in the
+ * dashboard shell, panels, and shared primitives. Components reference
+ * these via var(--…). Dark is the default theme; [data-theme="light"]
+ * overrides the color tokens only.
+ *
+ * Scales:
+ *   spacing  4px grid, 6 steps
+ *   type     5 sizes, 3 weights
+ *   radius   3 steps + pill
+ *   surfaces 3 elevation levels — background + 1px border, no shadow stacking
+ *   neutrals one gray ramp, 6 steps
+ *   status   4 semantic colors, flat (base / bg / border)
+ */
+
+@theme {
+  /* ---- spacing (4px grid) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* ---- type ---- */
+  --text-micro: 11px;   /* badges, timestamps, overlines */
+  --text-label: 12px;   /* control labels, secondary text */
+  --text-body: 13px;    /* default UI body */
+  --text-title: 16px;   /* panel / modal titles */
+  --text-display: 20px; /* page-level headings */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* ---- radius ---- */
+  --radius-sm: 6px;   /* buttons, inputs, chips */
+  --radius-md: 8px;   /* cards, panels, dropdowns */
+  --radius-lg: 12px;  /* modals, sheets */
+  --radius-pill: 9999px;
+
+  /* ---- neutrals (one ramp, dark values; light overrides below) ---- */
+  --gray-950: #09090b;
+  --gray-900: #111113;
+  --gray-800: #19191d;
+  --gray-600: #52525b;
+  --gray-400: #a1a1aa;
+  --gray-50: #fafafa;
+}
+
+:root {
+  /* ---- surfaces: 3 elevations, distinguished by bg + 1px border ---- */
+  --surface-0: var(--gray-950);            /* app canvas */
+  --surface-1: var(--gray-900);            /* panels, cards */
+  --surface-2: var(--gray-800);            /* raised: popovers, toolbars, hover-fill */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* ---- text ---- */
+  --text-strong: var(--gray-50);
+  --text-body: var(--gray-400);
+  --text-faint: var(--gray-600);
+
+  /* ---- status: flat semantic color (replaces semantic gradients) ---- */
+  --status-success: #22c55e;
+  --status-success-bg: rgba(34, 197, 94, 0.12);
+  --status-success-border: rgba(34, 197, 94, 0.3);
+  --status-error: #ef4444;
+  --status-error-bg: rgba(239, 68, 68, 0.12);
+  --status-error-border: rgba(239, 68, 68, 0.3);
+  --status-warning: #f59e0b;
+  --status-warning-bg: rgba(245, 158, 11, 0.12);
+  --status-warning-border: rgba(245, 158, 11, 0.3);
+  --status-info: #3b82f6;
+  --status-info-bg: rgba(59, 130, 246, 0.12);
+  --status-info-border: rgba(59, 130, 246, 0.3);
+
+  /* ---- overlays & focus ---- */
+  --overlay-bg: rgba(0, 0, 0, 0.48);
+  --shadow-overlay: 0 8px 28px rgba(0, 0, 0, 0.4); /* modals/sheets ONLY — the single permitted elevation shadow */
+  --focus-ring: rgba(255, 255, 255, 0.2);
+
+  /* ---- fonts (unchanged) ---- */
+  --font-display: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  color-scheme: dark;
+
+  /* ================================================================
+   * Semantic aliases — map pre-existing var names onto the tokens so
+   * untouched CSS (landing lp-*, demo-*, out-of-scope files) keeps
+   * resolving unchanged. These are permanent, not a migration shim:
+   * src/demos/** and landing CSS reference them directly.
+   * ================================================================ */
+  --bg-primary: var(--surface-0);
+  --bg-secondary: var(--surface-1);
+  --bg-tertiary: var(--surface-2);
+  --border: var(--border-subtle);
+  --text-primary: var(--text-strong);
+  --text-secondary: var(--text-body);
+  --text-muted: var(--text-faint);
+  --accent: var(--text-strong);
+
+  /* legacy status family -> merged status tokens */
+  --color-success: var(--status-success);
+  --color-success-bg: var(--status-success-bg);
+  --color-success-border: var(--status-success-border);
+  --color-error: var(--status-error);
+  --color-error-bg: var(--status-error-bg);
+  --color-error-border: var(--status-error-border);
+  --color-warning: var(--status-warning);
+  --color-warning-bg: var(--status-warning-bg);
+  --color-warning-border: var(--status-warning-border);
+  --color-info: var(--status-info);
+  --color-info-bg: var(--status-info-bg);
+  --color-info-border: var(--status-info-border);
+
+  /* demo accent colors (referenced by src/types/index.ts demo metadata) */
+  --merkle: var(--gray-50);
+  --accumulator: var(--gray-400);
+  --polynomial: #d4d4d8;
+  --recursive: #71717a;
+
+  --button-bg: rgba(255, 255, 255, 0.05);
+  --button-bg-strong: rgba(255, 255, 255, 0.08);
+  --button-border: rgba(255, 255, 255, 0.1);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --toolbar-bg: rgba(9, 9, 11, 0.75);
+  --surface-element: rgba(12, 12, 14, 0.9);
+  --surface-element-border: rgba(255, 255, 255, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.025);
+  --grid-line-strong: rgba(255, 255, 255, 0.04);
+
+  /* legacy spacing names -> 6-step scale (nearest step) */
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-2);
+  --space-md: var(--space-3);
+  --space-lg: var(--space-4);
+  --space-xl: var(--space-4);
+  --space-2xl: var(--space-5);
+  --space-3xl: var(--space-6);
+  --space-4xl: 48px;
+  --space-5xl: 64px;
+}
+
+[data-theme="light"] {
+  --gray-950: #ffffff;
+  --gray-900: #fafafa;
+  --gray-800: #f4f4f5;
+  --gray-600: #a1a1aa;
+  --gray-400: #52525b;
+  --gray-50: #09090b;
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  --status-success: #16a34a;
+  --status-success-bg: rgba(22, 163, 74, 0.1);
+  --status-success-border: rgba(22, 163, 74, 0.3);
+  --status-error: #dc2626;
+  --status-error-bg: rgba(220, 38, 38, 0.1);
+  --status-error-border: rgba(220, 38, 38, 0.3);
+  --status-warning: #d97706;
+  --status-warning-bg: rgba(217, 119, 6, 0.1);
+  --status-warning-border: rgba(217, 119, 6, 0.3);
+  --status-info: #2563eb;
+  --status-info-bg: rgba(37, 99, 235, 0.1);
+  --status-info-border: rgba(37, 99, 235, 0.3);
+
+  --overlay-bg: rgba(0, 0, 0, 0.48);
+  --shadow-overlay: 0 10px 26px rgba(0, 0, 0, 0.1);
+  --focus-ring: rgba(0, 0, 0, 0.12);
+
+  color-scheme: light;
+
+  /* demo accents, light values */
+  --polynomial: #3f3f46;
+
+  /* aliases that carry raw alphas must be re-inverted for light */
+  --button-bg: rgba(0, 0, 0, 0.03);
+  --button-bg-strong: rgba(0, 0, 0, 0.06);
+  --button-border: rgba(0, 0, 0, 0.1);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --toolbar-bg: rgba(255, 255, 255, 0.75);
+  --surface-element: rgba(255, 255, 255, 0.9);
+  --surface-element-border: rgba(0, 0, 0, 0.08);
+  --grid-line: rgba(0, 0, 0, 0.03);
+  --grid-line-strong: rgba(0, 0, 0, 0.06);
+}

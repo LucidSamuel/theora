@@ -435,6 +435,11 @@ export function MLEDemo(): JSX.Element {
         'Use partial evaluation to see dimension reduction',
         'Compare the eq-basis weights at different points',
       ],
+      securityState: {
+        fieldSize: state.fieldSize,
+        degree: 1,
+        numRounds: state.numVars,
+      },
     });
   }, [state.phase, state.evalPoint, state.evaluation, state.partialResult, state.numVars, state.fieldSize, state.fixedVars.length, state.attackClaim, setEntry]);
 

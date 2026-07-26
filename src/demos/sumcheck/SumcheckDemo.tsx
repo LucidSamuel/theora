@@ -339,8 +339,13 @@ export function SumcheckDemo(): JSX.Element {
         'Toggle cheat mode to see detection',
         'Change the number of variables',
       ],
+      securityState: {
+        fieldSize: state.fieldSize,
+        degree: 1,
+        numRounds: state.numVariables,
+      },
     });
-  }, [state.cheatMode, state.claimedSum, state.currentRound, state.honestSum, state.numVariables, state.phase, state.verdict, setEntry]);
+  }, [state.cheatMode, state.claimedSum, state.currentRound, state.fieldSize, state.honestSum, state.numVariables, state.phase, state.verdict, setEntry]);
 
   // ── Share handlers ─────────────────────────────────────────────────
   const handleCopyShareUrl = () => {

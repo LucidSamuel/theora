@@ -1,11 +1,24 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { DemoId } from '@/types';
 
+export interface SecurityState {
+  fieldSize: bigint;
+  /** Degree of polynomial (per-variable for multilinear, total for univariate) */
+  degree?: number;
+  /** Number of protocol rounds (e.g., sumcheck rounds, FRI fold rounds) */
+  numRounds?: number;
+  /** Number of query repetitions (FRI) */
+  numQueries?: number;
+  /** Number of circuit layers (GKR) */
+  numLayers?: number;
+}
+
 export interface InfoContextEntry {
   title: string;
   body: string;
   nextSteps?: string[];
   glossary?: { term: string; definition: string }[];
+  securityState?: SecurityState;
   updatedAt: number;
 }
 
