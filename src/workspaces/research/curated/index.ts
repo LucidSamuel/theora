@@ -4,12 +4,20 @@ import { groth16Walkthrough } from './groth16';
 import { plonkWalkthrough } from './plonk';
 import { bulletproofsWalkthrough } from './bulletproofs';
 import { raguWalkthrough } from './ragu';
+import { friWalkthrough } from './fri';
+import { protostarWalkthrough } from './protostar';
+import { plonkyWalkthrough } from './plonky';
+import { hyperplonkWalkthrough } from './hyperplonk';
 
 export const CURATED_WALKTHROUGHS: Walkthrough[] = [
   haloWalkthrough,
   groth16Walkthrough,
   plonkWalkthrough,
   bulletproofsWalkthrough,
+  friWalkthrough,
+  protostarWalkthrough,
+  plonkyWalkthrough,
+  hyperplonkWalkthrough,
 ];
 
 // All walkthroughs including unlisted ones (accessible via direct ?paper= link)

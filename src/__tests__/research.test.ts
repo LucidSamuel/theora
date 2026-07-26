@@ -4,6 +4,12 @@ import { generateDemoState } from '../workspaces/research/stateGenerator';
 import { buildWalkthroughDemoUrl, normalizePaperPdfUrl } from '../workspaces/research/urls';
 import { DEMO_IDS, isDemoId } from '../types';
 import { decodeState } from '../lib/urlState';
+import { deserializeDocument } from '../demos/constraint-editor/logic';
+import { parse } from '../lib/dsl/parser';
+import { compile } from '../lib/dsl/compiler';
+import { analyzeConstraints } from '../lib/dsl/analyzer';
+import { evaluateWitnessFromAST } from '../lib/dsl/witness';
+import { checkConstraints } from '../lib/dsl/checker';
 
 describe('curated walkthroughs', () => {
   it('all walkthroughs have unique IDs', () => {
@@ -68,8 +74,8 @@ describe('curated walkthroughs', () => {
     expect(getCuratedWalkthrough('nonexistent')).toBeNull();
   });
 
-  it('has 4 curated walkthroughs', () => {
-    expect(CURATED_WALKTHROUGHS.length).toBe(4);
+  it('has 8 curated walkthroughs', () => {
+    expect(CURATED_WALKTHROUGHS.length).toBe(8);
   });
 
   it('each walkthrough has at least one section with a demo', () => {
@@ -166,10 +172,84 @@ describe('research URL helpers', () => {
     });
   });
 
+  it('appends the mode param when a walkthrough demo sets one', () => {
+    const demo = {
+      demoId: 'circuit' as const,
+      state: { x: 7 },
+      mode: 'debug' as const,
+      caption: 'test',
+      interactionHints: [],
+    };
+    const full = new URL(buildWalkthroughDemoUrl(demo, { origin: 'https://theora.test' }));
+    expect(full.searchParams.get('mode')).toBe('debug');
+    const embed = new URL(buildWalkthroughDemoUrl(demo, { origin: 'https://theora.test', embed: true }));
+    expect(embed.searchParams.get('mode')).toBe('debug');
+  });
+
+  it('omits the mode param when a walkthrough demo has none', () => {
+    for (const walkthrough of CURATED_WALKTHROUGHS) {
+      for (const section of walkthrough.sections) {
+        if (!section.demo || section.demo.mode) continue;
+        const url = new URL(buildWalkthroughDemoUrl(section.demo, { origin: 'https://theora.test' }));
+        expect(url.searchParams.get('mode')).toBeNull();
+      }
+    }
+  });
+
   it('normalizes bare eprint ids and page URLs to PDF URLs', () => {
     expect(normalizePaperPdfUrl('2019/1021')).toBe('https://eprint.iacr.org/2019/1021.pdf');
     expect(normalizePaperPdfUrl('https://eprint.iacr.org/2019/1021')).toBe('https://eprint.iacr.org/2019/1021.pdf');
     expect(normalizePaperPdfUrl('https://eprint.iacr.org/2019/1021.pdf')).toBe('https://eprint.iacr.org/2019/1021.pdf');
+  });
+});
+
+describe('paper-lineage walkthroughs (fri/protostar/plonky/hyperplonk)', () => {
+  const NEW_IDS = ['fri-ethstark-2021', 'protostar-2023', 'plonky-lineage-2022', 'hyperplonk-2022'];
+
+  it('all four are listed with sections and references', () => {
+    for (const id of NEW_IDS) {
+      const walkthrough = getCuratedWalkthrough(id);
+      expect(walkthrough, id).not.toBeNull();
+      expect(CURATED_WALKTHROUGHS.some((w) => w.id === id), `${id} listed`).toBe(true);
+      expect(walkthrough!.sections.length).toBeGreaterThanOrEqual(8);
+      expect(walkthrough!.references!.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('each has at least one constraint-editor deep link', () => {
+    for (const id of NEW_IDS) {
+      const walkthrough = getCuratedWalkthrough(id)!;
+      const editorSections = walkthrough.sections.filter((s) => s.demo?.demoId === 'constraint-editor');
+      expect(editorSections.length, `${id} editor sections`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('every constraint-editor payload deserializes, compiles cleanly, and is satisfied by its inputs', () => {
+    for (const walkthrough of CURATED_WALKTHROUGHS) {
+      for (const section of walkthrough.sections) {
+        if (section.demo?.demoId !== 'constraint-editor') continue;
+        const where = `${walkthrough.id}/${section.id}`;
+
+        const doc = deserializeDocument(section.demo.state);
+        expect(doc, `${where}: deserializeDocument`).not.toBeNull();
+        expect(doc!.source, where).toBeTruthy();
+
+        const parsed = parse(doc!.source!);
+        expect(parsed.errors, `${where}: parse ${JSON.stringify(parsed.errors)}`).toHaveLength(0);
+
+        const compilation = compile(parsed.ast, doc!.fieldSize!);
+        expect(compilation.errors, `${where}: compile ${JSON.stringify(compilation.errors)}`).toHaveLength(0);
+
+        const analysis = analyzeConstraints(compilation);
+        expect(analysis.unconstrainedWires, `${where}: unconstrained wires`).toHaveLength(0);
+
+        const witness = evaluateWitnessFromAST(compilation, parsed.ast, doc!.inputs!);
+        expect(witness.success, `${where}: witness ${JSON.stringify(witness.errors)}`).toBe(true);
+
+        const check = checkConstraints(compilation, witness);
+        expect(check.allSatisfied, `${where}: ${JSON.stringify(check.failedConstraints)}`).toBe(true);
+      }
+    }
   });
 });
 
