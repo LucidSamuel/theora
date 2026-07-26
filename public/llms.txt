@@ -1,0 +1,74 @@
+# theora
+
+> Interactive zero-knowledge proof visualizer. Every demo state is URL-addressable;
+> an MCP server exposes the same primitives as tools, so agents can compute,
+> verify, and hand humans a link to exactly what they built.
+
+## Demos
+
+Every demo lives at https://www.theora.dev/app#<id> (full app) or /app?embed=<id> (chrome-less iframe view).
+
+- [Proof Pipeline](https://www.theora.dev/app#pipeline): end-to-end 7-stage proof flow with fault injection
+- [Merkle Tree](https://www.theora.dev/app#merkle): hash trees, inclusion proofs, step-through verification
+- [RSA Accumulator](https://www.theora.dev/app#accumulator): membership and non-membership proofs
+- [Polynomial Commitments](https://www.theora.dev/app#polynomial): coefficients, Lagrange, KZG, NTT, IPA, batch opening
+- [Recursive Proofs](https://www.theora.dev/app#recursive): proof composition trees and IVC chains
+- [Split Accumulation](https://www.theora.dev/app#split-accumulation): accumulation-scheme folding
+- [Rerandomization](https://www.theora.dev/app#rerandomization): proof rerandomization
+- [Oblivious Sync](https://www.theora.dev/app#oblivious-sync): privacy-preserving sync
+- [Elliptic Curves](https://www.theora.dev/app#elliptic): point arithmetic and pairing views over toy fields
+- [Fiat-Shamir](https://www.theora.dev/app#fiat-shamir): interactive vs non-interactive transcripts, forgery detection
+- [R1CS Circuits](https://www.theora.dev/app#circuit): constraint evaluation and underconstrained exploits
+- [Lookup Arguments](https://www.theora.dev/app#lookup): table containment plus LogUp
+- [Pedersen Commitments](https://www.theora.dev/app#pedersen): hiding/binding intuition
+- [Constraint Counter](https://www.theora.dev/app#constraint-counter): circuit cost intuition
+- [PLONK](https://www.theora.dev/app#plonk): gates, permutation, linearization, custom gates, cost
+- [Groth16](https://www.theora.dev/app#groth16): pairing-based SNARK flow
+- [Sumcheck](https://www.theora.dev/app#sumcheck): the sumcheck protocol round by round
+- [FRI](https://www.theora.dev/app#fri): low-degree testing by fold-and-query
+- [Nova](https://www.theora.dev/app#nova): folding-scheme IVC
+- [MLE](https://www.theora.dev/app#mle): multilinear extensions on the boolean hypercube
+- [GKR](https://www.theora.dev/app#gkr): layered-circuit sumcheck protocol
+- [Proof Trace](https://www.theora.dev/app#proof-trace) (new): load a trace.json proof transcript; fingerprint, constraint graph, and timeline views
+- [Constraint Editor](https://www.theora.dev/app#constraint-editor) (new): author R1CS circuits in the theora DSL and hunt underconstraint bugs
+
+## URL grammar
+
+- Full page: `/app#<demoId>` — embedded: `/app?embed=<demoId>`
+- Demo state: `?<shortKey>=<base64(JSON state)>` — short keys: pipeline=pl, merkle=m, polynomial=p, accumulator=a, recursive=r, split-accumulation=sa, rerandomization=rr, oblivious-sync=os, fiat-shamir=fs, circuit=c, elliptic=e, lookup=l, pedersen=ped, constraint-counter=cc, plonk=plk, groth16=g16, sumcheck=sc, fri=fri, nova=nova, mle=mle, gkr=gkr, proof-trace=pt, constraint-editor=ce
+- Hash-state share links: `/app#<demoId>|<urlencoded JSON state>` (hash state wins over query params)
+- Modes: `?mode=explore|attack|debug|predict` (explore is the default and omitted)
+- Debug-mode circuit deep link: `/app?embed=circuit&mode=debug&src=<base64 DSL source>&inputs=x:7,out:61&field=101`
+- Constraint-editor deep link: `/app?embed=constraint-editor&ce=<base64 CircuitDocumentV1 {v,source,field,inputs}>`
+- Demos restore state defensively: unknown or malformed keys silently fall back to defaults.
+
+## Constraint DSL
+
+Arithmetic circuits over a prime field (default GF(101)), compiled to R1CS. Statements: `input x`, `public out`, `wire t = x * x`, `assert u == out`, `// comment`. Expressions use `+ - * ( )` with at most one multiplication each (split larger products into wires). Example:
+
+    input x
+    public out
+    wire t = x * x
+    wire u = t + x + 5
+    assert u == out
+
+Full grammar and semantics: the `theora://dsl/grammar` MCP resource.
+
+## MCP server
+
+npm package `@theora/mcp-server`, bin `theora-mcp` (stdio). Config: `{"mcpServers": {"theora": {"command": "node", "args": ["/path/to/theora/mcp-server/build/index.js"]}}}`.
+
+- Primitive tools: merkle_build/prove/verify, polynomial_* (evaluate, interpolate, KZG), accumulator_*, recursive_*, elliptic_*, fiat_shamir_*, circuit_evaluate, circuit_find_exploit, lookup_check, pipeline_run
+- Constraint DSL tools: dsl_parse, dsl_compile, dsl_analyze (underconstraint verdict + editor URL), dsl_witness_check, dsl_exhaustive
+- Deep-link tools: build_demo_url (any demo + state + mode), build_editor_url (DSL source -> live editor link)
+- Trace tools: trace_validate, trace_fingerprint (canonical sha256, identical to the in-app fingerprint)
+- Resources: theora://demos/list, theora://demos/{id}/info, theora://dsl/grammar, theora://trace/schema
+- Prompts: explain_primitive, audit_circuit, generate_test_vectors, author_circuit (write DSL -> analyze -> fix -> exhaustive -> editor link)
+
+## Research walkthroughs
+
+Curated paper walkthroughs with live demo embeds at https://www.theora.dev/research?paper=<id>: halo-2019, groth16-2016, plonk-2019, bulletproofs-2018, ragu-2026 (unlisted). Upload any eprint PDF for an AI-generated walkthrough (user-supplied Anthropic key).
+
+## Trace format
+
+trace.json v1: `{version: 1, meta: {system, protocol, field}, transcript: [{t: absorb|challenge|commit|fold|query|check, round, label, data?, ok?}], constraints?, rounds?}`. Fingerprint = sha256 of `theora/proof-trace/v1|<protocol>|<field>|<canonical JSON of normalized transcript>` (sorted keys, no whitespace; empty data arrays and non-check ok flags dropped). Schema + pinned test vector: the `theora://trace/schema` MCP resource.

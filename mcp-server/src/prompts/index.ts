@@ -107,4 +107,22 @@ export function registerPrompts(server: McpServer) {
       }],
     })
   );
+
+  server.prompt(
+    "author_circuit",
+    "Author a sound arithmetic circuit in the theora constraint DSL for a given computation, verify it with the DSL tools, and hand back a live editor link",
+    {
+      computation: z.string().describe("The computation to encode, e.g. 'prove knowledge of x with x^3 + x + 5 = out'"),
+      field: z.string().optional().describe("Prime field modulus as a decimal string, default 101"),
+    },
+    ({ computation, field }) => ({
+      messages: [{
+        role: "user",
+        content: {
+          type: "text",
+          text: `Author a constraint circuit in the theora DSL for this computation:\n\n${computation}\n\nField: GF(${field || "101"}).\n\nWork through these steps, using the theora MCP tools at each stage — do not skip the verification steps:\n\n1. Read the theora://dsl/grammar resource if you have not already. Write the circuit: declare inputs (\`input\`), public outputs (\`public\`), intermediate wires (\`wire name = expr\`, at most one multiplication per expression), and the final \`assert\`.\n2. Run dsl_compile to confirm it compiles, then dsl_analyze. If the analysis reports unconstrained wires, weak inputs, or positive degrees of freedom, FIX the circuit and re-run — an underconstrained circuit lets a prover cheat.\n3. Run dsl_witness_check with honest example inputs to confirm the constraints are satisfied by a valid witness.\n4. If the search space is small (fieldSize^numInputs <= 100000, e.g. use field 13 or 97 for this check), run dsl_exhaustive to confirm there are no counterexample witnesses and the output is input-determined.\n5. Call build_editor_url with the final source and example inputs, and present the link to the user so they can drag the witness values live in the browser.\n\nReport the final DSL source, the analysis verdict, and the editor URL.`,
+        },
+      }],
+    })
+  );
 }

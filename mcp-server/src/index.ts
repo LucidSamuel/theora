@@ -10,6 +10,9 @@ import { registerFiatShamirTools } from "./tools/fiat-shamir.js";
 import { registerCircuitTools } from "./tools/circuit.js";
 import { registerLookupTools } from "./tools/lookup.js";
 import { registerPipelineTools } from "./tools/pipeline.js";
+import { registerDslTools } from "./tools/dsl.js";
+import { registerUrlTools } from "./tools/urls.js";
+import { registerTraceTools } from "./tools/trace.js";
 import { registerResources } from "./resources/schemas.js";
 import { registerPrompts } from "./prompts/index.js";
 
@@ -28,6 +31,9 @@ registerFiatShamirTools(server);
 registerCircuitTools(server);
 registerLookupTools(server);
 registerPipelineTools(server);
+registerDslTools(server);
+registerUrlTools(server);
+registerTraceTools(server);
 
 // Register resources and prompts
 registerResources(server);

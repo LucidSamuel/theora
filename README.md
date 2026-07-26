@@ -65,6 +65,8 @@ Connect a GitHub account to save and load demo states as unlisted Gists. Click "
 
 An MCP server exposes every primitive as a callable tool for AI agents (Claude Code, Cursor, etc.).
 
+For agents: [`/llms.txt`](https://www.theora.dev/llms.txt) maps the demos, the URL grammar, the constraint DSL, and every MCP tool.
+
 ```bash
 cd mcp-server && npm install && npm run build
 ```

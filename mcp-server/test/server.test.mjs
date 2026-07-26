@@ -102,8 +102,8 @@ test("resource registration exposes the demo catalog and import schema", async (
   registerResources(mock.server);
 
   const demos = await invokeResource(mock, "theora://demos/list");
-  assert.equal(demos.demos.length, 9);
-  assert.equal(demos.totalTools, 28);
+  assert.equal(demos.demos.length, 11);
+  assert.equal(demos.totalTools, 37);
 
   const pipeline = await invokeResource(mock, "theora://demos/pipeline/info");
   assert.equal(pipeline.id, "pipeline");
