@@ -39,6 +39,7 @@ export interface WalkthroughSection {
 export interface WalkthroughDemo {
   demoId: DemoId;
   state: Record<string, unknown>;
+  mode?: 'explore' | 'attack' | 'debug' | 'predict';
   caption: string;
   interactionHints: string[];
 }

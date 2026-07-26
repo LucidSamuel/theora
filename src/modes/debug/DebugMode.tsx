@@ -61,7 +61,7 @@ function DebugCanvas() {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   const {
-    compilation, witness, checks, failureTrace, layout,
+    compilation, witness, checks, failureTrace, analysis, layout,
     selectedWire, setSelectedWire,
     selectedConstraint, setSelectedConstraint,
     hoveredElement, setHoveredElement,
@@ -76,6 +76,7 @@ function DebugCanvas() {
       witness,
       checks,
       failureTrace,
+      analysis,
       selectedWire,
       selectedConstraint,
       hoveredElement,
@@ -83,7 +84,7 @@ function DebugCanvas() {
     };
 
     renderDebugGraph(ctx, frame, state, theme);
-  }, [compilation, witness, checks, failureTrace, layout, selectedWire, selectedConstraint, hoveredElement, theme]);
+  }, [compilation, witness, checks, failureTrace, analysis, layout, selectedWire, selectedConstraint, hoveredElement, theme]);
 
   const handleFitToView = useCallback((options?: { instant?: boolean }) => {
     const canvas = canvasElRef.current;

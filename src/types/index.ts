@@ -20,6 +20,8 @@ export const DEMO_IDS = [
   'mle',
   'gkr',
   'pipeline',
+  'proof-trace',
+  'constraint-editor',
 ] as const;
 
 export type DemoId = typeof DEMO_IDS[number];
@@ -204,5 +206,21 @@ export const DEMOS: DemoMeta[] = [
     description:
       'A proof system is not one primitive — it is a pipeline. A computation becomes constraints, constraints become a polynomial, the polynomial is committed to, a Fiat-Shamir challenge is derived, the polynomial is opened, and the verifier checks everything. This demo shows the full flow end-to-end, with fault injection to see exactly where and why verification breaks.',
     accent: '#a78bfa',
+  },
+  {
+    id: 'proof-trace',
+    title: 'Proof Trace',
+    subtitle: 'Fingerprint, replay, and inspect a recorded proof execution.',
+    description:
+      'Load a trace.json describing one execution of a proof protocol — its transcript of absorbs, challenges, commitments, folds, queries, and checks. The fingerprint view renders a deterministic visual identity from a hash of the transcript: the same trace always produces the same image, and any change to the interaction visibly changes it. Constraint and timeline views let you inspect the underlying R1CS section and step through the protocol round by round.',
+    accent: '#d946ef',
+  },
+  {
+    id: 'constraint-editor',
+    title: 'Constraint Editor',
+    subtitle: 'Author R1CS circuits and hunt your own underconstrained bugs.',
+    description:
+      'Write arithmetic circuits in a small constraint DSL and watch them compile to R1CS live: wires, constraints, witness values, and dependency structure on the canvas. The analyzer flags wires the prover can choose freely — the bug class behind most real SNARK vulnerabilities — and the exhaustive checker searches the full input space for concrete exploits. Every circuit is shareable as a URL.',
+    accent: '#f472b6',
   },
 ];

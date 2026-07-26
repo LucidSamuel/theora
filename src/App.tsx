@@ -34,6 +34,8 @@ import { FRIDemo } from '@/demos/fri/FRIDemo';
 import { NovaDemo } from '@/demos/nova/NovaDemo';
 import { MLEDemo } from '@/demos/mle/MLEDemo';
 import { GKRDemo } from '@/demos/gkr/GKRDemo';
+import { ProofTraceDemo } from '@/demos/proof-trace/ProofTraceDemo';
+import { ConstraintEditorDemo } from '@/demos/constraint-editor/ConstraintEditorDemo';
 import { DEMOS, type DemoId } from '@/types';
 
 const DEMO_NAMES = {
@@ -58,6 +60,8 @@ const DEMO_NAMES = {
   nova: 'Nova Folding',
   mle: 'Multilinear Extensions',
   gkr: 'GKR Protocol',
+  'proof-trace': 'Proof Trace',
+  'constraint-editor': 'Constraint Editor',
 } as const;
 
 export default function App() {
@@ -135,6 +139,10 @@ export default function App() {
         return <GKRDemo />;
       case 'pipeline':
         return <PipelineDemo />;
+      case 'proof-trace':
+        return <ProofTraceDemo />;
+      case 'constraint-editor':
+        return <ConstraintEditorDemo />;
     }
   };
 

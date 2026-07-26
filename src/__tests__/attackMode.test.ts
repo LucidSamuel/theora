@@ -61,8 +61,8 @@ const initialState: AttackState = {
 // --- Tests ---
 
 describe('Attack scenario registry', () => {
-  it('has 21 scenarios', () => {
-    expect(ALL_SCENARIOS).toHaveLength(21);
+  it('has 22 scenarios', () => {
+    expect(ALL_SCENARIOS).toHaveLength(22);
   });
 
   it('each scenario has a unique id', () => {
@@ -138,7 +138,8 @@ describe('Attack scenario registry', () => {
     expect(ATTACK_DEMO_IDS).toContain('oblivious-sync');
     expect(ATTACK_DEMO_IDS).toContain('constraint-counter');
     expect(ATTACK_DEMO_IDS).toContain('pedersen');
-    expect(ATTACK_DEMO_IDS).toHaveLength(21);
+    expect(ATTACK_DEMO_IDS).toContain('constraint-editor');
+    expect(ATTACK_DEMO_IDS).toHaveLength(22);
   });
 });
 

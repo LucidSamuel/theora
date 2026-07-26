@@ -21,6 +21,7 @@ import { OSYNC_DEANONYMIZE } from './oblivious-sync';
 import { RERAND_LINKABILITY } from './rerandomization';
 import { CONSTRAINT_COUNTER_COST_ATTACK } from './constraint-counter';
 import { PEDERSEN_HIDING_ATTACK } from './pedersen';
+import { EDITOR_AUTHOR_THE_BUG } from './constraint-editor';
 
 export const ALL_SCENARIOS: AttackScenario[] = [
   FROZEN_HEART,
@@ -44,6 +45,7 @@ export const ALL_SCENARIOS: AttackScenario[] = [
   RERAND_LINKABILITY,
   CONSTRAINT_COUNTER_COST_ATTACK,
   PEDERSEN_HIDING_ATTACK,
+  EDITOR_AUTHOR_THE_BUG,
 ];
 
 const BY_DEMO = new Map<DemoId, AttackScenario>();

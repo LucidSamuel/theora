@@ -48,5 +48,15 @@ export function generateDemoState(demoId: DemoId): Record<string, unknown> {
       return { numVars: 2, fieldSize: 101 };
     case 'gkr':
       return { inputs: [3, 5, 7, 11], fieldSize: 101 };
+    case 'proof-trace':
+      return { source: { kind: 'sample', id: 'sumcheck-3var' }, view: 'fingerprint', step: 0 };
+    case 'constraint-editor':
+      return {
+        v: 1,
+        source: '// Compute f(x) = x\u00b2 + x + 5\ninput x\npublic out\n\nwire t = x * x\nwire u = t + x + 5\nassert u == out',
+        field: '101',
+        inputs: { x: '7', out: '61' },
+        presetId: 'basic',
+      };
   }
 }

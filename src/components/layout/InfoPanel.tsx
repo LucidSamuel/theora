@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { DEMOS, type DemoId } from '@/types';
-import { useInfoPanel } from './InfoContext';
+import { useInfoPanel, type SecurityState } from './InfoContext';
 
 interface InfoPanelProps {
   activeDemo: DemoId;
@@ -14,8 +14,11 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
 }
 
-function CollapsibleSection({ title, defaultOpen = false, children }: CollapsibleSectionProps) {
+function CollapsibleSection({ title, accent, defaultOpen = false, children }: CollapsibleSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const sectionId = useId();
+  const buttonId = `${sectionId}-button`;
+  const panelId = `${sectionId}-panel`;
   return (
     <div
       style={{
@@ -25,20 +28,24 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
       }}
     >
       <button
+        id={buttonId}
+        type="button"
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between w-full text-left"
+        aria-expanded={open}
+        aria-controls={panelId}
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
         <span
           className="text-[10px] font-bold uppercase"
-          style={{ color: 'var(--text-muted)', letterSpacing: '0.1em' }}
+          style={{ color: accent, letterSpacing: '0.1em' }}
         >
           {title}
         </span>
         <span
           className="text-[10px]"
           style={{
-            color: 'var(--text-muted)',
+            color: accent,
             transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
             display: 'inline-block',
             transition: 'transform 150ms ease',
@@ -49,6 +56,9 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
       </button>
 
       <div
+        id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
         style={{
           display: 'grid',
           gridTemplateRows: open ? '1fr' : '0fr',
@@ -63,6 +73,58 @@ function CollapsibleSection({ title, defaultOpen = false, children }: Collapsibl
       </div>
     </div>
   );
+}
+
+interface SecurityParamsEntry {
+  demoField: string;
+  productionField: string;
+  comparisons: string[];
+}
+
+/** Compute soundness error bounds from live demo state. */
+function computeSoundnessErrors(state: SecurityState): { demoError: string; productionError: string; formula: string } | null {
+  const p = state.fieldSize;
+  const d = state.degree ?? 1;
+
+  // FRI: error ≤ (d/|F|)^Q per query repetition
+  if (state.numQueries != null) {
+    const ratio = d / Number(p);
+    const demoErr = ratio ** state.numQueries;
+    const prodRatio = d / 2 ** 255;
+    const prodErr = prodRatio ** state.numQueries;
+    return {
+      formula: `(d/|F|)^Q = (${d}/${p})^${state.numQueries}`,
+      demoError: demoErr < 0.001 ? demoErr.toExponential(2) : demoErr.toFixed(4),
+      productionError: `\u2248 2^{${Math.round(Math.log2(prodErr))}}`,
+    };
+  }
+
+  // Sumcheck / GKR: error ≤ n·d / |F| per round (union bound)
+  if (state.numRounds != null) {
+    const rounds = state.numRounds;
+    const demoErr = (rounds * d) / Number(p);
+    const prodBits = Math.round(Math.log2(Number(p))) >= 64 ? 254 : 254;
+    return {
+      formula: `n\u00B7d/|F| = ${rounds}\u00B7${d}/${p}`,
+      demoError: demoErr < 0.001 ? demoErr.toExponential(2) : demoErr.toFixed(4),
+      productionError: `\u2248 2^{${Math.round(Math.log2(rounds * d) - prodBits)}}`,
+    };
+  }
+
+  // GKR with layers: total error ≤ layers · (sumcheck rounds per layer) · d / |F|
+  if (state.numLayers != null) {
+    const layers = state.numLayers;
+    const roundsPerLayer = Math.ceil(Math.log2(8)); // typical gate fan-in bits
+    const totalRounds = layers * roundsPerLayer;
+    const demoErr = (totalRounds * d) / Number(p);
+    return {
+      formula: `layers\u00B7rounds\u00B7d/|F| \u2248 ${layers}\u00B7${roundsPerLayer}\u00B7${d}/${p}`,
+      demoError: demoErr < 0.001 ? demoErr.toExponential(2) : demoErr.toFixed(4),
+      productionError: `\u2248 2^{${Math.round(Math.log2(totalRounds * d) - 254)}}`,
+    };
+  }
+
+  return null;
 }
 
 export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label: string; url: string }[] }> = {
@@ -295,6 +357,28 @@ export const EXTRA_INFO: Record<DemoId, { concepts: string[]; resources: { label
       { label: 'Delegating Computation (Goldwasser, Kalai, Rothblum)', url: 'https://eprint.iacr.org/2018/601' },
     ],
   },
+  'constraint-editor': {
+    concepts: [
+      'An R1CS constraint has the form A\u00b7w \u00d7 B\u00b7w = C\u00b7w \u2014 one multiplication of linear combinations per constraint.',
+      'A circuit is underconstrained when some wire value is not uniquely determined by the inputs; the prover can then choose it freely and prove false statements.',
+      'Exhaustive checking over a toy field enumerates every input assignment \u2014 a luxury impossible over 2\u00b2\u2075\u2075-element production fields, where formal tools take its place.',
+    ],
+    resources: [
+      { label: 'Circom documentation \u2014 constraint generation', url: 'https://docs.circom.io/circom-language/constraint-generation/' },
+      { label: 'Chaliasos et al. \u2014 SoK: What don\u2019t we know? Understanding Security Vulnerabilities in SNARKs', url: 'https://arxiv.org/abs/2402.15293' },
+    ],
+  },
+  'proof-trace': {
+    concepts: [
+      'A transcript records every message of a proof execution: absorbs, challenges, commitments, folds, queries, and checks.',
+      'Hashing a canonical serialization of the transcript yields a fingerprint that identifies the exact interaction \u2014 any change to any message changes it.',
+      'The same idea powers Fiat-Shamir: challenges are derived by hashing the transcript so far, binding the prover to its earlier messages.',
+    ],
+    resources: [
+      { label: 'Fiat-Shamir transform (Wikipedia)', url: 'https://en.wikipedia.org/wiki/Fiat%E2%80%93Shamir_heuristic' },
+      { label: 'Merlin transcripts \u2014 composable proof transcripts', url: 'https://merlin.cool/' },
+    ],
+  },
 };
 
 export const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[]> = {
@@ -407,6 +491,186 @@ export const MINI_GLOSSARY: Record<DemoId, { term: string; definition: string }[
     { term: 'Layer reduction', definition: 'Sumcheck reduces a claim about V_i to a claim about V_{i+1}.' },
     { term: 'Oracle query', definition: 'Final check: evaluate input MLE at the reduced point.' },
   ],
+  'constraint-editor': [
+    { term: 'R1CS', definition: 'Rank-1 constraint system: every constraint is one multiplication of linear combinations of wires.' },
+    { term: 'Underconstrained wire', definition: 'A wire whose value is not pinned down by the constraints \u2014 the prover picks it freely.' },
+    { term: 'Witness', definition: 'The full assignment of values to every wire, including intermediates.' },
+  ],
+  'proof-trace': [
+    { term: 'Transcript', definition: 'The ordered sequence of messages exchanged during one proof execution.' },
+    { term: 'Fiat–Shamir transform', definition: 'Deriving verifier challenges by hashing the transcript, removing interaction.' },
+    { term: 'Fingerprint', definition: 'Deterministic visual derived from the transcript hash — an identicon for a proof run.' },
+  ],
+};
+
+export const SECURITY_PARAMS: Record<DemoId, SecurityParamsEntry | null> = {
+  pipeline: {
+    demoField: 'Toy field (configurable)',
+    productionField: 'BN254 / BLS12-381 scalar field (~2\u00B2\u2075\u2074 elements)',
+    comparisons: [
+      'Demo: all operations over small primes where discrete log is trivial.',
+      'Production: 254-bit prime fields backed by elliptic curve pairings. Discrete log takes longer than the age of the universe.',
+      'Protocol structure is identical — only field size differs.',
+    ],
+  },
+  merkle: {
+    demoField: 'SHA-256 truncated to hex display',
+    productionField: 'SHA-256 / Poseidon (256-bit output)',
+    comparisons: [
+      'Demo uses real SHA-256 — hash security is production-grade.',
+      'Collision resistance: ~2\u00B9\u00B2\u2078 operations (128-bit security).',
+      'In-circuit Merkle proofs replace SHA-256 with Poseidon (~63 R1CS vs ~25,210).',
+    ],
+  },
+  polynomial: {
+    demoField: 'Plain-number polynomial math + SHA-256 stand-in commitment',
+    productionField: 'KZG over BLS12-381 / BN254 scalar field (~2\u00B2\u2075\u2075 elements)',
+    comparisons: [
+      'Demo: coefficients, evaluations, and quotient polynomial are shown directly; the “commitment” is a simplified hash of the coefficients.',
+      'Production: the commitment is an elliptic-curve point [p(\u03C4)] built from a trusted setup over a 255-bit field.',
+      'The opening flow is still structurally right: commit, sample z, reveal p(z), then prove divisibility with the quotient polynomial.',
+    ],
+  },
+  accumulator: {
+    demoField: 'RSA modulus: ~2\u2076\u2070 (two 30-bit primes)',
+    productionField: 'RSA modulus: 2048-bit or larger',
+    comparisons: [
+      'Demo: n = p\u00B7q with p,q \u2248 10\u2079. Factorable in milliseconds.',
+      'Production: 2048-bit RSA modulus. Factoring would take billions of years.',
+      'Strong RSA assumption holds structurally in both — only hardness differs.',
+    ],
+  },
+  recursive: {
+    demoField: 'Simplified Pallas/Vesta cycle visualization',
+    productionField: 'Pallas: ~2\u00B2\u2075\u2075 base, Vesta: ~2\u00B2\u2075\u2075 base',
+    comparisons: [
+      'Demo: illustrates the cycle-of-curves structure without real curve arithmetic.',
+      'Production: each scalar multiplication = 255 doublings + ~128 additions.',
+      'IVC security: 128-bit from the curve cycle. Demo shows protocol flow, not hardness.',
+    ],
+  },
+  elliptic: {
+    demoField: 'y\u00B2 = x\u00B3 + ax + b over GF(97) (97 elements)',
+    productionField: 'Pallas/Vesta: y\u00B2 = x\u00B3 + 5 over ~2\u00B2\u2075\u2075-element field',
+    comparisons: [
+      'Demo: all ~100 curve points visible and enumerable. ECDLP solvable by brute force.',
+      'Production: ~2\u00B2\u2075\u2075 points. ECDLP requires ~2\u00B9\u00B2\u2078 group operations (128-bit security).',
+      'Point addition geometry is identical — the group law does not change with field size.',
+    ],
+  },
+  'fiat-shamir': {
+    demoField: 'GF(97) — 97 elements, generator g = 7',
+    productionField: 'BN254 scalar field (~2\u00B2\u2075\u2074 elements)',
+    comparisons: [
+      'Demo: discrete log in GF(97) solvable in microseconds by exhaustive search.',
+      'Production: discrete log over a 254-bit prime field is computationally infeasible.',
+      'Transcript-binding security is structural — the Fiat-Shamir bug patterns are real regardless of field size.',
+    ],
+  },
+  circuit: {
+    demoField: 'Optional field (0 = integers, or small configurable prime)',
+    productionField: 'BN254 / Pasta scalar field (~2\u00B2\u2075\u2074 elements)',
+    comparisons: [
+      'Demo: constraint satisfaction is checkable by hand over small fields.',
+      'Production: witness satisfiability is checked over 254-bit fields inside the prover.',
+      'Underconstrained bugs are field-size-independent — they exist at any scale.',
+    ],
+  },
+  lookup: {
+    demoField: 'Small configurable table and field',
+    productionField: 'Tables up to 2\u00B2\u2070 rows over ~2\u00B2\u2075\u2074 field',
+    comparisons: [
+      'Demo: table is small enough to inspect every entry visually.',
+      'Production: LogUp soundness error \u2248 table_size / |F| \u2248 2\u00B2\u2070/2\u00B2\u2075\u2074 \u2248 2\u207B\u00B2\u00B3\u2074.',
+      'Multiset check structure is identical at any scale.',
+    ],
+  },
+  pedersen: {
+    demoField: 'Z*\u2089\u2087 — p = 97, g = 5, h = 47',
+    productionField: 'Jubjub / Pallas curve group (~2\u00B2\u2075\u2075 elements)',
+    comparisons: [
+      'Demo: log\u2085(47) = 39 mod 96 is trivially computable. Binding is broken.',
+      'Production: computing log_g(h) on a 255-bit curve is infeasible (128-bit security).',
+      'Hiding is perfect at any field size. Binding requires the DLP to be hard.',
+    ],
+  },
+  plonk: {
+    demoField: 'GF(101) — 101 elements',
+    productionField: 'BN254 scalar field (~2\u00B2\u2075\u2074 elements)',
+    comparisons: [
+      'Demo: all 101 field elements visible. Polynomial identity testing over GF(101) has error \u2248 d/101.',
+      'Production: Schwartz-Zippel error \u2248 d/2\u00B2\u2075\u2074 \u2248 negligible for any practical degree d.',
+      'Gate structure (qL\u00B7a + qR\u00B7b + qO\u00B7c + qM\u00B7a\u00B7b + qC = 0) is field-independent.',
+    ],
+  },
+  groth16: {
+    demoField: 'GF(101) — 101 elements',
+    productionField: 'BN254 scalar field (~2\u00B2\u2075\u2074), BN254 curve for pairings',
+    comparisons: [
+      'Demo: "pairings" are g^(ab) mod 101 — no real bilinear map.',
+      'Production: e(g\u00B9, g\u00B2) on BN254 with 128-bit security. Proof is 3 curve elements (192 bytes).',
+      'QAP structure and trusted setup ceremony are structurally identical.',
+    ],
+  },
+  sumcheck: {
+    demoField: 'GF(101) — 101 elements',
+    productionField: 'Goldilocks (2\u2076\u2074 \u2212 2\u00B3\u00B2 + 1) or BN254 scalar field',
+    comparisons: [
+      'Demo: soundness error per round = d/101 where d is the polynomial degree.',
+      'Production: soundness error per round = d/2\u2076\u2074 or d/2\u00B2\u2075\u2074 — negligible.',
+      'Total protocol error over n rounds: \u2264 n\u00B7d/|F|. Demo makes this ratio visible.',
+    ],
+  },
+  fri: {
+    demoField: 'GF(257) — 257 elements, \u03C9 = 3 (256th root of unity)',
+    productionField: 'Goldilocks field (2\u2076\u2074 \u2212 2\u00B3\u00B2 + 1) or BabyBear (2\u00B3\u00B9 \u2212 2\u00B2\u2077 + 1)',
+    comparisons: [
+      'Demo: 256-point evaluation domain. All folding steps visible.',
+      'Production: domains of 2\u00B2\u2070\u207A points. FRI proximity gap gives ~100-bit soundness.',
+      'Folding mechanics (f\u2032(x) = f_even(x) + \u03B1\u00B7f_odd(x)) are identical at any scale.',
+    ],
+  },
+  nova: {
+    demoField: 'GF(101) — 101 elements',
+    productionField: 'Pasta scalar field (~2\u00B2\u2075\u2075 elements)',
+    comparisons: [
+      'Demo: folding with r \u2208 GF(101). Cross-term T visible in small field.',
+      'Production: r is a 255-bit random challenge. Folding soundness \u2248 1/2\u00B2\u2075\u2075 per step.',
+      'Relaxed R1CS structure (Az \u2218 Bz = u\u00B7Cz + E) is field-independent.',
+    ],
+  },
+  mle: {
+    demoField: 'GF(101) — 101 elements (configurable)',
+    productionField: 'Goldilocks or BN254 scalar field',
+    comparisons: [
+      'Demo: hypercube {0,1}^n evaluations mod 101. All eq-basis weights visible.',
+      'Production: same multilinear extension formula over 64-bit or 254-bit fields.',
+      'MLE uniqueness and partial evaluation properties are field-size-independent.',
+    ],
+  },
+  gkr: {
+    demoField: 'GF(101) — 101 elements',
+    productionField: 'Goldilocks or BN254 scalar field',
+    comparisons: [
+      'Demo: layer reduction via sumcheck over GF(101). All intermediate values visible.',
+      'Production: sumcheck soundness error per layer \u2248 d/|F| — negligible over large fields.',
+      'Circuit wiring predicates and layer structure are field-independent.',
+    ],
+  },
+  'split-accumulation': {
+    demoField: 'Simplified MSM cost model',
+    productionField: 'Pallas/Vesta curves (~2\u00B2\u2075\u2075 scalar field)',
+    comparisons: [
+      'Demo: illustrates fold-vs-naive MSM cost ratio without real curve operations.',
+      'Production: one MSM over n Pallas points \u2248 n\u00B7255 doublings + additions.',
+      'Accumulation savings are proportional — the ratio is the same at any scale.',
+    ],
+  },
+  rerandomization: null,
+  'oblivious-sync': null,
+  'constraint-counter': null,
+  'proof-trace': null,
+  'constraint-editor': null,
 };
 
 export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
@@ -431,6 +695,8 @@ export const DEFAULT_NEXT_STEPS: Record<DemoId, string[]> = {
   nova: ['Fold one step to see the cross-term', 'Run all steps to see the full IVC chain', 'Check that each folded instance is satisfied', 'See full recursive proof trees in Recursive Proofs'],
   mle: ['Edit hypercube values and evaluate at a non-boolean point', 'Use partial evaluation to see dimension reduction', 'Compare the eq-basis weights at different points'],
   gkr: ['Prove to see layer-by-layer reduction', 'Step through to watch each sumcheck', 'Change input values and re-prove'],
+  'proof-trace': ['Load a bundled sample trace', 'Compare fingerprints of an honest and corrupted run', 'Step through the timeline view'],
+  'constraint-editor': ['Load a buggy preset and find the flaw', 'Run the exhaustive check for a counterexample', 'Write a circuit from scratch and share it'],
 };
 
 export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
@@ -440,6 +706,8 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
   const contextEntry = entries[activeDemo];
   const glossary = contextEntry?.glossary ?? MINI_GLOSSARY[activeDemo];
   const nextSteps = contextEntry?.nextSteps ?? DEFAULT_NEXT_STEPS[activeDemo];
+  const securityParams = SECURITY_PARAMS[activeDemo];
+  const soundness = contextEntry?.securityState ? computeSoundnessErrors(contextEntry.securityState) : null;
 
   if (!isOpen) return null;
 
@@ -525,6 +793,121 @@ export function InfoPanel({ activeDemo, isOpen }: InfoPanelProps) {
           ))}
         </ul>
       </CollapsibleSection>
+
+      {securityParams && (
+        <CollapsibleSection title="Security Parameters" accent="var(--text-muted)">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: 8,
+              }}
+            >
+              <div
+                className="rounded-lg"
+                style={{
+                  minWidth: 0,
+                  padding: '10px 12px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  className="text-[9px] font-bold uppercase"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 4 }}
+                >
+                  This demo
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  {securityParams.demoField}
+                </div>
+              </div>
+              <div
+                className="rounded-lg"
+                style={{
+                  minWidth: 0,
+                  padding: '10px 12px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  className="text-[9px] font-bold uppercase"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 4 }}
+                >
+                  Production
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  {securityParams.productionField}
+                </div>
+              </div>
+            </div>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {securityParams.comparisons.map((c, i) => (
+                <li
+                  key={i}
+                  style={{
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    color: 'var(--text-secondary)',
+                    paddingLeft: 10,
+                    borderLeft: '2px solid var(--text-muted)',
+                  }}
+                >
+                  {c}
+                </li>
+              ))}
+            </ul>
+            {soundness && (
+              <div
+                className="rounded-lg"
+                style={{
+                  padding: '10px 12px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                  marginTop: 4,
+                }}
+              >
+                <div
+                  className="text-[9px] font-bold uppercase"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 8 }}
+                >
+                  Live Soundness Error
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>
+                  {soundness.formula}
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div>
+                    <div className="text-[9px] uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 2 }}>
+                      Demo
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)', fontFamily: 'var(--font-mono)' }}>
+                      {soundness.demoError}
+                    </div>
+                  </div>
+                  <div style={{ width: 1, background: 'var(--border)' }} />
+                  <div>
+                    <div className="text-[9px] uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 2 }}>
+                      Production
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-success)', fontFamily: 'var(--font-mono)' }}>
+                      {soundness.productionError}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
 
       <CollapsibleSection title="Mini Glossary" accent="var(--text-muted)">
         <ul style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

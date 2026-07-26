@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearCrossDemoParams } from '@/hooks/useActiveDemo';
+import { clearCrossDemoParams, SEARCH_PARAM_DEMO_KEYS } from '@/hooks/useActiveDemo';
 
 describe('clearCrossDemoParams', () => {
   it('removes demo-specific and debug-specific URL params', () => {
@@ -29,6 +29,15 @@ describe('clearCrossDemoParams', () => {
     expect(next.get('scenario')).toBeNull();
     expect(next.get('step')).toBeNull();
     expect(next.get('pl')).toBeNull();
+    expect(next.get('keep')).toBe('1');
+  });
+
+  it('maps ce to constraint-editor and clears it across demo switches', () => {
+    expect(SEARCH_PARAM_DEMO_KEYS).toContainEqual(['ce', 'constraint-editor']);
+
+    const params = new URLSearchParams('ce=payload&keep=1');
+    const next = clearCrossDemoParams(params);
+    expect(next.get('ce')).toBeNull();
     expect(next.get('keep')).toBe('1');
   });
 });

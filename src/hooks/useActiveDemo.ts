@@ -9,7 +9,7 @@ export interface ActiveDemoLocation {
   locationKey: string;
 }
 
-const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
+export const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
   ['pl', 'pipeline'],
   ['m', 'merkle'],
   ['p', 'polynomial'],
@@ -31,6 +31,8 @@ const SEARCH_PARAM_DEMO_KEYS: Array<[string, DemoId]> = [
   ['nova', 'nova'],
   ['mle', 'mle'],
   ['gkr', 'gkr'],
+  ['pt', 'proof-trace'],
+  ['ce', 'constraint-editor'],
 ];
 
 const MODE_PARAM_KEYS = ['scenario', 'step', 'src', 'inputs', 'field'] as const;

@@ -46,11 +46,15 @@ const DEMO_QUERY_KEYS: Record<DemoId, string> = {
   nova: 'nova',
   mle: 'mle',
   gkr: 'gkr',
+  'proof-trace': 'pt',
+  'constraint-editor': 'ce',
 };
 
 export function applyImportedState(payload: TheoraImportEnvelope): void {
   const demo = payload.demo;
-  const updates: Record<string, string | null> = { pl: null, m: null, p: null, a: null, r: null, sa: null, rr: null, os: null, fs: null, c: null, e: null, l: null, ped: null, cc: null, plk: null, g16: null, sc: null, fri: null, nova: null, mle: null, gkr: null };
+  const updates: Record<string, string | null> = Object.fromEntries(
+    Object.values(DEMO_QUERY_KEYS).map((key) => [key, null]),
+  );
   updates[DEMO_QUERY_KEYS[demo]] = encodeState(payload.state);
   setSearchParams(updates);
   window.location.hash = `${demo}|${encodeStatePlain(payload.state)}`;

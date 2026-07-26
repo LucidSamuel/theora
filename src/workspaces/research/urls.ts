@@ -24,6 +24,8 @@ export const RESEARCH_DEMO_PARAM_KEYS: Record<DemoId, string> = {
   nova: 'nova',
   mle: 'mle',
   gkr: 'gkr',
+  'proof-trace': 'pt',
+  'constraint-editor': 'ce',
 };
 
 interface BuildWalkthroughDemoUrlOptions {
@@ -49,6 +51,10 @@ export function buildWalkthroughDemoUrl(
 
   if (Object.keys(demo.state).length > 0) {
     url.searchParams.set(key, encodeState(demo.state));
+  }
+
+  if (demo.mode) {
+    url.searchParams.set('mode', demo.mode);
   }
 
   return url.toString();
